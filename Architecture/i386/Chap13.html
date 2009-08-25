@@ -1,0 +1,176 @@
+<pre>
+<title>           PART III  COMPATIBILITY                          </title><body>
+<H1><font color=red>           PART III  COMPATIBILITY                          </font></H1>
+<pre>
+<title>Chapter 13     Executing 80286 Protected-Mode Code</title><body>
+<H1><font color=red>Chapter 13 </font>    Executing 80286 Protected-Mode Code</H1>
+<pre>
+<HR>
+<A Name="13.1"><H2>13.1  80286 Code Executes as a Subset of the 80386</H2>
+
+
+Chapter 13  Executing 80286 Protected-Mode Code
+
+----------------------------------------------------------------------------
+
+13.1  80286 Code Executes as a Subset of the 80386
+
+In general, programs designed for execution in protected mode on an 80286
+execute without modification on the 80386, because the features of the 80286
+are a subset of those of the 80386.
+
+All the descriptors used by the 80286 are supported by the 80386 as long as
+the Intel-reserved word (last word) of the 80286 descriptor is zero.
+
+The descriptors for data segments, executable segments, local descriptor
+tables, and task gates are common to both the 80286 and the 80386. Other
+80286 descriptors--TSS segment, call gate, interrupt gate, and trap
+gate--are supported by the 80386. The 80386 also has new versions of
+descriptors for TSS segment, call gate, interrupt gate, and trap gate that
+support the 32-bit nature of the 80386. Both sets of descriptors can be
+used simultaneously in the same system.
+
+For those descriptors that are common to both the 80286 and the 80386, the
+presence of zeros in the final word causes the 80386 to interpret these
+descriptors exactly as 80286 does; for example:
+
+Base Address      The high-order eight bits of the 32-bit base address are
+                  zero, limiting base addresses to 24 bits.
+
+Limit             The high-order four bits of the limit field are zero,
+                  restricting the value of the limit field to 64K.
+
+Granularity bit   The granularity bit is zero, which implies that the value
+                  of the 16-bit limit is interpreted in units of one byte.
+
+B-bit             In a data-segment descriptor, the B-bit is zero, implying
+                  that the segment is no larger than 64 Kbytes.
+
+D-bit             In an executable-segment descriptor, the D-bit is zero,
+                  implying that 16-bit addressing and operands are the
+                  default.
+
+For formats of these descriptors and documentation of their use refer to
+the iAPX 286 Programmer's Reference Manual.
+
+<HR>
+<A Name="13.2"><H2>13.2  Two Ways to Execute 80286 Tasks</H2>
+
+13.2  Two ways to Execute 80286 Tasks
+
+When porting 80286 programs to the 80386, there are two cases to consider:
+
+  1.  Porting an entire 80286 system to the 80386, complete with 80286
+      operating system, loader, and system builder.
+
+      In this case, all tasks will have 80286 TSSs. The 80386 is being used
+      as a faster 286.
+
+  2.  Porting selected 80286 applications to run in an 80386 environment
+      with an 80386 operating system, loader, and system builder.
+
+      In this case, the TSSs used to represent 80286 tasks should be
+      changed to 80386 TSSs. It is theoretically possible to mix 80286 and
+      80386 TSSs, but the benefits are slight and the problems are great. It
+      is recommended that all tasks in a 80386 software system have 80386
+      TSSs. It is not necessary to change the 80286 object modules
+      themselves; TSSs are usually constructed by the operating system, by
+      the loader, or by the system builder. Refer to Chapter 16 for further
+      discussion of the interface between 16-bit and 32-bit code.
+
+<HR>
+<A Name="13.3"><H2>13.3  Differences from 80286</H2>
+
+13.3  Differences From 80286
+
+The few differences that do exist primarily affect operating system code.
+
+<HR>
+<A Name="13.3.1"><H2>13.3.1  Wraparound of 80286 24-Bit Physical Address Space</H2>
+
+13.3.1  Wraparound of 80286 24-Bit Physical Address Space
+
+With the 80286, any base and offset combination that addresses beyond 16M
+bytes wraps around to the first megabyte of the 80286 address space. With
+the 80386, since it has a greater physical address space, any such address
+falls into the 17th megabyte. In the unlikely event that any software
+depends on this anomaly, the same effect can be simulated on the 80386 by
+using paging to map the first 64K bytes of the 17th megabyte of logical
+addresses to physical addresses in the first megabyte.
+
+<HR>
+<A Name="13.3.2"><H2>13.3.2  Reserved Word of Descriptor</H2>
+
+13.3.2  Reserved Word of Descriptor
+
+Because the 80386 uses the contents of the reserved word (last word) of
+every descriptor, 80286 programs that place values in this word may not
+execute correctly on the 80386.
+
+<HR>
+<A Name="13.3.3"><H2>13.3.3  New Descriptor Type Codes</H2>
+
+13.3.3  New Descriptor Type Codes
+
+Operating-system code that manages space in descriptor tables often uses an
+invalid value in the access-rights field of descriptor-table entries to
+identify unused entries. Access rights values of 80H and 00H remain invalid
+for both the 80286 and 80386. Other values that were invalid on for the
+80286 may be valid for the 80386 because of the additional descriptor types
+defined by the 80386.
+
+<HR>
+<A Name="13.3.4"><H2>13.3.4  Restricted Semantics of LOCK</H2>
+
+13.3.4  Restricted Semantics of LOCK
+
+The 80286 processor implements the bus lock function differently than the
+80386. Programs that use forms of memory locking specific to the 80286 may
+not execute properly when transported to a specific application of the
+80386.
+
+The LOCK prefix and its corresponding output signal should only be used to
+prevent other bus masters from interrupting a data movement operation.  LOCK
+may only be used with the following 80386 instructions when they modify
+memory. An undefined-opcode exception results from using LOCK before any
+other instruction.
+
+  *  Bit test and change:  BTS, BTR, BTC.
+  *  Exchange: XCHG.
+  *  One-operand arithmetic and logical: INC, DEC, NOT, and NEG.
+  *  Two-operand arithmetic and logical:  ADD, ADC, SUB, SBB, AND, OR, XOR.
+
+A locked instruction is guaranteed to lock only the area of memory defined
+by the destination operand, but may lock a larger memory area.  For example,
+typical 8086 and 80286 configurations lock the entire physical memory space.
+With the 80386, the defined area of memory is guaranteed to be locked
+against access by a processor executing a locked instruction on exactly the
+same memory area, i.e., an operand with identical starting address and
+identical length.
+
+
+
+<HR>
+<A Name="13.3.5"><H2>13.3.5  Additional Exceptions</H2>
+
+
+13.3.5  Additional Exceptions
+
+The 80386 defines new exceptions that can occur even in systems designed
+for the 80286.
+
+  *  Exception #6 -- invalid opcode
+
+     This exception can result from improper use of the LOCK instruction.
+
+  *  Exception #14 -- page fault
+
+     This exception may occur in an 80286 program if the operating system
+     enables paging. Paging can be used in a system with 80286 tasks as long
+     as all tasks use the same page directory. Because there is no place in
+     an 80286 TSS to store the PDBR, switching to an 80286 task does not
+     change the value of PDBR. Tasks ported from the 80286 should be given
+     80386 TSSs so they can take full advantage of paging.
+
+
+

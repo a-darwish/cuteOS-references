@@ -1,0 +1,52 @@
+<title>Instruction Set TEST</title><pre>
+<A Name="TEST"><H2>TEST 			   -- Logical Compare</H2>
+
+TEST -- Logical Compare
+
+
+Opcode       Instruction       Clocks   Description
+
+A8   ib      TEST AL,imm8      2        AND immediate byte with AL
+A9   iw      TEST AX,imm16     2        AND immediate word with AX
+A9   id      TEST EAX,imm32    2        AND immediate dword with EAX
+F6   /0 ib   TEST r/m8,imm8    2/5      AND immediate byte with r/m byte
+F7   /0 iw   TEST r/m16,imm16  2/5      AND immediate word with r/m word
+F7   /0 id   TEST r/m32,imm32  2/5      AND immediate dword with r/m dword
+84   /r      TEST r/m8,r8      2/5      AND byte register with r/m byte
+85   /r      TEST r/m16,r16    2/5      AND word register with r/m word
+85   /r      TEST r/m32,r32    2/5      AND dword register with r/m dword
+
+
+Operation
+
+DEST : = LeftSRC AND RightSRC;
+CF = 0;
+OF = 0;
+
+Description
+
+TEST computes the bit-wise logical AND of its two operands. Each bit
+of the result is 1 if both of the corresponding bits of the operands are 1;
+otherwise, each bit is 0. The result of the operation is discarded and only
+the flags are modified.
+
+Flags Affected
+
+OF = 0, CF = 0; SF, ZF, and PF as described in Appendix C
+
+Protected Mode Exceptions
+
+#GP(0) for an illegal memory operand effective address in the CS, DS,
+ES, FS, or GS segments; #SS(0) for an illegal address in the SS segment;
+#PF(fault-code) for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode; #PF(fault-code) for a page
+fault
+

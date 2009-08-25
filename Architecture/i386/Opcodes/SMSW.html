@@ -1,0 +1,46 @@
+<title>Instruction Set SMSW</title><pre>
+<A Name="SMSW"><H2>SMSW 			   -- Store Machine Status Word</H2>
+
+SMSW -- Store Machine Status Word
+
+
+Opcode      Instruction     Clocks          Description
+
+0F  01 /4   SMSW r/m16      2/3,pm=2/2      Store machine status word to EA
+                                            word
+
+
+Operation
+
+r/m16 = MSW;
+
+Description
+
+SMSW stores the machine status word (part of CR0) in the two-byte register
+or memory location indicated by the effective address operand.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#GP(0) if the result is in a nonwritable segment; #GP(0) for an illegal
+memory operand effective address in the CS, DS, ES, FS, or GS segments;
+#SS(0) for an illegal address in the SS segment; #PF(fault-code) for a page
+fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode; #PF(fault-code) for a page fault
+
+Notes
+
+This instruction is provided for compatibility with the 80286; 80386
+programs should use MOV ..., CR0.
+

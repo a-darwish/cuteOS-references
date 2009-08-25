@@ -1,0 +1,45 @@
+<title>Instruction Set STR</title><pre>
+<A Name="STR"><H2>STR 			   -- Store Task Register</H2>
+
+STR -- Store Task Register
+
+Opcode        Instruction   Clocks       Description
+
+0F  00 /1     STR r/m16     pm=23/27     Load EA word into task register
+
+
+Operation
+
+r/m = task register;
+
+Description
+
+The contents of the task register are copied to the two-byte register or
+memory location indicated by the effective address operand.
+
+STR is used only in operating system software. It is not used in application
+programs.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#GP(0) if the result is in a nonwritable segment; #GP(0) for an illegal
+memory operand effective address in the CS, DS, ES, FS, or GS segments;
+#SS(0) for an illegal address in the SS segment; #PF(fault-code) for a page
+fault
+
+Real Address Mode Exceptions
+
+Interrupt 6; STR is not recognized in Real Address Mode
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode
+
+Notes
+
+The operand-size attribute has no effect on this instruction.
+

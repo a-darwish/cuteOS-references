@@ -1,0 +1,66 @@
+<title>Instruction Set POPA-POPAD</title><pre>
+<A Name="POPA/POPAD"><H2>POPA/POPAD 		   -- Pop all General Registers</H2>
+
+POPA/POPAD -- Pop all General Registers
+
+
+Opcode   Instruction   Clocks   Description
+
+61       POPA          24       Pop DI, SI, BP, SP, BX, DX, CX, and AX
+61       POPAD         24       Pop EDI, ESI, EBP, ESP, EDX, ECX, and EAX
+
+
+Operation
+
+IF OperandSize = 16 (* instruction = POPA *)
+THEN
+   DI = Pop();
+   SI = Pop();
+   BP = Pop();
+   throwaway = Pop (); (* Skip SP *)
+   BX = Pop();
+   DX = Pop();
+   CX = Pop();
+   AX = Pop();
+ELSE (* OperandSize = 32, instruction = POPAD *)
+   EDI = Pop();
+   ESI = Pop();
+   EBP = Pop();
+   throwaway = Pop (); (* Skip ESP *)
+   EBX = Pop();
+   EDX = Pop();
+   ECX = Pop();
+   EAX = Pop();
+FI;
+
+Description
+
+POPA pops the eight 16-bit general registers. However, the SP value is
+discarded instead of loaded into SP. POPA reverses a previous PUSHA,
+restoring the general registers to their values before PUSHA was
+executed. The first register popped is DI.
+
+POPAD pops the eight 32-bit general registers. The ESP value is
+discarded instead of loaded into ESP. POPAD reverses the previous
+PUSHAD, restoring the general registers to their values before PUSHAD
+was executed. The first register popped is EDI.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#SS(0) if the starting or ending stack address is not within the stack
+segment; #PF(fault-code) for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in real-address mode; #PF(fault-code) for a page
+fault
+

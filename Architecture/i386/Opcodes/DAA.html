@@ -1,0 +1,51 @@
+<title>Instruction Set DAA</title><pre>
+<A Name="DAA"><H2>DAA 			   -- Decimal Adjust AL after Addition</H2>
+
+DAA -- Decimal Adjust AL after Addition
+
+
+Opcode    Instruction        Clocks   Description
+
+27        DAA                4        Decimal adjust AL after addition
+
+
+Operation
+
+IF ((AL AND 0FH) > 9) OR (AF = 1)
+THEN
+   AL = AL + 6;
+   AF = 1;
+ELSE
+   AF = 0;
+FI;
+IF (AL > 9FH) OR (CF = 1)
+THEN
+   AL = AL + 60H;
+   CF = 1;
+ELSE CF = 0;
+FI;
+
+Description
+
+Execute DAA only after executing an ADD instruction that leaves a
+two-BCD-digit byte result in the AL register. The ADD operands should
+consist of two packed BCD digits. The DAA instruction adjusts AL to
+contain the correct two-digit packed decimal result.
+
+Flags Affected
+
+AF and CF as described above; SF, ZF, PF, and CF as described in
+Appendix C.
+
+Protected Mode Exceptions
+
+None
+
+Real Address Mode Exceptions
+
+None
+
+Virtual 8086 Mode Exceptions
+
+None
+

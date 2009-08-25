@@ -1,0 +1,484 @@
+<pre>
+<title>Chapter 5    Memory Management</title><body>
+<H1><font color=red>Chapter 5  </font>  Memory Management</H1>
+<pre>
+
+
+Chapter 5  Memory Management
+
+----------------------------------------------------------------------------
+
+The 80386 transforms logical addresses (i.e., addresses as viewed by
+programmers) into physical address (i.e., actual addresses in physical
+memory) in two steps:
+
+  *  Segment translation, in which a logical address (consisting of a
+     segment selector and segment offset) are converted to a linear address.
+
+  *  Page translation, in which a linear address is converted to a physical
+     address. This step is optional, at the discretion of systems-software
+     designers.
+
+These translations are performed in a way that is not visible to
+applications programmers. Figure 5-1 illustrates the two translations at a
+high level of abstraction.
+
+Figure 5-1 and the remainder of this chapter present a simplified view of
+the 80386 addressing mechanism. In reality, the addressing mechanism also
+includes memory protection features. For the sake of simplicity, however,
+the subject of protection is taken up in another chapter, Chapter 6.
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-1">Fig.5-1</A> 
+
+<HR>
+<A Name="5.1"><H2>5.1  Segment Translation</H2>
+
+5.1  Segment Translation
+
+Figure 5-2 shows in more detail how the processor converts a logical
+address into a linear address.
+
+To perform this translation, the processor uses the following data
+structures:
+
+  *  Descriptors
+  *  Descriptor tables
+  *  Selectors
+  *  Segment Registers
+
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-2">Fig.5-2</A> 
+
+<HR>
+<A Name="5.1.1"><H2>5.1.1  Descriptors</H2>
+
+5.1.1  Descriptors
+
+The segment descriptor provides the processor with the data it needs to map
+a logical address into a linear address. Descriptors are created by
+compilers, linkers, loaders, or the operating system, not by applications
+programmers. Figure 5-3 illustrates the two general descriptor formats. All
+types of segment descriptors take one of these formats. Segment-descriptor
+fields are:
+
+BASE: Defines the location of the segment within the 4 gigabyte linear
+address space. The processor concatenates the three fragments of the base
+address to form a single 32-bit value.
+
+LIMIT: Defines the size of the segment. When the processor concatenates the
+two parts of the limit field, a 20-bit value results. The processor
+interprets the limit field in one of two ways, depending on the setting of
+the granularity bit:
+
+  1.  In units of one byte, to define a limit of up to 1 megabyte.
+
+  2.  In units of 4 Kilobytes, to define a limit of up to 4 gigabytes. The
+      limit is shifted left by 12 bits when loaded, and low-order one-bits
+      are inserted.
+
+Granularity bit: Specifies the units with which the LIMIT field is
+interpreted. When thebit is clear, the limit is interpreted in units of one
+byte; when set, the limit is interpreted in units of 4 Kilobytes.
+
+TYPE: Distinguishes between various kinds of descriptors.
+
+DPL (Descriptor Privilege Level): Used by the protection mechanism (refer
+to Chapter 6).
+
+Segment-Present bit: If this bit is zero, the descriptor is not valid for
+use in address transformation; the processor will signal an exception when a
+selector for the descriptor is loaded into a segment register. Figure 5-4
+shows the format of a descriptor when the present-bit is zero. The operating
+system is free to use the locations marked AVAILABLE. Operating systems that
+implement segment-based virtual memory clear the present bit in either of
+these cases:
+
+  *  When the linear space spanned by the segment is not mapped by the
+     paging mechanism.
+
+  *  When the segment is not present in memory.
+
+Accessed bit: The processor sets this bit when the segment is accessed;
+i.e., a selector for the descriptor is loaded into a segment register or
+used by a selector test instruction. Operating systems that implement
+virtual memory at the segment level may, by periodically testing and
+clearing this bit, monitor frequency of segment usage.
+
+Creation and maintenance of descriptors is the responsibility of systems
+software, usually requiring the cooperation of compilers, program loaders or
+system builders, and therating system.
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-3">Fig.5-3</A> <A HREF="Figs/Fig.5.html#Fig.5-4">Fig.5-4</A> <A HREF="Figs/Fig.5.html#Fig.5-2">Fig.5-2</A> 
+
+<HR>
+<A Name="5.1.2"><H2>5.1.2  Descriptor Tables</H2>
+
+5.1.2  Descriptor Tables
+
+Segment descriptors are stored in either of two kinds of descriptor table:
+
+  *  The global descriptor table (GDT)
+  *  A local descriptor table (LDT)
+
+A descriptor table is simply a memory array of 8-byte entries that contain
+descriptors, as Figure 5-5 shows. A descriptor table is variable in length
+and may contain up to 8192 (2^(13)) descriptors. The first entry of the GDT
+(INDEX=0) is not used by the processor, however.
+
+The processor locates the GDT and the current LDT in memory by means of the
+GDTR and LDTR registers. These registers store the base addresses of the
+tables in the linear address space and store the segment limits. The
+instructions LGDT and SGDT give access to the GDTR; the instructions LLDT
+and SLDT give access to the LDTR.
+
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-4">Fig.5-4</A> <A HREF="Figs/Fig.5.html#Fig.5-5">Fig.5-5</A> 
+
+<HR>
+<A Name="5.1.3"><H2>5.1.3  Selectors</H2>
+
+5.1.3  Selectors
+
+The selector portion of a logical address identifies a descriptor by
+specifying a descriptor table and indexing a descriptor within that table.
+Selectors may be visible to applications programs as a field within a
+pointer variable, but the values of selectors are usually assigned (fixed
+up) by linkers or linking loaders. Figure 5-6 shows the format of a
+selector.
+
+Index: Selects one of 8192 descriptors in a descriptor table. The processor
+simply multiplies this index value by 8 (the length of a descriptor), and
+adds the result to the base address of the descriptor table in order to
+access the appropriate segment descriptor in the table.
+
+Table Indicator: Specifies to which descriptor table the selector refers. A
+zero indicates the GDT; a one indicates the current LDT.
+
+Requested Privilege Level: Used by the protection mechanism. (Refer to
+Chapter 6.)
+
+Because the first entry of the GDT is not used by the processor, a selector
+that has an index of zero and a table indicator of zero (i.e., a selector
+that points to the first entry of the GDT), can be used as a null selector.
+The processor does not cause an exception when a segment register (other
+than CS or SS) is loaded with a null selector. It will, however, cause an
+exception when the segment register is used to access memory.  This feature
+is useful for initializing unused segment registers so as to trap accidental
+references.
+
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-6">Fig.5-6</A> <A HREF="Figs/Fig.5.html#Fig.5-7">Fig.5-7</A> 
+
+<HR>
+<A Name="5.1.4"><H2>5.1.4  Segment Registers</H2>
+
+
+5.1.4  Segment Registers
+
+The 80386 stores information from descriptors in segment registers, thereby
+avoiding the need to consult a descriptor table every time it accesses
+memory.
+
+Every segment register has a "visible" portion and an "invisible" portion,
+as Figure 5-7 illustrates. The visible portions of these segment address
+registers are manipulated by programs as if they were simply 16-bit
+registers. The invisible portions are manipulated by the processor.
+
+The operations that load these registers are normal program instructions
+(previously described in Chapter 3). These instructions are of two classes:
+
+  1.  Direct load instructions; for example, MOV, POP, LDS, LSS, LGS, LFS.
+      These instructions explicitly reference the segment registers.
+
+  2.  Implied load instructions; for example, far CALL and JMP. These
+      instructions implicitly reference the CS register, and load it with a
+      new value.
+
+Using these instructions, a program loads the visible part of the segment
+register with a 16-bit selector. The processor automatically fetches the
+base address, limit, type, and other information from a descriptor table and
+loads them into the invisible part of the segment register.
+
+Because most instructions refer to data in segments whose selectors have
+already been loaded into segment registers, the processor can add the
+segment-relative offset supplied by the instruction to the segment base
+address with no additional overhead.
+
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-7">Fig.5-7</A> 
+
+<HR>
+<A Name="5.2"><H2>5.2  Page Translation</H2>
+
+5.2  Page Translation
+
+In the second phase of address transformation, the 80386 transforms a
+linear address into a physical address. This phase of address transformation
+implements the basic features needed for page-oriented virtual-memory
+systems and page-level protection.
+
+The page-translation step is optional. Page translation is in effect only
+when the PG bit of CR0 is set. This bit is typically set by the operating
+system during software initialization. The PG bit must be set if the
+operating system is to implement multiple virtual 8086 tasks, page-oriented
+protection, or page-oriented virtual memory.
+
+<HR>
+<A Name="5.2.1"><H2>5.2.1  Page Frame</H2>
+
+5.2.1  Page Frame
+
+A page frame is a 4K-byte unit of contiguous addresses of physical memory.
+Pages begin onbyte boundaries and are fixed in size.
+
+<HR>
+<A Name="5.2.2"><H2>5.2.2  Linear Address</H2>
+
+5.2.2  Linear Address
+
+A linear address refers indirectly to a physical address by specifying a
+page table, a page within that table, and an offset within that page. Figure
+5-8 shows the format of a linear address.
+
+Figure 5-9 shows how the processor converts the DIR, PAGE, and OFFSET
+fields of a linear address into the physical address by consulting two
+levels of page tables. The addressing mechanism uses the DIR field as an
+index into a page directory, uses the PAGE field as an index into the page
+table determined by the page directory, and uses the OFFSET field to address
+a byte within the page determined by the page table.
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-8">Fig.5-8</A> <A HREF="Figs/Fig.5.html#Fig.5-9">Fig.5-9</A> 
+
+<HR>
+<A Name="5.2.3"><H2>5.2.3  Page Tables</H2>
+
+5.2.3  Page Tables
+
+A page table is simply an array of 32-bit page specifiers. A page table is
+itself a page, and therefore contains 4 Kilobytes of memory or at most 1K
+32-bit entries.
+
+Two levels of tables are used to address a page of memory. At the higher
+level is a page directory. The page directory addresses up to 1K page tables
+of the second level. A page table of the second level addresses up to 1K
+pages. All the tables addressed by one page directory, therefore, can
+address 1M pages (2^(20)). Because each page contains 4K bytes 2^(12)
+bytes), the tables of one page directory can span the entire physical
+address space of the 80386 (2^(20) times 2^(12) = 2^(32)).
+
+The physical address of the current page directory is stored in the CPU
+register CR3, also called the page directory base register (PDBR). Memory
+management software has the option of using one page directory for all
+tasks, one page directory for each task, or some combination of the two.
+Refer to Chapter 10 for information on initialization of CR3. Refer to
+Chapter 7 to see how CR3 can change for each task.
+
+<HR>
+<A Name="5.2.4"><H2>5.2.4  Page-Table Entries</H2>
+
+5.2.4  Page-Table Entries
+
+Entries in either level of page tables have the same format. Figure 5-10
+illustrates this format.
+
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-10">Fig.5-10</A> 
+
+<HR>
+<A Name="5.2.4.1"><H2>5.2.4.1  Page Frame Address</H2>
+
+5.2.4.1  Page Frame Address
+
+The page frame address specifies the physical starting address of a page.
+Because pages are located on 4K boundaries, the low-order 12 bits are always
+zero. In a page directory, the page frame address is the address of a page
+table. In a second-level page table, the page frame address is the address
+of the page frame that contains the desired memory operand.
+
+<HR>
+<A Name="5.2.4.2"><H2>5.2.4.2  Present Bit</H2>
+
+5.2.4.2  Present Bit
+
+The Present bit indicates whether a page table entry can be used in address
+translation. P=1 indicates that the entry can be used.
+
+When P=0 in either level of page tables, the entry is not valid for address
+translation, and the rest of the entry is available for software use; none
+of the other bits in the entry is tested by the hardware. Figure 5-11
+illustrates the format of a page-table entry when P=0.
+
+If P=0 in either level of page tables when an attempt is made to use a
+page-table entry for address translation, the processor signals a page
+exception. In software systems that support paged virtual memory, the
+page-not-present exception handler can bring the required page into physical
+memory. The instruction that caused the exception can then be reexecuted.
+Refer to Chapter 9 for more information on exception handlers.
+
+Note that there is no present bit for the page directory itself. The page
+directory may be not-present while the associated task is suspended, but the
+operating system must ensure that the page directory indicated by the CR3
+image in the TSS is present in physical memory before the task is
+dispatched. Refer to Chapter 7 for an explanation of the TSS and task
+dispatching.
+
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-10">Fig.5-10</A> <A HREF="Figs/Fig.5.html#Fig.5-11">Fig.5-11</A> 
+
+<HR>
+<A Name="5.2.4.3"><H2>5.2.4.3  Accessed and Dirty Bits</H2>
+
+5.2.4.3  Accessed and Dirty Bits
+
+These bits provide data about page usage in both levels of the page tables.
+With the exception of the dirty bit in a page directory entry, these bits
+are set by the hardware; however, the processor does not clear any of these
+bits.
+
+The processor sets the corresponding accessed bits in both levels of page
+tables to one before a read or write operation to a page.
+
+The processor sets the dirty bit in the second-level page table to one
+before a write to an address covered by that page table entry. The dirty bit
+in directory entries is undefined.
+
+An operating system that supports paged virtual memory can use these bits
+to determine what pages to eliminate from physical memory when the demand
+for memory exceeds the physical memory available. The operating system is
+responsible for testing and clearing these bits.
+
+Refer to Chapter 11 for how the 80386 coordinates updates to the accessed
+and dirty bits in multiprocessor systems.
+
+<HR>
+<A Name="5.2.4.4"><H2>5.2.4.4  Read/Write and User/Supervisor Bits</H2>
+
+
+5.2.4.4  Read/Write and User/Supervisor Bits
+
+These bits are not used for address translation, but are used for
+page-level protection, which the processor performs at the same time as
+address translation. Refer to Chapter 6 where protection is discussed in
+detail.
+
+<HR>
+<A Name="5.2.5"><H2>5.2.5  Page Translation Cache</H2>
+
+
+5.2.5  Page Translation Cache
+
+For greatest efficiency in address translation, the processor stores the
+most recently used page-table data in an on-chip cache. Only if the
+necessary paging information is not in the cache must both levels of page
+tables be referenced.
+
+The existence of the page-translation cache is invisible to applications
+programmers but not to systems programmers; operating-system programmers
+must flush the cache whenever the page tables are changed. The
+page-translation cache can be flushed by either of two methods:
+
+  1.  By reloading CR3 with a MOV instruction; for example:
+
+      MOV CR3, EAX
+
+  2.  By performing a task switch to a TSS that has a different CR3 image
+      than the current TSS. (Refer to Chapter 7 for more information on
+      task switching.)
+
+<HR>
+<A Name="5.3"><H2>5.3  Combining Segment and Page Translation</H2>
+
+5.3  Combining Segment and Page Translation
+
+Figure 5-12 combines Figure 5-2 and Figure 5-9 to summarize both phases
+of the transformation from a logical address to a physical address when
+paging is enabled. By appropriate choice of options and parameters to both
+phases, memory-management software can implement several different styles of
+memory management.
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-12">Fig.5-12</A> <A HREF="Figs/Fig.5.html#Fig.5-2">Fig.5-2</A> <A HREF="Figs/Fig.5.html#Fig.5-9">Fig.5-9</A> 
+
+<HR>
+<A Name="5.3.1"><H2>5.3.1  "Flat" Architecture</H2>
+
+5.3.1  "Flat" Architecture
+
+When the 80386 is used to execute software designed for architectures that
+don't have segments, it may be expedient to effectively "turn off" the
+segmentation features of the 80386. The 80386 does not have a mode that
+disables segmentation, but the same effect can be achieved by initially
+loading the segment registers with selectors for descriptors that encompass
+the entire 32-bit linear address space. Once loaded, the segment registers
+don't need to be changed. The 32-bit offsets used by 80386 instructions are
+adequate to address the entire linear-address space.
+
+<HR>
+<A Name="5.3.2"><H2>5.3.2  Segments Spanning Several Pages</H2>
+
+5.3.2  Segments Spanning Several Pages
+
+The architecture of the 80386 permits segments to be larger or smaller than
+the size of a page (4 Kilobytes). For example, suppose a segment is used to
+address and protect a large data structure that spans 132 Kilobytes. In a
+software system that supports paged virtual memory, it is not necessary for
+the entire structure to be in physical memory at once. The structure is
+divided into 33 pages, any number of which may not be present. The
+applications programmer does not need to be aware that the virtual memory
+subsystem is paging the structure in this manner.
+
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-12">Fig.5-12</A> 
+<HR>
+<A Name="5.3.3"><H2>5.3.3  Pages Spanning Several Segments</H2>
+
+5.3.3  Pages Spanning Several Segments
+
+On the other hand, segments may be smaller than the size of a page. For
+example, consider a small data structure such as a semaphore. Because of the
+protection and sharing provided by segments (refer to Chapter 6), it may be
+useful to create a separate segment for each semaphore. But, because a
+system may need many semaphores, it is not efficient to allocate a page for
+each. Therefore, it may be useful to cluster many related segments within a
+page.
+
+<HR>
+<A Name="5.3.4"><H2>5.3.4  Non-Aligned Page and Segment Boundaries</H2>
+
+5.3.4  Non-Aligned Page and Segment Boundaries
+
+The architecture of the 80386 does not enforce any correspondence between
+the boundaries of pages and segments. It is perfectly permissible for a page
+to contain the end of one segment and the beginning of another. Likewise, a
+segment may contain the end of one page and the beginning of another.
+
+<HR>
+<A Name="5.3.5"><H2>5.3.5  Aligned Page and Segment Boundaries</H2>
+
+5.3.5  Aligned Page and Segment Boundaries
+
+Memory-management software may be simpler, however, if it enforces some
+correspondence between page and segment boundaries. For example, if segments
+are allocated only in units of one page, the logic for segment and page
+allocation can be combined. There is no need for logic to account for
+partially used pages.
+
+<HR>
+<A Name="5.3.6"><H2>5.3.6  Page-Table per Segment</H2>
+
+
+5.3.6  Page-Table per Segment
+
+An approach to space management that provides even further simplification
+of space-management software is to maintain a one-to-one correspondence
+between segment descriptors and page-directory entries, as Figure 5-13
+illustrates. Each descriptor has a base address in which the low-order 22
+bits are zero; in other words, the base address is mapped by the first entry
+of a page table. A segment may have any limit from 1 to 4 megabytes.
+Depending on the limit, the segment is contained in from 1 to 1K page
+frames. A task is thus limited to 1K segments (a sufficient number for many
+applications), each containing up to 4 Mbytes. The descriptor, the
+corresponding page-directory entry, and the corresponding page table can be
+allocated and deallocated simultaneously.
+
+
+See Also: <A HREF="Figs/Fig.5.html#Fig.5-13">Fig.5-13</A> 

@@ -1,0 +1,483 @@
+<title>Figures Fig.3</title><pre>
+<A Name="Fig.3-1"><H2>Fig.3-1     PUSH</H2>
+Figure 3-1.  PUSH
+
+       D  O        BEFORE PUSH                  AFTER PUSH
+       I  F     . 31          0 .           . 31          0 .
+       R        |               |           |               |
+       E  E     |-------+-------|           |-------+-------|
+       C  X     |               |           |               |
+       T  P     |-------+-------|           |-------+-------|
+       I  A     |               |           |               |
+       O  N     |-------+-------|<--ESP     |-------+-------|
+       N  S     |               |           |    OPERAND    |
+          I     |-------+-------|           |-------+-------|<--ESP
+        | O     |               |           |               |
+        | N     |-------+-------|           |-------+-------|
+        |       |               |           |               |
+        v       |-------+-------|           |-------+-------|
+                |               |           |               |
+                .               .           .               .
+
+<A Name="Fig.3-2"><H2>Fig.3-2     PUSHA</H2>
+
+Figure 3-2.  PUSHA
+
+                   BEFORE PUSHA                AFTER PUSHA
+                . 31          0 .           . 31          0 .
+         D  O   |               |           |               |
+         I  F   |-------+-------|           |-------+-------|
+         R      |               |           |               |
+         E  E   |-------+-------|           |-------+-------|
+         C  X   |               |           |               |
+         T  P   |-------+-------|<--ESP     |-------+-------|
+         I  A   |               |           |      EAX      |
+         O  N   |-------+-------|           |-------+-------|
+         N  S   |               |           |      ECX      |
+            I   |-------+-------|           |-------+-------|
+          | O   |               |           |      EDX      |
+          | N   |-------+-------|           |-------+-------|
+          |     |               |           |      EBX      |
+          v     |-------+-------|           |-------+-------|
+                |               |           |    OLD ESP    |
+                |-------+-------|           |-------+-------|
+                |               |           |      EBP      |
+                |-------+-------|           |-------+-------|
+                |               |           |      ESI      |
+                |-------+-------|           |-------+-------|
+                |               |           |      EDI      |
+                |-------+-------|           |-------+-------|<--ESP
+                |               |           |               |
+                |-------+-------|           |-------+-------|
+                |               |           |               |
+                .               .           .               .
+<A Name="Fig.3-3"><H2>Fig.3-3     POP</H2>
+
+Figure 3-3.  POP
+
+       D  O         BEFORE POP                  AFTER POP
+       I  F     . 31          0 .           . 31          0 .
+       R        |               |           |               |
+       E  E     |-------+-------|           |-------+-------|
+       C  X     |               |           |               |
+       T  P     |-------+-------|           |-------+-------|
+       I  A     |               |           |               |
+       O  N     |-------+-------|           |-------+-------|<--ESP
+       N  S     |    OPERAND    |           |               |
+          I     |-------+-------|<--ESP     |-------+-------|
+        | O     |               |           |               |
+        | N     |-------+-------|           |-------+-------|
+        |       |               |           |               |
+        v       |-------+-------|           |-------+-------|
+                |               |           |               |
+                .               .           .               .
+
+<A Name="Fig.3-4"><H2>Fig.3-4     POPA</H2>
+
+Figure 3-4.  POPA
+
+                   BEFORE POPA                  AFTER POPA
+                . 31          0 .           . 31          0 .
+         D  O   |               |           |               |
+         I  F   |-------+-------|           |-------+-------|
+         R      |               |           |               |
+         E  E   |-------+-------|           |-------+-------|
+         C  X   |               |           |               |
+         T  P   |-------+-------|           |-------+-------|<--ESP
+         I  A   |      EAX      |           |               |
+         O  N   |-------+-------|           |-------+-------|
+         N  S   |      ECX      |           |               |
+            I   |-------+-------|           |-------+-------|
+          | O   |      EDX      |           |               |
+          | N   |-------+-------|           |-------+-------|
+          |     |      EBX      |           |               |
+          v     |-------+-------|           |-------+-------|
+                |      ESP      |           |               |
+                |-------+-------|           |-------+-------|
+                |      EPB      |           |               |
+                |-------+-------|           |-------+-------|
+                |      ESI      |           |               |
+                |-------+-------|           |-------+-------|
+                |      EDI      |           |               |
+                |-------+-------|<--ESP     |-------+-------|
+                |               |           |               |
+                |-------+-------|           |-------+-------|
+                |               |           |               |
+                .               .           .               .
+
+<A Name="Fig.3-5"><H2>Fig.3-5     Sign Extension</H2>
+
+Figure 3-5.  Sign Extension
+
+                                    15                7               0
+                                    +----------------+----------------+
+     BEFORE SIGN EXTENSION--------->|S| N N N N N N N N N N N N N N N |
+                                    +----------------+----------------+
+     AFTER SIGN EXTENSION------+
+                               |
+    31               23        v     15              7              0
+    +---------------+---------------+---------------+---------------+
+    |S|S S S S S S S S S S S S S S S S N N N N N N N N N N N N N N N|
+    +---------------+---------------+---------------+---------------+
+<A Name="Fig.3-6"><H2>Fig.3-6     SAL and SHL</H2>
+
+Figure 3-6.  SAL and SHL
+
+                     OF   CF                OPERAND
+
+       BEFORE SHL    X    X     10001000100010001000100010001111
+       OR SAL
+
+       AFTER SHL     1    1 <-- 00010001000100010001000100011110 <-- 0
+       OR SAL BY 1
+
+       AFTER SHL     X    0 <-- 00100010001000100011110000000000 <-- 0
+       OR SAL BY 10
+
+SHL (WHICH HAS THE SYNONYM SAL) SHIFTS THE BITS IN THE REGISTER OR MEMORY
+OPERAND TO THE LEFT BY THE SPECIFIED NUMBER OF BIT POSITIONS. CF RECEIVES
+THE LAST BIT SHIFTED OUT OF THE LEFT OF THE OPERAND. SHL SHIFTS IN ZEROS
+TO FILL THE VACATED BIT LOCATIONS. THESE INSTRUCTIONS OPERATE ON BYTE,
+WORD, AND DOUBLEWORD OPERANDS.
+
+<A Name="Fig.3-7"><H2>Fig.3-7     SHR</H2>
+
+Figure 3-7.  SHR
+
+                                      OPERAND                  CF
+
+       BEFORE SHR         10001000100010001000100010001111     X
+
+       AFTER SHR    0---->01000100010001000100010001000111---->1
+       BY 1
+
+       AFTER SHR    0---->00000000001000100010001000100010---->O
+       BY 10
+
+SHR SHIFTS THE BITS OF THE REGISTER OR MEMORY OPERAND TO THE RIGHT BY THE
+SPECIFIED NUMBER OF BIT POSITIONS. CF RECEIVES THE LAST BIT SHIFTED OUT OF
+THE RIGHT OF THE OPERAND. SHR SHIFTS IN ZEROS TO FILL THE VACATED BIT
+LOCATIONS.
+
+<A Name="Fig.3-8"><H2>Fig.3-8     SAR</H2>
+
+Figure 3-8.  SAR
+
+                                  POSITIVE OPERAND             CF
+
+       BEFORE SAR         01000100010001000100010001000111     X
+
+       AFTER SAR    0---->00100010001000100010001000100011---->1
+       BY 1
+
+                                  NEGATIVE OPERAND             CF
+
+       BEFORE SAR         11000100010001000100010001000111     X
+
+       AFTER SAR    0---->11100010001000100010001000100011---->1
+       BY 1
+
+SAR PRESERVES THE SIGN OF THE REGISTER OR MEMORY OPERAND AS IT SHIFTS THE
+OPERAND TO THE RIGHT BY THE SPECIFIED NUMBER OF BIT POSITIONS. CF RECIEVES
+THE LAST BIT SHIFTED OUT OF THE RIGHT OF THE OPERAND.
+
+<A Name="Fig.3-9"><H2>Fig.3-9     Using SAR to Simulate IDIV</H2>
+
+Figure 3-9.  Using SAR to Simulate IDIV
+
+    ; assuming N is in ECX, and the dividend is in EAX
+    ;                                               CLOCKS
+    CMP     EAX, 0      ; to set sign flag          2
+    JGE     NoAdjust    ; jump if sign is zero      3 or 9
+    ADD     EAX, ECX    ;                           2
+    DEC     EAX         ; EAX := EAX + (N-1)        2
+NoAdjust:
+    SAR     EAX, CL     ;                           3
+    ;                       TOTAL CLOCKS           12 or 18]
+<A Name="Fig.3-10"><H2>Fig.3-10    Shift Left Double</H2>
+Figure 3-10.  Shift Left Double
+
+                  31                   DESTINATION                 0
+    +----+       +--------------------------------------------------+
+    | CF |<------|                 MEMORY OF REGISTER               |<---+
+    +----+       +--------------------------------------------------+    |
+             +-----------------------------------------------------------+
+             |    31                     SOURCE                    0
+             |   +--------------------------------------------------+
+             +---|                      REGISTER                    |
+                 +--------------------------------------------------+
+
+<A Name="Fig.3-11"><H2>Fig.3-11    Shift Right Double</H2>
+
+Figure 3-11.  Shift Right Double
+
+        31                     SOURCE                    0
+       +--------------------------------------------------+
+       |                      REGISTER                    |---+
+       +--------------------------------------------------+   |
+   +----------------------------------------------------------+
+   |    31                   DESTINATION                 0
+   |   +--------------------------------------------------+        +----+
+   +-->|                 MEMORY OF REGISTER               |------->| CF |
+       +--------------------------------------------------+        +----+
+
+<A Name="Fig.3-12"><H2>Fig.3-12    ROL</H2>
+
+Figure 3-12.  ROL
+
+                  31                   DESTINATION                 0
+    +----+       +--------------------------------------------------+
+    | CF |<------|                 MEMORY OF REGISTER               |<--+
+    +----+    |  +--------------------------------------------------+   |
+              +---------------------------------------------------------+
+
+<A Name="Fig.3-13"><H2>Fig.3-13    ROR</H2>
+
+Figure 3-13.  ROR
+
+     +----------------------------------------------------------+
+     |    31                   DESTINATION                 0    |
+     |   +--------------------------------------------------+   |    +----+
+     +-->|                 MEMORY OF REGISTER               |------->| CF |
+         +--------------------------------------------------+        +----+
+
+<A Name="Fig.3-14"><H2>Fig.3-14    RCL</H2>
+
+Figure 3-14.  RCL
+
+                  31                   DESTINATION                 0
+    +----+       +--------------------------------------------------+
+  +-| CF |<------|                 MEMORY OF REGISTER               |<--+
+  | +----+       +--------------------------------------------------+   |
+  +---------------------------------------------------------------------+
+
+<A Name="Fig.3-15"><H2>Fig.3-15    RCR</H2>
+
+Figure 3-15.  RCR
+
+   +----------------------------------------------------------------------+
+   |    31                   DESTINATION                 0                |
+   |   +--------------------------------------------------+        +----+ |
+   +-->|                 MEMORY OF REGISTER               |------->| CF |-+
+       +--------------------------------------------------+        +----+
+<A Name="Fig.3-16"><H2>Fig.3-16    Formal Definition of the ENTER Instruction</H2>
+
+Figure 3-16.  Formal Definition of the ENTER Instruction
+
+The formal definition of the ENTER instruction for all cases is given by the
+following listing. LEVEL denotes the value of the second operand.
+
+Push EBP
+Set a temporary value FRAME_PTR := ESP
+If LEVEL > 0 then
+      Repeat (LEVEL-1) times:
+          EBP :=EBP - 4
+          Push the doubleword pointed to by EBP
+      End repeat
+      Push FRAME_PTR
+End if
+EBP := FRAME_PTR
+ESP := ESP - first operand.
+
+<A Name="Fig.3-17"><H2>Fig.3-17    Variable Access in Nested Procedures</H2>
+
+Figure 3-17.  Variable Access in Nested Procedures
+
+      +----------------------------------------------------------------+
+      |                MAIN PROCEDURE (LEXICAL LEVEL 1)                |
+      |   +--------------------------------------------------------+   |
+      |   |              PROCEDURE A (LEXICAL LEVEL 2)             |   |
+      |   |  +--------------------------------------------------+  |   |
+      |   |  |           PROCEDURE B (LEXICAL LEVEL 3)          |  |   |
+      |   |  +--------------------------------------------------+  |   |
+      |   |                                                        |   |
+      |   |  +--------------------------------------------------+  |   |
+      |   |  |           PROCEDURE C (LEXICAL LEVEL 3)          |  |   |
+      |   |  |  +--------------------------------------------+  |  |   |
+      |   |  |  |        PROCEDURE D (LEXICAL LEVEL 4)       |  |  |   |
+      |   |  |  +--------------------------------------------+  |  |   |
+      |   |  |                                                  |  |   |
+      |   |  +--------------------------------------------------+  |   |
+      |   |                                                        |   |
+      |   +--------------------------------------------------------+   |
+      |                                                                |
+      +----------------------------------------------------------------+
+
+<A Name="Fig.3-18"><H2>Fig.3-18    Stack Frame for MAIN at Level 1</H2>
+
+Figure 3-18.  Stack Frame for MAIN at Level 1
+
+                                     . 31          0 .
+                D  O                 |               |
+                I  F              +- |-------+-------|
+                R                 |  |    OLD ESP    |
+                E  E     DISPLAY -|  |-------+-------|<--EBP FOR MAIN
+                C  X              |  |      EBPM     |  EBPM = EBP VALUE
+                T  P              |- |-------+-------|    FOR MAIN
+                I  A              |  |               |
+                O  N              |  |-------+-------|
+                N  S     DYNAMIC -|  |               |
+                   I     STORAGE  |  |-------+-------|
+                 | O              |  |               |
+                 | N              +- |-------+-------|<--ESP
+                 |                   |               |
+                 v                   .               .
+
+
+<A Name="Fig.3-19"><H2>Fig.3-19    Stack Frame for Prooedure A</H2>
+
+Figure 3-19.  Stack Frame for Procedure A
+
+                                     . 31          0 .
+                D  O                 |               |
+                I  F                 |-------+-------|
+                R                    |    OLD ESP    |
+                E  E                 |-------+-------|
+                C  X                 |      EBPM     | EBPM = EBP VALUE
+                T  P                 |-------+-------|        FOR MAIN
+                I  A                 |               |
+                O  N                 |-------+-------|
+                N  S                 |               |
+                   I                 |-------+-------|
+                 | O                 |               |
+                 | N              +- |-------+-------|
+                 |                |  |      EBPM     |
+                 v                |  |-------+-------|<--EBP FOR A
+                         DISPLAY -|  |      EBPM     |
+                                  |  |-------+-------|
+                                  |  |      EBPA     | EBPA = EBP VALUE
+                                  |- |-------+-------|     FOR PROCEDURE A
+                                  |  |               |
+                                  |  |-------+-------|
+                         DYNAMIC -|  |               |
+                         STORAGE  |  |-------+-------|
+                                  |  |               |
+                                  +- |-------+-------|<--ESP
+                                     |               |
+                                     .               .
+
+<A Name="Fig.3-20"><H2>Fig.3-20    Stack Frame for Procedure B at Level 3 Called from A</H2>
+
+Figure 3-20.  Stack Frame for Procedure B at Level 3 Called from A
+
+                                     . 31          0 .
+                D  O                 |               |
+                I  F                 |-------+-------|
+                R                    |    OLD ESP    |
+                E  E                 |-------+-------|
+                C  X                 |      EBPM     | EBPM = EBP VALUE
+                T  P                 |-------+-------|        FOR MAIN
+                I  A                 |               |
+                O  N                 |-------+-------|
+                N  S                 |               |
+                   I                 |-------+-------|
+                 | O                 |               |
+                 | N                 |-------+-------|
+                 |                   |      EBPM     |
+                 v                   |-------+-------|
+                                     |      EBPM     |
+                                     |-------+-------|
+                                     |      EBPA     |
+                                     |-------+-------|
+                                     |               |
+                                     |-------+-------|
+                                     |               |
+                                     |-------+-------|
+                                     |               |
+                                  +- |-------+-------|
+                                  |  |      EBPA     |
+                                  |  |-------+-------|<--EBP
+                                  |  |      EBPM     |
+                         DISPLAY -|  |-------+-------|
+                                  |  |      EBPA     |
+                                  |  |-------+-------|
+                                  |  |      EBPB     | EBPB = EBP VALUE
+                                  |- |-------+-------|    FOR PROCEDURE B
+                                  |  |               |
+                                  |  |-------+-------|
+                         DYNAMIC -|  |               |
+                         STORAGE  |  |-------+-------|
+                                  |  |               |
+                                  +- |-------+-------|<--ESP
+                                     |               |
+                                     .               .
+
+<A Name="Fig.3-21"><H2>Fig.3-21    Stack Frame for Procedure C at Level 3 Called from B</H2>
+
+Figure 3-21.  Stack Frame for Procedure C at Level 3 Called from B
+
+                                     . 31          0 .
+                D  O                 |               |
+                I  F                 |-------+-------|
+                R                    |    OLD ESP    |
+                E  E                 |-------+-------|
+                C  X                 |      EBPM     | EBPM = EBP VALUE
+                T  P                 |-------+-------|        FOR MAIN
+                I  A                 |               |
+                O  N                 |-------+-------|
+                N  S                 |               |
+                   I                 |-------+-------|
+                 | O                 |               |
+                 | N                 |-------+-------|
+                 |                   |      EBPM     |
+                 v                   |-------+-------|
+                                     |      EBPM     |
+                                     |-------+-------|
+                                     |      EBPA     | EBPA = EBP VALUE
+                                     |-------+-------|    FOR PROCEDURE A
+                                     |               |
+                                     |-------+-------|
+                                     |               |
+                                     |-------+-------|
+                                     |               |
+                                  +- |-------+-------|
+                                  |  |      EBPA     |
+                                  |  |-------+-------|<--EBP
+                                  |  |      EBPM     |
+                         DISPLAY -|  |-------+-------|
+                                  |  |      EBPA     |
+                                  |  |-------+-------|
+                                  |  |      EBPB     | EBPB = EBP VALUE
+                                  |- |-------+-------|    FOR PROCEDURE B
+                                  |  |               |
+                                  |  |-------+-------|
+                         DYNAMIC -|  |               |
+                         STORAGE  |  |-------+-------|
+                                  |  |               |
+                                  +- |-------+-------|<--ESP
+                                     |               |
+                                     .               .
+<A Name="Fig.3-22"><H2>Fig.3-22    LAHF and SAHF</H2>
+
+Figure 3-22.  LAHF and SAHF
+
+                     7    6    5    4    3    2    1    0
+                   +---------------------------------------+
+                   | SF | ZF | UU | AF | UU | PF | UU | CF |
+                   +---------------------------------------+
+
+     LAHF LOADS FIVE FLAGS FROM THE FLAG REGISTER INTO REGISTER AH. SAHF
+     STORES THESE SAME FIVE FLAGS FROM AH INTO THE FLAG REGISTER. THE BIT
+     POSITION OF EACH FLAG IS THE SAME IN AH AS IT IS IN THE FLAG REGISTER.
+     THE REMAINING BITS (MARKED UU) ARE RESERVED; DO NOT DEFINE.
+<A Name="Fig.3-23"><H2>Fig.3-23    Flag Format for PUSHF and POPF</H2>
+
+Figure 3-23.  Flag Format for PUSHF and POPF
+
+                                PUSHFD/POPFD
+     +----------------------------------------------------------------+
+                                                  PUSHF/POPF
+                                     +--------------------------------+
+      31              23               15                7           0
+     +---------------+------------------------------------------------+
+     |                           |V|R| |N|ID  |O|D|I|T|S|Z| |A| |P| |C|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0| | |0| |    | | | | | | |0| |0| |1| |
+     |                           |M|F| |T|  PL|F|F|F|F|F|F| |F| |F| |F|
+     +---------------+------------------------------------------------+
+
+     BITS MARKED 0 AND 1 ARE RESERVED BY INTEL. DO NOT DEFINE.
+
+   SYSTEMS FLAGS (INCLUDING THE IOPL FIELD, AND THE VM, RF, AND IF FLAGS)
+   ARE PUSHED AND ARE VISIBLE TO APPLICATIONS PROGRAMS. HOWEVER, WHEN AN
+   APPLICATIONS PROGRAM POPS THE FLAGS, THESE ITEMS ARE NOT CHANGED,
+   REGARDLESS OF THE VALUES POPPED INTO THEM.

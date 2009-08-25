@@ -1,0 +1,82 @@
+
+
+			"I believe each incoming freshman must be started at once on his own research
+			 project if we are to preserve his secret dream of greatness and make it come
+			 true." -- Edwin H. Land
+
+GOALS IN ORDER:
+---------------
+
+- "Nearly from the start, the system was able to, and did, maintain itself. This
+  fact is more important than it might seem. If designers of a system are forced
+  to use that system, they quickly become aware of its functional and
+  superficial deficiencies and are strongly motivated to correct them before it
+  is too late." -- Richie & Thomson, The UNIX Time-Sharing System, Proceedings
+  of the Fourth ACM Symposium on OS
+
+- A self-hosting SMP-safe x86_64 operating system where running on 386+
+  processors is not mandatory. It's necessary to master x86_64 software these
+  days and it's in the rapid way of being the default architecture for laptops
+  where native 64bit OSes are installed by default. It's already the currently
+  most used architecture for servers.
+  
+- Practically learn UNIX implementation details ** inside out ** including posix
+  syscalls, memory management, filesystems and a TCP/IP stack implementation.
+
+- Be able to understand system internals to a powerful level. Being very
+  comfortable with x86 architecture including BIOS, the different hardware buses,
+  and parallelism complexities. Easily understand magazines like Phrack.
+
+- Implement the btrfs file system; it's the future. Also check the great
+  LWN article: "A short history of btrfs", Valerie Aurora (Henson)
+  http://lwn.net/Articles/342892/
+
+- Reach a level of maturity to run the lovely stuff at suckless.org like
+  their dynamic window managers. As from R&T quote, we already want a
+  self-hosting kernel.
+
+
+Steps:
+------
+
+1) Finish this semester subject and its RegEX parser project. I should get rid
+   of this darn college as soon as possible. --Done!
+   
+2) It's been a while since I coded in GNU assembler 686. "From The Ground Up"
+   by Jon Bartlett should give me a push quickly. Also check my previous
+   x86 assembly projects. --Done!
+
+3) Revise the x86 system programming details; Namely the 686 manual.
+   -- Done till Chapter 6 only
+
+3) Meanwhile, carefully read "The undocumented PC" to get a better insight into
+   the PC architecture. These details are going to be necessary for the
+   real-mode bootup code and the PCI and keyboard drivers later. NO, we shall
+   not use any of the BIOS services afterwards: we are not creating a crappy
+   ROM-based OS
+
+4) Create the bootloader to jump to the kernel start point. Delve into the
+   kernel development afterwards.
+
+Resources:
+----------
+
++ "The Undocumented PC: A Programmer's Guide to I/O, CPUs, and Fixed Memory Areas,
+  2nd Edition", Frank van Gilluwe.
+
++ Intel's i386 and i686 references + Official AMD64 architecture documents.
+
++ You should check the amazing notes and references of the VisoPsys project,
+  a visual operating system - http://visopsys.org/about/index.html
+
++ Practical OS Books:
+  Modern: "Understanding the Linux Kernel, 3rd Edition", Bovet, Cesati
+  Classic: "The Design of the UNIX Operating System", Maurice J. Bach
+  Classic: "Unix Internals: the new fronteirs", Ulrich Vahalia
+  Modern: "Practical File System Design with the Be File System", Dominic Giampaolo
+
+
+			"A little sleep, a little slumber, a little folding of the hands to rest -
+			 and poverty will come on you like a bandit and scarcity like an armed man."
+			 -- Proverbs 24:33-34 NIV
+

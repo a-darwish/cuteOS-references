@@ -1,0 +1,39 @@
+<title>Instruction Set CLD</title><pre>
+<A Name="CLD"><H2>CLD 			   -- Clear Direction Flag</H2>
+
+CLD -- Clear Direction Flag
+
+
+Opcode    Instruction     Clocks   Description
+
+FC        CLD             2        Clear direction flag; SI and DI
+                                   will increment during string
+                                   instructions
+
+
+Operation
+
+DF = 0;
+
+Description
+
+CLD clears the direction flag. No other flags or registers are affected.
+After CLD is executed, string operations will increment the index registers
+(SI and/or DI) that they use.
+
+Flags Affected
+
+DF = 0
+
+Protected Mode Exceptions
+
+None
+
+Real Address Mode Exceptions
+
+None
+
+Virtual 8086 Mode Exceptions
+
+None
+

@@ -1,0 +1,234 @@
+<title>Figures Fig.9</title><pre>
+<A Name="Fig.9-1"><H2>Fig.9-1     IDT Register and Table</H2>
+
+Figure 9-1.  IDT Register and Table
+
+                                              INTERRUPT DESCRIPTOR TABLE
+                                              +-------------------------+
+                                        +---->|      |     |     |      |
+                                        |     |- GATE FOR INTERRUPT #N -|
+                                        |     |      |     |     |      |
+                                        |     +-------------------------+
+                                        |     .                         .
+                                        |     .                         .
+                                        |     .                         .
+                                        |     +-------------------------+
+                                        |     |      |     |     |      |
+                                        |     |- GATE FOR INTERRUPT #2 -|
+                                        |     |      |     |     |      |
+                                        |     |-------------------------|
+            IDT REGISTER                |     |      |     |     |      |
+                                        |     |- GATE FOR INTERRUPT #1 -|
+                    15            0     |     |      |     |     |      |
+                   +---------------+    |     |-------------------------|
+                   |   IDT LIMIT   |----+     |      |     |     |      |
+  +--------------------------------|          |- GATE FOR INTERRUPT #0 -|
+  |            IDT BASE            |--------->|      |     |     |      |
+  +--------------------------------+          +-------------------------+
+   31                             0
+
+<A Name="Fig.9-2"><H2>Fig.9-2     Pseudo-Descriptor Format for LIDT and SIDT</H2>
+
+Figure 9-2.  Pseudo-Descriptor Format for LIDT and SIDT
+
+  31                23                15                7               0
+ +-----------------+-----------------+-----------------+-----------------+
+ |                                 BASE                                  |2
+ +-----------------+-----------------------------------+-----------------|
+                                     |               LIMIT               |0
+                                     +-----------------+-----------------+
+<A Name="Fig.9-3"><H2>Fig.9-3     80386 IDT Gate Descriptors</H2>
+
+Figure 9-3.  80306 IDT Gate Descriptors
+
+                                80386 TASK GATE (type 5)
+   31                23                15                7                0
+  +-----------------+-----------------+-----------------+-----------------+
+  |             (NOT USED)            | P |DPL|0 0 1 0 1|   (NOT USED)    |4
+  |-----------------------------------+-----------------------------------|
+  |             SELECTOR              |             (NOT USED)            |0
+  +-----------------+-----------------+-----------------+-----------------+
+
+                                80386 INTERRUPT GATE (type E)
+   31                23                15                7                0
+  +-----------------+-----------------+-----------------+-----+-----------+
+  |           OFFSET 31..16           | P |DPL|0 1 1 1 0|0 0 0|(NOT USED) |4
+  |-----------------------------------+-----------------------------------|
+  |             SELECTOR              |           OFFSET 15..0            |0
+  +-----------------+-----------------+-----------------+-----------------+
+
+                                80386 TRAP GATE (Type F)
+   31                23                15                7                0
+  +-----------------+-----------------+-----------------+-----+-----------+
+  |          OFFSET 31..16            | P |DPL|0 1 1 1 1|0 0 0|(NOT USED) |4
+  |-----------------------------------+-----------------------------------|
+  |             SELECTOR              |           OFFSET 15..0            |0
+  +-----------------+-----------------+-----------------+-----------------+
+<A Name="Fig.9-4"><H2>Fig.9-4     Interrupt Vectoring for Procedures</H2>
+
+Figure 9-4.  Interrupt Vectoring for Procedures
+
+                  IDT                                    EXECUTABLE SEGMENT
+           +---------------+                             +---------------+
+           |               |                       OFFSET|               |
+           |---------------|  +------------------------->| ENTRY POINT   |
+           |               |  |      LDT OR GDT          |               |
+           |---------------|  |   +---------------+      |               |
+           |               |  |   |               |      |               |
+INTERRUPT  |---------------|  |   |---------------|      |               |
+   ID----->| TRAP GATE OR  |--+   |               |      |               |
+           |INTERRUPT GATE |--+   |---------------|      |               |
+           |---------------|  |   |               |      |               |
+           |               |  |   |---------------|      |               |
+           |---------------|  +-->|   SEGMENT     |-+    |               |
+           |               |      |  DESCRIPTOR   | |    |               |
+           |---------------|      |---------------| |    |               |
+           |               |      |               | |    |               |
+           |---------------|      |---------------| |    |               |
+           |               |      |               | |BASE|               |
+           +---------------+      |---------------| +--->+---------------+
+                                  |               |
+                                  |               |
+                                  |               |
+                                  +---------------+
+<A Name="Fig.9-5"><H2>Fig.9-5     Stack Layout after Exception of Interrupt</H2>
+
+Figure 9-5.  Stack Layout after Exception of Interrupt
+
+                           WITHOUT PRIVILEGE TRANSITION
+
+      D  O      31          0                     31          0
+      I  F    |---------------|                 |---------------|
+      R       |       |       |    OLD          |       |       |    OLD
+      E  E    |-------+-------|   SS:ESP        |-------+-------|   SS:ESP
+      C  X    |       |       |     |           |       |       |     |
+      T  P    |---------------|<----+           |---------------|<----+
+      I  A    |  OLD EFLAGS   |                 |  OLD EFLAGS   |
+      O  N    |---------------|                 |---------------|
+      N  S    |       |OLD CS |    NEW          |       |OLD CS |
+         I    |---------------|   SS:ESP        |---------------|
+       | O    |    OLD EIP    |     |           |    OLD EIP    |    NEW
+       | N    |---------------|<----+           |---------------|   SS:ESP
+       |      |               |                 |  ERROR CODE   |     |
+       v      .               .                 |---------------|<----+
+              .               .                 |               |
+              .               .
+              WITHOUT ERROR CODE                 WITH ERROR CODE
+
+                             WITH PRIVILEGE TRANSITION
+
+      D  O     31            0                     31          0
+      I  F    +---------------+<----+           +---------------+<----+
+      R       |       |OLD SS |     |           |       |OLD SS |     |
+      E  E    |---------------|   SS:ESP        |---------------|   SS:ESP
+      C  X    |    OLD ESP    |  FROM TSS       |    OLD ESP    |  FROM TSS
+      T  P    |---------------|                 |---------------|
+      I  A    |  OLD EFLAGS   |                 |  OLD EFLAGS   |
+      O  N    |---------------|                 |---------------|
+      N  S    |       |OLD CS |    NEW          |       |OLD CS |
+         I    |---------------|   SS:EIP        |---------------|
+       | O    |    OLD EIP    |     |           |    OLD EIP    |    NEW
+       | N    |---------------|<----+           |---------------|   SS:ESP
+       |      |               |                 |  ERROR CODE   |     |
+       v      .               .                 |---------------|<----+
+              .               .                 |               |
+              .               .
+              WITHOUT ERROR CODE                 WITH ERROR CODE
+
+<A Name="Fig.9-6"><H2>Fig.9-6     Interrupt Vectoring for Tasks</H2>
+
+Figure 9-6.  Interrupt Vectoring for Tasks
+
+            IDT                       GDT
+     +----------------+        +----------------+
+     |                |        |                |              TSS
+     |----------------|        |----------------|       +----------------+
+     |                |        |                |       |                |
+     |----------------|        |----------------|       |                |
+     |                |        |                |       |                |
+     |----------------|        |----------------|       |                |
+ +-->|   TASK GATE    |---+    |                |       |                |
+ |   |----------------|   |    |----------------|       |                |
+ |   |                |   +--->| TSS DESCRIPTOR |---+   |                |
+ |   |----------------|        |----------------|   |   |                |
+ |   |                |        |                |   |   |                |
+ |   |----------------|        |----------------|   +-->+----------------+
+ |   |                |        |                |
+ |   |----------------|        |----------------|
+ |   |                |        |                |
+ |   +----------------+        +----------------+
+ |
+ +-INTERRUPT ID
+
+<A Name="Fig.9-7"><H2>Fig.9-7     Error Code Format</H2>
+Figure 9-7.  Error Code Format
+
+       31              23               15                        2 1 0
+      +---------------+----------------------------------+-------------+
+      |                                |                         |T| |E|
+      |           UNDEFINED            |     SELECTOR INDEX      | |I| |
+      |                                |                         |I| |X|
+      +---------------+----------------------------------+-------------+
+
+  For 286:
+
+    15                                               3   2   1   0
+   +---------------------------------------------------------------+
+   |                                                   | T | I | E |
+   |                       INDEX                       | I | D | X |
+   |                                                   |   | T | T |
+   +---------------------------------------------------------------+
+   +---------------------------------------------------+ |   |   |
+       +---------------------+                           |   |   |
+       |         +---------------------------------------+   |   |
+       |         |             +-----------------------------+   |
+       v         v             v                                 v
+ +-------++---------++---------------++-------------------------------------+
+ | Entry || 1 means || 1 means use   || 1 means that an event external to   |
+ | in    ||   use   ||   IDT and     ||   the program caused the exception  |
+ | IDT,  ||   LDT   ||   ignore      ||   (i.e., external interrupt, single |
+ | GDT,  || 0 means ||   bit 2.      ||   step, processor extension error)  |
+ | or    ||   use   || 0 means bit 2 || 0 means that an exception occurred  |
+ | LDT   ||   GDT   ||   indicates   ||   while processing the instruction  |
+ |       ||         ||   table usage ||   at CS:IP saved on the stack.      |
+ +-------++---------++---------------++-------------------------------------+
+
+
+<A Name="Fig.9-8"><H2>Fig.9-8     Page-Fault Error Code Format</H2>
+
+Figure 9-8.  Page-Fault Error Code Format
+
+ +------------------------------------------------------------------------+
+ |Field|Value|                         Description                        |
+ |-----+-----+------------------------------------------------------------|
+ | U/S |  0  | The access causing the fault originated when the processor |
+ |     |     | was executing in supervisor mode.                          |
+ |     |     |                                                            |
+ |     |  1  | The access causing the fault originated when the processor |
+ |     |     | was executing in user mode.                                |
+ |     |     |                                                            |
+ | W/R |  0  | The access causing the fault was a read.                   |
+ |     |     |                                                            |
+ |     |  1  | The access causing the fault was a write.                  |
+ |     |     |                                                            |
+ | P   |  0  | The fault was caused by a not-present page.                |
+ |     |     |                                                            |
+ |     |  1  | The fault was caused by a page-level protection violation. |
+ +------------------------------------------------------------------------+
+
+       31                               15             7        3 2 1 0
+      +--------------------------------+-------------------------------+
+      |                                                          |U|W| |
+      |                          UNDEFINED                       |/|/|P|
+      |                                                          |S|R| |
+      +--------------------------------+-------------------------------+
+<A Name="Fig.9-9"><H2>Fig.9-9     CR2 Format</H2>
+
+Figure 9-9.  CR2 Format
+
+      31               23               15               7              0
+     +----------------+----------------+----------------+----------------+
+     |                                                                   |
+     |                      PAGE FAULT LINEAR ADDRESS                    |
+     |                                                                   |
+     +----------------+----------------+----------------+----------------+

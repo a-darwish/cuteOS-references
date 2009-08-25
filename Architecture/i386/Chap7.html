@@ -1,0 +1,489 @@
+<pre>
+<title>Chapter 7    Multitasking</title><body>
+<H1><font color=red>Chapter 7  </font>  Multitasking</H1>
+<pre>
+
+  Chapter 7  Multitasking
+
+----------------------------------------------------------------------------
+
+To provide efficient, protected multitasking, the 80386 employs several
+special data structures. It does not, however, use special instructions to
+control multitasking; instead, it interprets ordinary control-transfer
+instructions differently when they refer to the special data structures. The
+registers and data structures that support multitasking are:
+
+  *  Task state segment
+  *  Task state segment descriptor
+  *  Task register
+  *  Task gate descriptor
+
+With these structures the 80386 can rapidly switch execution from one task
+to another, saving the context of the original task so that the task can be
+restarted later. In addition to the simple task switch, the 80386 offers two
+other task-management features:
+
+  1.  Interrupts and exceptions can cause task switches (if needed in the
+      system design). The processor not only switches automatically to the
+      task that handles the interrupt or exception, but it automatically
+      switches back to the interrupted task when the interrupt or exception
+      has been serviced. Interrupt tasks may interrupt lower-priority
+      interrupt tasks to any depth.
+
+  2.  With each switch to another task, the 80386 can also switch to
+      another LDT and to another page directory. Thus each task can have a
+      different logical-to-linear mapping and a different linear-to-physical
+      mapping. This is yet another protection feature, because tasks can be
+      isolated and prevented from interfering with one another.
+
+<HR>
+<A Name="7.1"><H2>7.1  Task State Segment</H2>
+
+7.1  Task State Segment
+
+All the information the processor needs in order to manage a task is stored
+in a special type of segment, a task state segment (TSS). Figure 7-1 shows
+the format of a TSS for executing 80386 tasks. (Another format is used for
+executing 80286 tasks; refer to Chapter 13.)
+
+The fields of a TSS belong to two classes:
+
+  1.  A dynamic set that the processor updates with each switch from the
+      task. This set includes the fields that store:
+
+      *  The general registers (EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI).
+
+      *  The segment registers (ES, CS, SS, DS, FS, GS).
+
+      *  The flags register (EFLAGS).
+
+      *  The instruction pointer (EIP).
+
+      *  The selector of the TSS of the previously executing task (updated
+         only when a return is expected).
+
+  2.  A static set that the processor reads but does not change. This set
+      includes the fields that store:
+
+      *  The selector of the task's LDT.
+
+      *  The register (PDBR) that contains the base address of the task's
+         page directory (read only when paging is enabled).
+
+      *  Pointers to the stacks for privilege levels 0-2.
+
+      *  The T-bit (debug trap bit) which causes the processor to raise a
+         debug exception when a task switch occurs. (Refer to Chapter 12
+         for more information on debugging.)
+
+      *  The I/O map base (refer to Chapter 8 for more information on the
+         use of the I/O map).
+
+Task state segments may reside anywhere in the linear space. The only case
+that requires caution is when the TSS spans a page boundary and the
+higher-addressed page is not present. In this case, the processor raises an
+exception if it encounters the not-present page while reading the TSS during
+a task switch. Such an exception can be avoided by either of two strategies:
+
+  1.  By allocating the TSS so that it does not cross a page boundary.
+
+  2.  By ensuring that both pages are either both present or both 
+      not-present at the time of a task switch. If both pages are 
+      not-present, then the page-fault handler must make both pages present 
+      before restarting the instruction that caused the task switch.
+
+See Also: <A HREF="Figs/Fig.7.html#Fig.7-1">Fig.7-1</A> <A HREF="Contents.html#"Chapter">"Chapter</A> <A HREF="8".html#8"">8"</A> <A HREF="CONTENTS.NGO:"Chapter.html#CONTENTS.NGO:"Chapter">CONTENTS.NGO:"Chapter</A> <A HREF="12".html#12"">12"</A> <A HREF="contents.html#"Chapter">"Chapter</A> <A HREF="13".html#13"">13"</A> 
+
+<HR>
+<A Name="7.2"><H2>7.2  TSS Descriptor</H2>
+
+7.2  TSS Descriptor
+
+The task state segment, like all other segments, is defined by a
+descriptor. Figure 7-2 shows the format of a TSS descriptor.
+
+The B-bit in the type field indicates whether the task is busy. A type code
+of 9 indicates a non-busy task; a type code of 11 indicates a busy task.
+Tasks are not reentrant. The B-bit allows the processor to detect an attempt
+to switch to a task that is already busy.
+
+The BASE, LIMIT, and DPL fields and the G-bit and P-bit have functions
+similar to their counterparts in data-segment descriptors. The LIMIT field,
+however, must have a value equal to or greater than 103. An attempt to
+switch to a task whose TSS descriptor has a limit less that 103 causes an
+exception. A larger limit is permissible, and a larger limit is required if
+an I/O permission map is present. A larger limit may also be convenient for
+systems software if additional data is stored in the same segment as the
+TSS.
+
+A procedure that has access to a TSS descriptor can cause a task switch. In
+most systems the DPL fields of TSS descriptors should be set to zero, so
+that only trusted software has the right to perform task switching.
+
+Having access to a TSS-descriptor does not give a procedure the right to
+read or modify a TSS. Reading and modification can be accomplished only with
+another descriptor that redefines the TSS as a data segment. An attempt to
+load a TSS descriptor into any of the segment registers (CS, SS, DS, ES, FS,
+GS) causes an exception.
+
+TSS descriptors may reside only in the GDT. An attempt to identify a TSS
+with a selector that has TI=1 (indicating the current LDT) results in an
+exception.
+
+See Also: <A HREF="Figs/Fig.7.html#Fig.7-2">Fig.7-2</A> 
+
+
+<HR>
+<A Name="7.3"><H2>7.3  Task Register</H2>
+
+7.3  Task Register
+
+The task register (TR) identifies the currently executing task by pointing
+to the TSS. Figure 7-3 shows the path by which the processor accesses the
+current TSS.
+
+The task register has both a "visible" portion (i.e., can be read and
+changed by instructions) and an "invisible" portion (maintained by the
+processor to correspond to the visible portion; cannot be read by any
+instruction). The selector in the visible portion selects a TSS descriptor
+in the GDT. The processor uses the invisible portion to cache the base and
+limit values from the TSS descriptor. Holding the base and limit in a
+register makes execution of the task more efficient, because the processor
+does not need to repeatedly fetch these values from memory when it
+references the TSS of the current task.
+
+The instructions LTR and STR are used to modify and read the visible
+portion of the task register. Both instructions take one operand, a 16-bit
+selector located in memory or in a general register.
+
+LTR (Load task register) loads the visible portion of the task register
+with the selector operand, which must select a TSS descriptor in the GDT.
+LTR also loads the invisible portion with information from the TSS
+descriptor selected by the operand. LTR is a privileged instruction; it may
+be executed only when CPL is zero. LTR is generally used during system
+initialization to give an initial value to the task register; thereafter,
+the contents of TR are changed by task switch operations.
+
+STR (Store task register) stores the visible portion of the task register
+in a general register or memory word. STR is not privileged.
+
+
+See Also: <A HREF="Figs/Fig.7.html#Fig.7-3">Fig.7-3</A> 
+
+<HR>
+<A Name="7.4"><H2>7.4  Task Gate Descriptor</H2>
+
+7.4  Task Gate Descriptor
+
+A task gate descriptor provides an indirect, protected reference to a TSS.
+Figure 7-4 illustrates the format of a task gate.
+
+The SELECTOR field of a task gate must refer to a TSS descriptor. The value
+of the RPL in this selector is not used by the processor.
+
+The DPL field of a task gate controls the right to use the descriptor to
+cause a task switch. A procedure may not select a task gate descriptor
+unless the maximum of the selector's RPL and the CPL of the procedure is
+numerically less than or equal to the DPL of the descriptor. This constraint
+prevents untrusted procedures from causing a task switch. (Note that when a
+task gate is used, the DPL of the target TSS descriptor is not used for
+privilege checking.)
+
+A procedure that has access to a task gate has the power to cause a task
+switch, just as a procedure that has access to a TSS descriptor. The 80386
+has task gates in addition to TSS descriptors to satisfy three needs:
+
+  1.  The need for a task to have a single busy bit. Because the busy-bit
+      is stored in the TSS descriptor, each task should have only one such
+      descriptor. There may, however, be several task gates that select the
+      single TSS descriptor.
+
+  2.  The need to provide selective access to tasks. Task gates fulfill
+      this need, because they can reside in LDTs and can have a DPL that is
+      different from the TSS descriptor's DPL. A procedure that does not
+      have sufficient privilege to use the TSS descriptor in the GDT (which
+      usually has a DPL of 0) can still switch to another task if it has
+      access to a task gate for that task in its LDT. With task gates,
+      systems software can limit the right to cause task switches to
+      specific tasks.
+
+  3.  The need for an interrupt or exception to cause a task switch. Task
+      gates may also reside in the IDT, making it possible for interrupts
+      and exceptions to cause task switching. When interrupt or exception
+      vectors to an IDT entry that contains a task gate, the 80386 switches
+      to the indicated task. Thus, all tasks in the system can benefit from
+      the protection afforded by isolation from interrupt tasks.
+
+Figure 7-5 illustrates how both a task gate in an LDT and a task gate in
+the IDT can identify the same task.
+
+See Also: <A HREF="Figs/Fig.7.html#Fig.7-4">Fig.7-4</A> <A HREF="Figs/Fig.7.html#Fig.7-5">Fig.7-5</A> 
+
+<HR>
+<A Name="7.5"><H2>7.5  Task Switching</H2>
+
+7.5  Task Switching
+
+The 80386 switches execution to another task in any of four cases:
+
+  1.  The current task executes a JMP or CALL that refers to a TSS
+      descriptor.
+
+  2.  The current task executes a JMP or CALL that refers to a task gate.
+
+  3.  An interrupt or exception vectors to a task gate in the IDT.
+
+  4.  The current task executes an IRET when the NT flag is set.
+
+JMP, CALL, IRET, interrupts, and exceptions are all ordinary mechanisms of
+the 80386 that can be used in circumstances that do not require a task
+switch. Either the type of descriptor referenced or the NT (nested task) bit
+in the flag word distinguishes between the standard mechanism and the
+variant that causes a task switch.
+
+To cause a task switch, a JMP or CALL instruction can refer either to a TSS
+descriptor or to a task gate. The effect is the same in either case: the
+80386 switches to the indicated task.
+
+An exception or interrupt causes a task switch when it vectors to a task
+gate in the IDT. If it vectors to an interrupt or trap gate in the IDT, a
+task switch does not occur. Refer to Chapter 9 for more information on the
+interrupt mechanism.
+
+Whether invoked as a task or as a procedure of the interrupted task, an
+interrupt handler always returns control to the interrupted procedure in the
+interrupted task. If the NT flag is set, however, the handler is an
+interrupt task, and the IRET switches back to the interrupted task.
+
+A task switching operation involves these steps:
+
+  1.  Checking that the current task is allowed to switch to the designated
+      task. Data-access privilege rules apply in the case of JMP or CALL
+      instructions. The DPL of the TSS descriptor or task gate must be less
+      than or equal to the maximum of CPL and the RPL of the gate selector.
+      Exceptions, interrupts, and IRETs are permitted to switch tasks
+      regardless of the DPL of the target task gate or TSS descriptor.
+
+  2.  Checking that the TSS descriptor of the new task is marked present
+      and has a valid limit. Any errors up to this point occur in the
+      context of the outgoing task. Errors are restartable and can be
+      handled in a way that is transparent to applications procedures.
+
+  3.  Saving the state of the current task. The processor finds the base
+      address of the current TSS cached in the task register. It copies the
+      registers into the current TSS (EAX, ECX, EDX, EBX, ESP, EBP, ESI,
+      EDI, ES, CS, SS, DS, FS, GS, and the flag register). The EIP field of
+      the TSS points to the instruction after the one that caused the task
+      switch.
+
+  4.  Loading the task register with the selector of the incoming task's
+      TSS descriptor, marking the incoming task's TSS descriptor as busy,
+      and setting the TS (task switched) bit of the MSW. The selector is
+      either the operand of a control transfer instruction or is taken from
+      a task gate.
+
+  5.  Loading the incoming task's state from its TSS and resuming
+      execution. The registers loaded are the LDT register; the flag
+      register; the general registers EIP, EAX, ECX, EDX, EBX, ESP, EBP,
+      ESI, EDI; the segment registers ES, CS, SS, DS, FS, and GS; and PDBR.
+      Any errors detected in this step occur in the context of the incoming
+      task. To an exception handler, it appears that the first instruction
+      of the new task has not yet executed.
+
+Note that the state of the outgoing task is always saved when a task switch
+occurs. If execution of that task is resumed, it starts after the
+instruction that caused the task switch. The registers are restored to the
+values they held when the task stopped executing.
+
+Every task switch sets the TS (task switched) bit in the MSW (machine
+status word). The TS flag is useful to systems software when a coprocessor
+(such as a numerics coprocessor) is present. The TS bit signals that the
+context of the coprocessor may not correspond to the current 80386 task.
+Chapter 11 discusses the TS bit and coprocessors in more detail.
+
+Exception handlers that field task-switch exceptions in the incoming task
+(exceptions due to tests 4 thru 16 of Table 7-1) should be cautious about
+taking any action that might load the selector that caused the exception.
+Such an action will probably cause another exception, unless the exception
+handler first examines the selector and fixes any potential problem.
+
+The privilege level at which execution resumes in the incoming task is
+neither restricted nor affected by the privilege level at which the outgoing
+task was executing. Because the tasks are isolated by their separate address
+spaces and TSSs and because privilege rules can be used to prevent improper
+access to a TSS, no privilege rules are needed to constrain the relation
+between the CPLs of the tasks. The new task begins executing at the
+privilege level indicated by the RPL of the CS selector value that is loaded
+from the TSS.
+
+See Also: <A HREF="Tabs.html#Tab.7-1">Tab.7-1</A> 
+
+<HR>
+<A Name="7.6"><H2>7.6  Task Linking</H2>
+
+7.6  Task Linking
+
+The back-link field of the TSS and the NT (nested task) bit of the flag
+word together allow the 80386 to automatically return to a task that CALLed
+another task or was interrupted by another task. When a CALL instruction, an
+interrupt instruction, an external interrupt, or an exception causes a
+switch to a new task, the 80386 automatically fills the back-link of the new
+TSS with the selector of the outgoing task's TSS and, at the same time,
+sets the NT bit in the new task's flag register. The NT flag indicates
+whether the back-link field is valid. The new task releases control by
+executing an IRET instruction. When interpreting an IRET, the 80386 examines
+the NT flag. If NT is set, the 80386 switches back to the task selected by
+the back-link field. Table 7-2 summarizes the uses of these fields.
+
+See Also: <A HREF="Tabs.html#Tab.7-2">Tab.7-2</A> 
+<HR>
+<A Name="7.6.1"><H2>7.6.1  Busy Bit Prevents Loops</H2>
+
+7.6.1  Busy Bit Prevents Loops
+
+The B-bit (busy bit) of the TSS descriptor ensures the integrity of the
+back-link. A chain of back-links may grow to any length as interrupt tasks
+interrupt other interrupt tasks or as called tasks call other tasks. The
+busy bit ensures that the CPU can detect any attempt to create a loop. A
+loop would indicate an attempt to reenter a task that is already busy;
+however, the TSS is not a reentrable resource.
+
+The processor uses the busy bit as follows:
+
+  1.  When switching to a task, the processor automatically sets the busy
+      bit of the new task.
+
+  2.  When switching from a task, the processor automatically clears the
+      busy bit of the old task if that task is not to be placed on the
+      back-link chain (i.e., the instruction causing the task switch is JMP
+      or IRET). If the task is placed on the back-link chain, its busy bit
+      remains set.
+
+  3.  When switching to a task, the processor signals an exception if the
+      busy bit of the new task is already set.
+
+By these actions, the processor prevents a task from switching to itself or
+to any task that is on a back-link chain, thereby preventing invalid reentry
+into a task.
+
+The busy bit is effective even in multiprocessor configurations, because
+the processor automatically asserts a bus lock when it sets or clears the
+busy bit. This action ensures that two processors do not invoke the same
+task at the same time. (Refer to Chapter 11 for more on multiprocessing.)
+
+<HR>
+<A Name="7.6.2"><H2>7.6.2  Modifying Task Linkages</H2>
+
+7.6.2  Modifying Task Linkages
+
+Any modification of the linkage order of tasks should be accomplished only
+by software that can be trusted to correctly update the back-link and the
+busy-bit. Such changes may be needed to resume an interrupted task before
+the task that interrupted it. Trusted software that removes a task from the
+back-link chain must follow one of the following policies:
+
+  1.  First change the back-link field in the TSS of the interrupting task,
+      then clear the busy-bit in the TSS descriptor of the task removed from
+      the list.
+
+  2.  Ensure that no interrupts occur between updating the back-link chain
+      and the busy bit.
+
+<HR>
+<A Name="7.7"><H2>7.7  Task Address Space</H2>
+
+7.7  Task Address Space
+
+The LDT selector and PDBR fields of the TSS give software systems designers
+flexibility in utilization of segment and page mapping features of the
+80386. By appropriate choice of the segment and page mappings for each task,
+tasks may share address spaces, may have address spaces that are largely
+distinct from one another, or may have any degree of sharing between these
+two extremes.
+
+The ability for tasks to have distinct address spaces is an important
+aspect of 80386 protection. A module in one task cannot interfere with a
+module in another task if the modules do not have access to the same address
+spaces. The flexible memory management features of the 80386 allow systems
+designers to assign areas of shared address space to those modules of
+different tasks that are designed to cooperate with each other.
+
+<HR>
+<A Name="7.7.1"><H2>7.7.1  Task Linear-to-Physical Space Mapping</H2>
+
+7.7.1  Task Linear-to-Physical Space Mapping
+
+The choices for arranging the linear-to-physical mappings of tasks fall
+into two general classes:
+
+  1.  One linear-to-physical mapping shared among all tasks.
+
+      When paging is not enabled, this is the only possibility. Without page
+      tables, all linear addresses map to the same physical addresses.
+
+      When paging is enabled, this style of linear-to-physical mapping 
+      results from using one page directory for all tasks. The linear space
+      utilized may exceed the physical space available if the operating 
+      system also implements page-level virtual memory.
+
+  2.  Several partially overlapping linear-to-physical mappings.
+
+      This style is implemented by using a different page directory for each
+      task. Because the PDBR (page directory base register) is loaded from 
+      the TSS with each task switch, each task may have a different page 
+      directory.
+
+In theory, the linear address spaces of different tasks may map to
+completely distinct physical addresses. If the entries of different page
+directories point to different page tables and the page tables point to
+different pages of physical memory, then the tasks do not share any physical
+addresses.
+
+In practice, some portion of the linear address spaces of all tasks must
+map to the same physical addresses. The task state segments must lie in a
+common space so that the mapping of TSS addresses does not change while the
+processor is reading and updating the TSSs during a task switch. The linear
+space mapped by the GDT should also be mapped to a common physical space;
+otherwise, the purpose of the GDT is defeated. Figure 7-6 shows how the
+linear spaces of two tasks can overlap in the physical space by sharing
+page tables.
+
+See Also: <A HREF="Figs/Fig.7.html#Fig.7-6">Fig.7-6</A> 
+
+<HR>
+<A Name="7.7.2"><H2>7.7.2  Task Logical Address Space</H2>
+
+
+7.7.2  Task Logical Address Space
+
+By itself, a common linear-to-physical space mapping does not enable
+sharing of data among tasks. To share data, tasks must also have a common
+logical-to-linear space mapping; i.e., they must also have access to
+descriptors that point into a shared linear address space. There are three
+ways to create common logical-to-physical address-space mappings:
+
+  1.  Via the GDT. All tasks have access to the descriptors in the GDT. If
+      those descriptors point into a linear-address space that is mapped to
+      a common physical-address space for all tasks, then the tasks can
+      share data and instructions.
+
+  2.  By sharing LDTs. Two or more tasks can use the same LDT if the LDT
+      selectors in their TSSs select the same LDT segment. Those
+      LDT-resident descriptors that point into a linear space that is mapped
+      to a common physical space permit the tasks to share physical memory.
+      This method of sharing is more selective than sharing by the GDT; the
+      sharing can be limited to specific tasks. Other tasks in the system
+      may have different LDTs that do not give them access to the shared
+      areas.
+
+  3.  By descriptor aliases in LDTs. It is possible for certain descriptors
+      of different LDTs to point to the same linear address space. If that
+      linear address space is mapped to the same physical space by the page
+      mapping of the tasks involved, these descriptors permit the tasks to
+      share the common space. Such descriptors are commonly called
+      "aliases". This method of sharing is even more selective than the
+      prior two; other descriptors in the LDTs may point to distinct linear
+      addresses or to linear addresses that are not shared.
+
+See Also: <A HREF="Figs/Fig.7.html#Fig.7-6">Fig.7-6</A> 
+

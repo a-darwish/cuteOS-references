@@ -1,0 +1,58 @@
+<title>Instruction Set BSF</title><pre>
+<A Name="BSF"><H2>BSF 			   -- Bit Scan Forward</H2>
+
+BSF -- Bit Scan Forward
+
+Opcode    Instruction          Clocks    Description
+
+0F  BC    BSF r16,r/m16        10+3n     Bit scan forward on r/m word
+0F  BC    BSF r32,r/m32        10+3n     Bit scan forward on r/m dword
+
+
+Notes
+
+ is the number of leading zero bits.
+
+Operation
+
+IF r/m = 0
+THEN
+   ZF = 1;
+   register = UNDEFINED;
+ELSE
+   temp = 0;
+   ZF = 0;
+   WHILE BIT[r/m, temp = 0]
+   DO
+      temp = temp + 1;
+      register = temp;
+   OD;
+FI;
+
+Description
+
+BSF scans the bits in the second word or doubleword operand starting with
+bit 0. The ZF flag is cleared if the bits are all 0; otherwise, the ZF flag
+is set and the destination register is loaded with the bit index of the
+first set bit.
+
+Flags Affected
+
+ZF as described above
+
+Protected Mode Exceptions
+
+#GP(0) for an illegal memory operand effective address in the CS, DS, ES,
+FS, or GS segments; #SS(0) for an illegal address in the SS segment;
+#PF(fault-code) for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode; #PF(fault-code) for a page fault
+
+

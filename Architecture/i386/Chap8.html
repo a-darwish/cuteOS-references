@@ -1,0 +1,310 @@
+<pre>
+<title>Chapter 8      Input/Output</title><body>
+<H1><font color=red>Chapter 8   </font>   Input/Output</H1>
+<pre>
+
+  Chapter 8  Input/Output
+
+----------------------------------------------------------------------------
+
+This chapter presents the I/O features of the 80386 from the following
+perspectives:
+
+  *  Methods of addressing I/O ports
+
+  *  Instructions that cause I/O operations
+
+  *  Protection as it applies to the use of I/O instructions and I/O port
+     addresses.
+
+<HR>
+<A Name="8.1"><H2>8.1  I/O Addressing</H2>
+
+8.1  I/O Addressing
+
+The 80386 allows input/output to be performed in either of two ways:
+
+  *  By means of a separate I/O address space (using specific I/O
+     instructions)
+
+  *  By means of memory-mapped I/O (using general-purpose operand
+     manipulationinstructions).
+
+<HR>
+<A Name="8.1.1"><H2>8.1.1  I/O Address Space</H2>
+
+8.1.1  I/O Address Space
+
+The 80386 provides a separate I/O address space, distinct from physical
+memory, that can be used to address the input/output ports that are used for
+external 16 devices. The I/O address space consists of 2^(16) (64K)
+individually addressable 8-bit ports; any two consecutive 8-bit ports can be
+treated as a 16-bit port; and four consecutive 8-bit ports can be treated
+as a 32-bit port. Thus, the I/O address space can accommodate up to 64K
+8-bit ports, up to 32K 16-bit ports, or up to 16K 32-bit ports.
+
+The program can specify the address of the port in two ways. Using an
+immediate byte constant, the program can specify:
+
+  *  256 8-bit ports numbered 0 through 255.
+  *  128 16-bit ports numbered 0, 2, 4, . . . , 252, 254.
+  *  64 32-bit ports numbered 0, 4, 8, . . . , 248, 252.
+
+Using a value in DX, the program can specify:
+
+  *  8-bit ports numbered 0 through 65535
+  *  16-bit ports numbered 0, 2, 4, . . . , 65532, 65534
+  *  32-bit ports numbered 0, 4, 8, . . . , 65528, 65532
+
+The 80386 can transfer 32, 16, or 8 bits at a time to a device located in
+the I/O space. Like doublewords in memory, 32-bit ports should be aligned at
+addresses evenly divisible by four so that the 32 bits can be transferred in
+a single bus access. Like words in memory, 16-bit ports should be aligned at
+even-numbered addresses so that the 16 bits can be transferred in a single
+bus access. An 8-bit port may be located at either an even or odd address.
+
+The instructions IN and OUT move data between a register and a port in the
+I/O address space. The instructions INS and OUTS move strings of data
+between the memory address space and ports in the I/O address space.
+
+<HR>
+<A Name="8.1.2"><H2>8.1.2  Memory-Mapped I/O</H2>
+
+8.1.2  Memory-Mapped I/O
+
+I/O devices also may be placed in the 80386 memory address space. As long
+as the devices respond like memory components, they are indistinguishable to
+the processor.
+
+Memory-mapped I/O provides additional programming flexibility. Any
+instruction that references memory may be used to access an I/O port located
+in the memory space. For example, the MOV instruction can transfer data
+between any register and a port; and the AND, OR, and TEST instructions may
+be used to manipulate bits in the internal registers of a device (see Figure
+8-1). Memory-mapped I/O performed via the full instruction set maintains
+the full complement of addressing modes for selecting the desired I/O
+device (e.g., direct address, indirect address, base register, index
+register, scaling).
+
+Memory-mapped I/O, like any other memory reference, is subject to access
+protection and control when executing in protected mode. Refer to Chapter 6
+for a discussion of memory protection.
+
+See Also: <A HREF="Figs/Fig.8.html#Fig.8-1">Fig.8-1</A> <A HREF="contents.html#"Chapter">"Chapter</A> <A HREF="6".html#6"">6"</A> 
+
+<HR>
+<A Name="8.2"><H2>8.2  I/O Instructions</H2>
+
+8.2  I/O Instructions
+
+The I/O instructions of the 80386 provide access to the processor's I/O
+ports for the transfer of data to and from peripheral devices. These
+instructions have as one operand the address of a port in the I/O address
+space. There are two classes of I/O instruction:
+
+  1.  Those that transfer a single item (byte, word, or doubleword) located
+      in a register.
+
+  2.  Those that transfer strings of items (strings of bytes, words, or
+      doublewords) located in memory. These are known as "string I/O
+      instructions" or "block I/O instructions".
+
+<HR>
+<A Name="8.2.1"><H2>8.2.1  Register I/O Instructions</H2>
+
+8.2.1  Register I/O Instructions
+
+The I/O instructions IN and OUT are provided to move data between I/O ports
+and the EAX (32-bit I/O), the AX (16-bit I/O), or AL (8-bit I/O) general
+registers. IN and OUT instructions address I/O ports either directly, with
+the address of one of up to 256 port addresses coded in the instruction, or
+indirectly via the DX register to one of up to 64K port addresses.
+
+IN (Input from Port) transfers a byte, word, or doubleword from an input
+port to AL, AX, or EAX. If a program specifies AL with the IN instruction,
+the processor transfers 8 bits from the selected port to AL. If a program
+specifies AX with the IN instruction, the processor transfers 16 bits from
+the port to AX. If a program specifies EAX with the IN instruction, the
+processor transfers 32 bits from the port to EAX.
+
+OUT (Output to Port) transfers a byte, word, or doubleword to an output
+port from AL, AX, or EAX. The program can specify the number of the port
+using the same methods as the IN instruction.
+
+See Also: <A HREF="Figs/Fig.8.html#Fig.8-1">Fig.8-1</A> 
+
+<HR>
+<A Name="8.2.2"><H2>8.2.2  Block I/O Instructions</H2>
+
+8.2.2  Block I/O Instructions
+
+The block (or string) I/O instructions INS and OUTS move blocks of data
+between I/O ports and memory space. Block I/O instructions use the DX
+register to specify the address of a port in the I/O address space. INS and
+OUTS use DX to specify:
+
+  *  8-bit ports numbered 0 through 65535
+  *  16-bit ports numbered 0, 2, 4, . . . , 65532, 65534
+  *  32-bit ports numbered 0, 4, 8, . . . , 65528, 65532
+
+Block I/O instructions use either SI or DI to designate the source or
+destination memory address. For each transfer, SI or DI are automatically
+either incremented or decremented as specified by the direction bit in the
+flags register.
+
+INS and OUTS, when used with repeat prefixes, cause block input or output
+operations. REP, the repeat prefix, modifies INS and OUTS to provide a means
+of transferring blocks of data between an I/O port and memory. These block
+I/O instructions are string primitives (refer also to Chapter 3 for more on
+string primitives). They simplify programming and increase the speed of data
+transfer by eliminating the need to use a separate LOOP instruction or an
+intermediate register to hold the data.
+
+The string I/O primitives can operate on byte strings, word strings, or
+doubleword strings. After each transfer, the memory address in ESI or EDI is
+updated by 1 for byte operands, by 2 for word operands, or by 4 for
+doubleword operands. The value in the direction flag (DF) determines whether
+the processor automatically increments ESI or EDI (DF=0) or whether it
+automatically decrements these registers (DF=1).
+
+INS (Input String from Port) transfers a byte or a word string element from
+an input port to memory. The mnemonics INSB, INSW, and INSD are variants
+that explicitly specify the size of the operand. If a program specifies
+INSB, the processor transfers 8 bits from the selected port to the memory
+location indicated by ES:EDI. If a program specifies INSW, the processor
+transfers 16 bits from the port to the memory location indicated by ES:EDI.
+If a program specifies INSD, the processor transfers 32 bits from the port
+to the memory location indicated by ES:EDI. The destination segment register
+choice (ES) cannot be changed for the INS instruction. Combined with the REP
+prefix, INS moves a block of information from an input port to a series of
+consecutive memory locations.
+
+OUTS (Output String to Port) transfers a byte, word, or doubleword string
+element to an output port from memory. The mnemonics OUTSB, OUTSW, and OUTSD
+are variants that explicitly specify the size of the operand. If a program
+specifies OUTSB, the processor transfers 8 bits from the memory location
+indicated by ES:EDI to the the selected port. If a program specifies OUTSW,
+the processor transfers 16 bits from the memory location indicated by ES:EDI
+to the the selected port. If a program specifies OUTSD, the processor
+transfers 32 bits from the memory location indicated by ES:EDI to the the
+selected port. Combined with the REP prefix, OUTS moves a block of
+information from a series of consecutive memory locations indicated by
+DS:ESI to an output port.
+
+<HR>
+<A Name="8.3"><H2>8.3  Protection and I/O</H2>
+
+8.3  Protection and I/O
+
+Two mechanisms provide protection for I/O functions:
+
+  1.  The IOPL field in the EFLAGS register defines the right to use
+      I/O-related instructions.
+
+  2.  The I/O permission bit map of a 80386 TSS segment defines the right
+      to use ports in the I/O address space.
+
+These mechanisms operate only in protected mode, including virtual 8086
+mode; they do not operate in real mode. In real mode, there is no protection
+of the I/O space; any procedure can execute I/O instructions, and any I/O
+port can be addressed by the I/O instructions.
+
+<HR>
+<A Name="8.3.1"><H2>8.3.1  I/O Privilege Level</H2>
+
+8.3.1  I/O Privilege Level
+
+Instructions that deal with I/O need to be restricted but also need to be
+executed by procedures executing at privilege levels other than zero. For
+this reason, the processor uses two bits of the flags register to store the
+I/O privilege level (IOPL). The IOPL defines the privilege level
+needed to execute I/O-related instructions.
+
+The following instructions can be executed only if CPL <= IOPL:
+
+IN      -- Input
+INS     -- Input String
+OUT     -- Output
+OUTS    -- Output String
+CLI     -- Clear Interrupt-Enable Flag
+STI     -- Set Interrupt-Enable
+
+These instructions are called "sensitive" instructions, because they are
+sensitive to IOPL.
+
+To use sensitive instructions, a procedure must execute at a privilege
+level at least as privileged as that specified by the IOPL (CPL <= IOPL). Any
+attempt by a less privileged procedure to use a sensitive instruction
+results in a general protection exception.
+
+Because each task has its own unique copy of the flags register, each task
+can have a different IOPL. A task whose primary function is to perform I/O
+(a device driver) can benefit from having an IOPL of three, thereby
+permitting all procedures of the task to performI/O. Other tasks typically
+have IOPL set to zero or one, reserving the right to perform I/O
+instructions for the most privileged procedures.
+
+A task can change IOPL only with the POPF instruction; however, such
+changes are privileged. No procedure may alter IOPL (the I/O privilege level
+in the flag register) unless the procedure is executing at privilege level
+0. An attempt by a less privileged procedure to alter IOPL does not result
+in an exception; IOPL simply remains unaltered.
+
+The POPF instruction may be used in addition to CLI and STI to alter the
+interrupt-enable flag (IF); however, changes to IF by POPF are
+IOPL-sensitive. A procedure may alter IF with a POPF instruction only when
+executing at a level that is at least as privileged as IOPL. An attempt by a
+less privileged procedure to alter IF in this manner does not result in an
+exception; IF simply remains unaltered.
+
+
+
+
+<HR>
+<A Name="8.3.2"><H2>8.3.2  I/O Permission Bit Map</H2>
+
+
+
+8.3.2  I/O Permission Bit Map
+
+The I/O instructions that directly refer to addresses in the processor's
+I/O space are IN, INS, OUT, OUTS. The 80386 has the ability to selectively
+trap references to specific I/O addresses. The structure that enables
+selective trapping is the I/O Permission Bit Map in the TSS segment (see
+Figure 8-2). The I/O permission map is a bit vector. The size of the map
+and its location in the TSS segment are variable. The processor locates the
+I/O permission map by means of the I/O map base field in the fixed portion
+of the TSS. The I/O map base field is 16 bits wide and contains the offset
+of the beginning of the I/O permission map. The upper limit of the I/O
+permission map is the same as the limit of the TSS segment.
+
+In protected mode, when it encounters an I/O instruction (IN, INS, OUT, or
+OUTS), the processor first checks whether CPL <= IOPL. If this condition is
+true, the I/O operation may proceed. If not true, the processor checks the
+I/O permission map. (In virtual 8086 mode, the processor consults the map
+without regard for IOPL. Refer to Chapter 15.)
+
+Each bit in the map corresponds to an I/O port byte address; for example,
+the bit for port 41 is found at I/O map base + 5, bit offset 1. The
+processor tests all the bits that correspond to the I/O addresses spanned by
+an I/O operation; for example, a doubleword operation tests four bits
+corresponding to four adjacent byte addresses. If any tested bit is set,
+the processor signals a general protection exception. If all the tested bits
+are zero, the I/O operation may proceed.
+
+It is not necessary for the I/O permission map to represent all the I/O
+addresses. I/O addresses not spanned by the map are treated as if they had
+one bits in the map. For example, if TSS limit is equal to I/O map base +
+31, the first 256 I/O ports are mapped; I/O operations on any port greater
+than 255 cause an exception.
+
+If I/O map base is greater than or equal to TSS limit, the TSS segment has
+no I/O permission map, and all I/O instructions in the 80386 program cause
+exceptions when CPL > IOPL.
+
+Because the I/O permission map is in the TSS segment, different tasks can
+have different maps. Thus, the operating system can allocate ports to a task
+by changing the I/O permission map in the task's TSS.
+
+See Also: <A HREF="Figs/Fig.8.html#Fig.8-2">Fig.8-2</A> 
+

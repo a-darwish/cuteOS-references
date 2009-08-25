@@ -1,0 +1,44 @@
+<title>Instruction Set MOVZX</title><pre>
+<A Name="MOVZX"><H2>MOVZX 			   -- Move with Zero-Extend</H2>
+
+MOVZX -- Move with Zero-Extend
+
+
+Opcode      Instruction        Clocks   Description
+
+0F  B6 /r   MOVZX r16,r/m8     3/6      Move byte to word with zero-extend
+0F  B6 /r   MOVZX r32,r/m8     3/6      Move byte to dword, zero-extend
+0F  B7 /r   MOVZX r32,r/m16    3/6      Move word to dword, zero-extend
+
+
+Operation
+
+DEST = ZeroExtend(SRC);
+
+Description
+
+MOVZX reads the contents of the effective address or register as a byte
+or a word, zero extends the value to the operand-size attribute of the
+instruction (16 or 32 bits), and stores the result in the destination
+register.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#GP(0) for an illegal memory operand effective address in the CS, DS,
+ES, FS, or GS segments; #SS(0) for an illegal address in the SS segment;
+#PF(fault-code) for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode; #PF(fault-code) for a page
+fault
+

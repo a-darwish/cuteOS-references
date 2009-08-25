@@ -1,0 +1,431 @@
+<pre>
+<title>Chapter 16    Mixing 16-Bit and 32-Bit Code</title><body>
+<H1><font color=red>Chapter 16  </font>  Mixing 16-Bit and 32-Bit Code</H1>
+<pre>
+
+
+
+Chapter 16  Mixing 16-Bit and 32 Bit Code
+
+----------------------------------------------------------------------------
+
+The 80386 running in protected mode is a 32-bit microprocessor, but it is
+designed to support 16-bit processing at three levels:
+
+  1.  Executing 8086/80286 16-bit programs efficiently with complete 
+      compatibility.
+
+  2.  Mixing 16-bit modules with 32-bit modules.
+
+  3.  Mixing 16-bit and 32-bit addresses and operands within one module.
+
+The first level of support for 16-bit programs has already been discussed
+in Chapter 13, Chapter 14, and Chapter 15. This chapter shows how 16-bit
+and 32-bit modules can cooperate with one another, and how one module can
+utilize both 16-bit and 32-bit operands and addressing.
+
+The 80386 functions most efficiently when it is possible to distinguish
+between pure 16-bit modules and pure 32-bit modules. A pure 16-bit module
+has these characteristics:
+
+  *  All segments occupy 64 Kilobytes or less.
+  *  Data items are either 8 bits or 16 bits wide.
+  *  Pointers to code and data have 16-bit offsets.
+  *  Control is transferred only among 16-bit segments.
+
+A pure 32-bit module has these characteristics:
+
+  *  Segments may occupy more than 64 Kilobytes (zero bytes to 4 
+     gigabytes).
+
+  *  Data items are either 8 bits or 32 bits wide.
+
+  *  Pointers to code and data have 32-bit offsets.
+
+  *  Control is transferred only among 32-bit segments.
+
+Pure 16-bit modules do exist; they are the modules designed for 16-bit
+microprocessors. Pure 32-bit modules may exist in new programs designed
+explicitly for the 80386. However, as systems designers move applications
+from 16-bit processors to the 32-bit 80386, it will not always be possible
+to maintain these ideals of pure 16-bit or 32-bit modules. It may be
+expedient to execute old 16-bit modules in a new 32-bit environment without
+making source-code changes to the old modules if any of the following
+conditions is true:
+
+  *  Modules will be converted one-by-one from 16-bit environments to
+     32-bit environments.
+
+  *  Older, 16-bit compilers and software-development tools will be
+     utilized in the new32-bit operating environment until new 32-bit
+     versions can be created.
+
+  *  The source code of 16-bit modules is not available for modification.
+
+  *  The specific data structures used by a given module inherently utilize
+     16-bit words.
+
+  *  The native word size of the source language is 16 bits.
+
+On the 80386, 16-bit modules can be mixed with 32-bit modules. To design a
+system that mixes 16- and 32-bit code requires an understanding of the
+mechanisms that the 80386 uses to invoke and control its 32-bit and 16-bit
+features.
+
+<HR>
+<A Name="16.1"><H2>16.1  How the 80386 Implements 16-Bit and 32-Bit Features</H2>
+
+16.1  How the 80386 Implements 16-Bit and 32-Bit Features
+
+The features of the architecture that permit the 80386 to work equally well
+with 32-bit and 16-bit address and operand sizes include:
+
+  *  The D-bit (default bit) of code-segment descriptors, which determines
+     the default choice of operand-size and address-size for the
+     instructions of a code segment. (In real-address mode and V86 mode,
+     which do not use descriptors, the default is 16 bits.) A code segment
+     whose D-bit is set is known as a USE32 segment; a code segment whose
+     D-bit is zero is a USE16 segment. The D-bit eliminates the need to
+     encode the operand size and address size in instructions when all
+     instructions use operands and effective addresses of the same size.
+
+  *  Instruction prefixes that explicitly override the default choice of
+     operand size and address size (available in protected mode as well as
+     in real-address mode and V86 mode).
+
+  *  Separate 32-bit and 16-bit gates for intersegment control transfers
+     (including call gates, interrupt gates, and trap gates). The operand
+     size for the control transfer is determined by the type of gate, not by
+     the D-bit or prefix of the transfer instruction.
+
+  *  Registers that can be used both for 32-bit and 16-bit operands and
+     effective-address calculations.
+
+  *  The B-bit (big bit) of data-segment descriptors, which determines the
+     size of stack pointer (32-bit ESP or 16-bit SP) used by the CPU for
+     implicit stack references.
+
+<HR>
+<A Name="16.2"><H2>16.2  Mixing 32-Bit and 16-Bit Operations</H2>
+
+16.2  Mixing 32-Bit and 16-Bit Operations
+
+The 80386 has two instruction prefixes that allow mixing of 32-bit and
+16-bit operations within one segment:
+
+  *  The operand-size prefix (66H)
+  *  The address-size prefix (67H)
+
+These prefixes reverse the default size selected by the D-bit. For example,
+the processor can interpret the word-move instruction MOV mem, reg in any of
+four ways:
+
+  *  In a USE32 segment:
+
+     1.  Normally moves 32 bits from a 32-bit register to a 32-bit
+         effective address in memory.
+
+     2.  If preceded by an operand-size prefix, moves 16 bits from a 16-bit
+         register to 32-bit effective address in memory.
+
+     3.  If preceded by an address-size prefix, moves 32 bits from a 32-bit
+         register to a16-bit effective address in memory.
+
+     4.  If preceded by both an address-size prefix and an operand-size
+         prefix, moves 16 bits from a 16-bit register to a 16-bit effective
+         address in memory.
+
+  *  In a USE16 segment:
+
+     1.  Normally moves 16 bits from a 16-bit register to a 16-bit
+         effective address in memory.
+
+     2.  If preceded by an operand-size prefix, moves 32 bits from a 32-bit
+         register to 16-bit effective address in memory.
+
+     3.  If preceded by an address-size prefix, moves 16 bits from a 16-bit
+         register to a32-bit effective address in memory.
+
+     4.  If preceded by both an address-size prefix and an operand-size
+         prefix, moves 32 bits from a 32-bit register to a 32-bit effective
+         address in memory.
+
+These examples illustrate that any instruction can generate any combination
+of operand size and address size regardless of whether the instruction is in
+a USE16 or USE32 segment. The choice of the USE16 or USE32 attribute for a
+code segment is based upon these criteria:
+
+  1.  The need to address instructions or data in segments that are larger
+      than 64 Kilobytes.
+
+  2.  The predominant size of operands.
+
+  3.  The addressing modes desired. (Refer to Chapter 17 for an explanation
+      of the additional addressing modes that are available when 32-bit
+      addressing is used.)
+
+Choosing a setting of the D-bit that is contrary to the predominant size of
+operands requires the generation of an excessive number of operand-size
+prefixes.
+
+<HR>
+<A Name="16.3"><H2>16.3  Sharing Data Segments among Mixed Code Segments</H2>
+
+16.3  Sharing Data Segments Among Mixed Code Segments
+
+Because the choice of operand size and address size is defined in code
+segments and their descriptors, data segments can be shared freely among
+both USE16 and USE32 code segments. The only limitation is the one imposed
+by pointers with 16-bit offsets, which can only point to the first 64
+Kilobytes of a segment. When a data segment that contains more than 64
+Kilobytes is to be shared among USE32 and USE16 segments, the data that is
+to be accessed by the USE16 segments must be located within the first 64
+Kilobytes.
+
+A stack that spans addresses less than 64K can be shared by both USE16 and
+USE32 code segments. This class of stacks includes:
+
+  *  Stacks in expand-up segments with G=0 and B=0.
+
+  *  Stacks in expand-down segments with G=0 and B=0.
+
+  *  Stacks in expand-up segments with G=1 and B=0, in which the stack is
+     contained completely within the lower 64 Kilobytes. (Offsets greater
+     than 64K can be used for data, other than the stack, that is not
+     shared.)
+
+The B-bit of a stack segment cannot, in general, be used to change the size
+of stack used by a USE16 code segment. The size of stack pointer used by the
+processor for implicit stack references is controlled by the B-bit of the
+data-segment descriptor for the stack. Implicit references are those caused
+by interrupts, exceptions, and instructions such as PUSH, POP, CALL, and
+RET. One might be tempted, therefore, to try to increase beyond 64K the
+size of the stack used by 16-bit code simply by supplying a larger stack
+segment with the B-bit set. However, the B-bit does not control explicit
+stack references, such as accesses to parameters or local variables. A USE16
+code segment can utilize a "big" stack only if the code is modified so that
+all explicit references to the stack are preceded by the address-size
+prefix, causing those references to use 32-bit addressing.
+
+In big, expand-down segments (B=1, G=1, and E=1), all offsets are greater
+than 64K, therefore USE16 code cannot utilize such a stack segment unless
+the code segment is modified to employ 32-bit addressing. (Refer to Chapter
+6 for a review of the B, G, and E bits.)
+
+<HR>
+<A Name="16.4"><H2>16.4  Transferring Control among Mixed Code Segments</H2>
+
+16.4  Transferring Control Among Mixed Code Segments
+
+When transferring control among procedures in USE16 and USE32 code
+segments, programmers must be aware of three points:
+
+  *  Addressing limitations imposed by pointers with 16-bit offsets.
+
+  *  Matching of operand-size attribute in effect for the CALL/RET pair and
+     theInterrupt/IRET pair so as to manage the stack correctly.
+
+  *  Translation of parameters, especially pointer parameters.
+
+Clearly, 16-bit effective addresses cannot be used to address data or code
+located beyond 64K in a 32-bit segment, nor can large 32-bit parameters be
+squeezed into a 16-bit word; however, except for these obvious limits, most
+interfacing problems between 16-bit and 32-bit modules can be solved. Some
+solutions involve inserting interface procedures between the procedures in
+question.
+
+<HR>
+<A Name="16.4.1"><H2>16.4.1  Size of Code-Segment Pointer</H2>
+
+16.4.1  Size of Code-Segment Pointer
+
+For control-transfer instructions that use a pointer to identify the next
+instruction (i.e., those that do not use gates), the size of the offset
+portion of the pointer is determined by the operand-size attribute. The
+implications of the use of two different sizes of code-segment pointer are:
+
+  *  JMP, CALL, or RET from 32-bit segment to 16-bit segment is always
+     possible using a 32-bit operand size.
+
+  *  JMP, CALL, or RET from 16-bit segment using a 16-bit operand size
+     cannot address the target in a 32-bit segment if the address of the
+     target is greater than 64K.
+
+An interface procedure can enable transfers from USE16 segments to 32-bit
+addresses beyond 64K without requiring modifications any more extensive than
+relinking or rebinding the old programs. The requirements for such an
+interface procedure are discussed later in this chapter.
+
+<HR>
+<A Name="16.4.2"><H2>16.4.2  Stack Management for Control Transfers</H2>
+
+16.4.2  Stack Management for Control Transfers
+
+Because stack management is different for 16-bit CALL/RET than for 32-bit
+CALL/RET, the operand size of RET must match that of CALL. (Refer to Figure
+16-1.) A 16-bit CALL pushes the 16-bit IP and (for calls between privilege
+levels) the 16-bit SP register. The corresponding RET must also use a 16-bit
+operand size to POP these 16-bit values from the stack into the 16-bit
+registers. A 32-bit CALL pushes the 32-bit EIP and (for interlevel calls)
+the 32-bit ESP register. The corresponding RET must also use a 32-bit
+operand size to POP these 32-bit values from the stack into the 32-bit
+registers. If the two halves of a CALL/RET pair do not have matching operand
+sizes, the stack will not be managed correctly and the values of the
+instruction pointer and stack pointer will not be restored to correct
+values.
+
+When the CALL and its corresponding RET are in segments that have D-bits
+with the same values (i.e., both have 32-bit defaults or both have 16-bit
+defaults), there is no problem. When the CALL and its corresponding RET are
+in segments that have different D-bit values, however, programmers (or
+program development software) must ensure that the CALL and RET match.
+
+There are three ways to cause a 16-bit procedure to execute a 32-bit call:
+
+  1.  Use a 16-bit call to a 32-bit interface procedure that then uses a
+      32-bit call to invoke the intended target.
+
+  2.  Bind the 16-bit call to a 32-bit call gate.
+
+  3.  Modify the 16-bit procedure, inserting an operand-size prefix before
+      the call, thereby changing it to a 32-bit call.
+
+Likewise, there are three ways to cause a 32-bit procedure to execute a
+16-bit call:
+
+  1.  Use a 32-bit call to a 32-bit interface procedure that then uses a
+      16-bit call to invoke the intended target.
+
+  2.  Bind the 32-bit call to a 16-bit call gate.
+
+  3.  Modify the 32-bit procedure, inserting an operand-size prefix before
+      the call, thereby changing it to a 16-bit call. (Be certain that the
+      return offset does not exceed 64K.)
+
+Programmers can utilize any of the preceding methods to make a CALL in a
+USE16 segment match the corresponding RET in a USE32 segment, or to make a
+CALL in a USE32 segment match the corresponding RET in a USE16 segment.
+
+See Also: <A HREF="Figs/Fig.16.html#Fig.16-1">Fig.16-1</A> 
+
+<HR>
+<A Name="16.4.2.1"><H2>16.4.2.1  Controlling the Operand-Size for a CALL</H2>
+
+16.4.2.1  Controlling the Operand-Size for a Call
+
+When the selector of the pointer referenced by a CALL instruction selects a
+segment descriptor, the operand-size attribute in effect for the CALL
+instruction is determined by the D-bit in the segment descriptor and by any
+operand-size instruction prefix.
+
+When the selector of the pointer referenced by a CALL instruction selects a
+gate descriptor, the type of call is determined by the type of call gate. A
+call via an 80286 call gate (descriptor type 4)  always has a 16-bit
+operand-size attribute; a call via an 80386 call gate (descriptor type 12)
+always has a 32-bit operand-size attribute. The offset of the target
+procedure is taken from the gate descriptor; therefore, even a 16-bit
+procedure can call a procedure that is located more than 64 kilobytes from
+the base of a 32-bit segment, because a 32-bit call gate contains a 32-bit
+target offset.
+
+An unmodified 16-bit code segment that has run successfully on an 8086 or
+real-mode 80286 will always have a D-bit of zero and will not use
+operand-size override prefixes; therefore, it will always execute 16-bit
+versions of CALL. The only modification needed to make a16-bit procedure
+effect a 32-bit call is to relink the call to an 80386 call gate.
+
+<HR>
+<A Name="16.4.2.2"><H2>16.4.2.2  Changing Size of Call</H2>
+
+16.4.2.2  Changing Size of Call
+
+When adding 32-bit gates to 16-bit procedures, it is important to consider
+the number of parameters. The count field of the gate descriptor specifies
+the size of the parameter string to copy from the current stack to the stack
+of the more privileged procedure. The count field of a 16-bit gate specifies
+the number of words to be copied, whereas the count field of a 32-bit gate
+specifies the number of doublewords to be copied; therefore, the 16-bit
+procedure must use an even number of words as parameters.
+
+<HR>
+<A Name="16.4.3"><H2>16.4.3  Interrupt Control Transfers</H2>
+
+16.4.3  Interrupt Control Transfers
+
+With a control transfer due to an interrupt or exception, a gate is always
+involved. The operand-size attribute for the interrupt is determined by the
+type of IDT gate.
+
+A 386 interrupt or trap gate (descriptor type 14 or 15) to a 32-bit
+interrupt procedure can be used to interrupt either 32-bit or 16-bit
+procedures. However, it is not generally feasible to permit an interrupt or
+exception to invoke a 16-bit handler procedure when 32-bit code is
+executing, because a 16-bit interrupt procedure has a return offset of only
+16-bits on its stack. If the 32-bit procedure is executing at an address
+greater than 64K, the 16-bit interrupt procedure cannot return correctly.
+
+<HR>
+<A Name="16.4.4"><H2>16.4.4  Parameter Translation</H2>
+
+16.4.4  Parameter Translation
+
+When segment offsets or pointers (which contain segment offsets) are passed
+as parameters between 16-bit and 32-bit procedures, some translation is
+required. Clearly, if a 32-bit procedure passes a pointer to data located
+beyond 64K to a 16-bit procedure, the 16-bit procedure cannot utilize it.
+Beyond this natural limitation, an interface procedure can perform any
+format conversion between 32-bit and 16-bit pointers that may be needed.
+
+Parameters passed by value between 32-bit and 16-bit code may also require
+translation between 32-bit and 16-bit formats. Such translation requirements
+are application dependent. Systems designers should take care to limit the
+range of values passed so that such translations are possible.
+
+
+<HR>
+<A Name="16.4.5"><H2>16.4.5  The Interface Procedure</H2>
+
+
+
+16.4.5  The Interface Procedure
+
+Interposing an interface procedure between 32-bit and 16-bit procedures can
+be the solution to any of several interface requirements:
+
+  *  Allowing procedures in 16-bit segments to transfer control to
+     instructions located beyond 64K in 32-bit segments.
+
+  *  Matching of operand size for CALL/RET.
+
+  *  Parameter translation.
+
+Interface procedures between USE32 and USE16 segments can be constructed
+with these properties:
+
+  *  The procedures reside in a code segment whose D-bit is set, indicating
+     a default operand size of 32-bits.
+
+  *  All entry points that may be called by 16-bit procedures have offsets
+     that are actually less than 64K.
+
+  *  All points to which called 16-bit procedures may return also lie
+     within 64K.
+
+The interface procedures do little more than call corresponding procedures
+in other segments. There may be two kinds of procedures:
+
+  *  Those that are called by 16-bit procedures and call 32-bit procedures.
+     These interface procedures are called by 16-bit CALLs and use the
+     operand-size prefix before RET instructions to cause a 16-bit RET.
+     CALLs to 32-bit segments are 32-bit calls (by default, because the
+     D-bit is set), and the 32-bit code returns with 32-bit RET
+     instructions.
+
+  *  Those that are called by 32-bit procedures and call 16-bit procedures.
+     These interface procedures are called by 32-bit CALL instructions, and
+     return with 32-bit RET instructions (by default, because the D-bit is
+     set).  CALLs to 16-bit procedures use the operand-size prefix;
+     procedures in the 16-bit code return with 16-bit RET instructions.
+
+
+

@@ -1,0 +1,443 @@
+<pre>
+<title>Chapter 14   80386 Real-Address Mode</title><body>
+<H1><font color=red>Chapter 14  </font> 80386 Real-Address Mode</H1>
+<pre>
+
+
+Chapter 14  80386 Real-Address Mode
+
+----------------------------------------------------------------------------
+
+The real-address mode of the 80386 executes object code designed for
+execution on 8086, 8088, 80186, or 80188 processors, or for execution in the
+real-address mode of an 80286:
+
+In effect, the architecture of the 80386 in this mode is almost identical
+to that of the 8086, 8088, 80186, and 80188. To a programmer, an 80386 in
+real-address mode appears as a high-speed 8086 with extensions to the
+instruction set and registers. The principal features of this architecture
+are defined in Chapters 2 and 3.
+
+This chapter discusses certain additional topics that complete the system
+programmer's view of the 80386 in real-address mode:
+
+  *  Address formation.
+  *  Extensions to registers and instructions.
+  *  Interrupt and exception handling.
+  *  Entering and leaving real-address mode.
+  *  Real-address-mode exceptions.
+  *  Differences from 8086.
+  *  Differences from 80286 real-address mode.
+
+<HR>
+<A Name="14.1"><H2>14.1  Physical Address Formation</H2>
+
+14.1  Physical Address Formation
+
+The 80386 provides a one Mbyte + 64 Kbyte memory space for an 8086 program.
+Segment relocation is performed as in the 8086: the 16-bit value in a
+segment selector is shifted left by four bits to form the base address of a
+segment. The effective address is extended with four high order zeros and
+added to the base to form a linear address as Figure 14-1 illustrates. (The
+linear address is equivalent to the physical address, because paging is not
+used in real-address mode.) Unlike the 8086, the resulting linear address
+may have up to 21 significant bits. There is a possibility of a carry when
+the base address is added to the effective address. On the 8086, the carried
+bit is truncated, whereas on the 80386 the carried bit is stored in bit
+position 20 of the linear address.
+
+Unlike the 8086 and 80286, 32-bit effective addresses can be generated (via
+the address-size prefix); however, the value of a 32-bit address may not
+exceed 65535 without causing an exception. For full compatibility with 80286
+real-address mode, pseudo-protection faults (interrupt 12 or 13 with no
+error code) occur if an effective address is generated outside the range 0
+through 65535.
+
+See Also: <A HREF="Figs/Fig.14.html#Fig.14-1">Fig.14-1</A> 
+
+<HR>
+<A Name="14.2"><H2>14.2  Registers and Instructions</H2>
+
+14.2  Registers and Instructions
+
+The register set available in real-address mode includes all the registers
+defined for the 8086 plus the new registers introduced by the 80386: FS, GS,
+debug registers, control registers, and test registers. New instructions
+that explicitly operate on the segment registers FS and GS are available,
+and the new segment-override prefixes can be used to cause instructions to
+utilize FS and GS for address calculations. Instructions can utilize 32-bit
+operands through the use of the operand size prefix.
+
+The instruction codes that cause undefined opcode traps (interrupt 6)
+include instructions of the protected mode that manipulate or interrogate
+80386 selectors and descriptors; namely, VERR, VERW, LAR, LSL, LTR, STR,
+LLDT, and SLDT. Programs executing in real-address mode are able to take
+advantage of the new applications-oriented instructions added to the
+architecture by the introduction of the 80186/80188, 80286 and 80386:
+
+* New instructions introduced by 80186/80188 and 80286.
+
+   -- PUSH immediate data
+   -- Push all and pop all (PUSHA and POPA)
+   -- Multiply immediate data
+   -- Shift and rotate by immediate count
+   -- String I/O
+   -- ENTER and LEAVE
+   -- BOUND
+
+* New instructions introduced by 80386.
+
+   -- LSS, LFS, LGS instructions
+   -- Long-displacement conditional jumps
+   -- Single-bit instructions
+   -- Bit scan
+   -- Double-shift instructions
+   -- Byte set on condition
+   -- Move with sign/zero extension
+   -- Generalized multiply
+   -- MOV to and from control registers
+   -- MOV to and from test registers
+   -- MOV to and from debug registers
+
+<HR>
+<A Name="14.3"><H2>14.3  Interrupt and Exception Handling</H2>
+
+14.3  Interrupt and Exception Handling
+
+Interrupts and exceptions in 80386 real-address mode work as much as they
+do on an 8086. Interrupts and exceptions vector to interrupt procedures via
+an interrupt table. The processor multiplies the interrupt or exception
+identifier by four to obtain an index into the interrupt table. The entries
+of the interrupt table are far pointers to the entry points of interrupt or
+exception handler procedures. When an interrupt occurs, the processor
+pushes the current values of CS:IP onto the stack, disables interrupts,
+clears TF (the single-step flag), then transfers control to the location
+specified in the interrupt table. An IRET instruction at the end of the
+handler procedure reverses these steps before returning control to the
+interrupted procedure.
+
+The primary difference in the interrupt handling of the 80386 compared to
+the 8086 is that the location and size of the interrupt table depend on the
+contents of the IDTR (IDT register). Ordinarily, this fact is not apparent
+to programmers, because, after RESET, the IDTR contains a base address of 0
+and a limit of 3FFH, which is compatible with the 8086. However, the LIDT
+instruction can be used in real-address mode to change the base and limit
+values in the IDTR. Refer to Chapter 9 for details on the IDTR, and the
+LIDT and SIDT instructions. If an interrupt occurs and the corresponding
+entry of the interrupt table is beyond the limit stored in the IDTR, the
+processor raises exception 8.
+
+<HR>
+<A Name="14.4"><H2>14.4  Entering and Leaving Real-Address Mode</H2>
+
+14.4  Entering and Leaving Real-Address Mode
+
+Real-address mode is in effect after a signal on the RESET pin. Even if the
+system is going to be used in protected mode, the start-up program will
+execute in real-address mode temporarily while initializing for protected
+mode.
+
+<HR>
+<A Name="14.4.1"><H2>14.4.1  Switching to Protected Mode</H2>
+
+14.4.1  Switching to Protected Mode
+
+The only way to leave real-address mode is to switch to protected mode. The
+processor enters protected mode when a MOV to CR0 instruction sets the PE
+(protection enable) bit in CR0. (For compatibility with the 80286, the LMSW
+instruction may also be used to set the PE bit.)
+
+Refer to Chapter 10 "Initialization" for other aspects of switching to
+protected mode.
+
+<HR>
+<A Name="14.5"><H2>14.5  Switching Back to Real-Address Mode</H2>
+
+14.5  Switching Back to Real-Address Mode
+
+The processor reenters real-address mode if software clears the PE bit in
+CR0 with a MOV to CR0 instruction. A procedure that attempts to do this,
+however, should proceed as follows:
+
+  1.  If paging is enabled, perform the following sequence:
+
+      *  Transfer control to linear addresses that have an identity mapping;
+         i.e., linear addresses equal physical addresses.
+
+      *  Clear the PG bit in CR0.
+
+      *  Move zeros to CR3 to clear out the paging cache.
+
+  2.  Transfer control to a segment that has a limit of 64K (FFFFH). This
+      loads the CS register with the limit it needs to have in real mode.
+
+  3.  Load segment registers SS, DS, ES, FS, and GS with a selector that
+      points to a descriptor containing the following values, which are
+      appropriate to real mode:
+
+      *  Limit = 64K   (FFFFH)
+      *  Byte granular (G = 0)
+      *  Expand up     (E = 0)
+      *  Writable      (W = 1)
+      *  Present       (P = 1)
+      *  Base = any value
+
+  4.  Disable interrupts. A CLI instruction disables INTR interrupts. NMIs
+      can be disabled with external circuitry.
+
+  5.  Clear the PE bit.
+
+  6.  Jump to the real mode code to be executed using a far JMP. This
+      action flushes the instruction queue and puts appropriate values in
+      the access rights of the CS register.
+
+  7.  Use the LIDT instruction to load the base and limit of the real-mode
+      interrupt vector table.
+
+  8.  Enable interrupts.
+
+  9.  Load the segment registers as needed by the real-mode code.
+
+<HR>
+<A Name="14.6"><H2>14.6  Real-Address Mode Exceptions</H2>
+
+14.6  Real-Address Mode Exceptions
+
+The 80386 reports some exceptions differently when executing in
+real-address mode than when executing in protected mode. Table 14-1 details
+the real-address-mode exceptions.
+
+
+See Also: <A HREF="Tabs.html#Tab.14-1">Tab.14-1</A> 
+<HR>
+<A Name="14.7"><H2>14.7  Differences from 8086</H2>
+
+14.7  Differences From 8086
+
+In general, the 80386 in real-address mode will correctly execute ROM-based
+software designed for the 8086, 8088, 80186, and 80188. Following is a list
+of the minor differences between 8086 execution on the 80386 and on an 8086.
+
+  1.  Instruction clock counts.
+
+      The 80386 takes fewer clocks for most instructions than the 8086/8088.
+      The areas most likely to be affected are:
+
+      *  Delays required by I/O devices between I/O operations.
+
+      *  Assumed delays with 8086/8088 operating in parallel with an 8087.
+
+  2.  Divide Exceptions Point to the DIV instruction.
+
+      Divide exceptions on the 80386 always leave the saved CS:IP value
+      pointing to the instruction that failed. On the 8086/8088, the CS:IP
+      value points to the next instruction.
+
+  3.  Undefined 8086/8088 opcodes.
+
+      Opcodes that were not defined for the 8086/8088 will cause exception
+      6 or will execute one of the new instructions defined for the 80386.
+
+  4.  Value written by PUSH SP.
+
+      The 80386 pushes a different value on the stack for PUSH SP than the
+      8086/8088. The 80386 pushes the value of SP before SP is incremented
+      as part of the push operation; the 8086/8088 pushes the value of SP
+      after it is incremented. If the value pushed is important, replace
+      PUSH SP instructions with the following three instructions:
+
+      PUSH  BP
+      MOV   BP, SP
+      XCHG  BP, [BP]
+
+      This code functions as the 8086/8088 PUSH SP instruction on the 80386.
+
+  5.  Shift or rotate by more than 31 bits.
+
+      The 80386 masks all shift and rotate counts to the low-order five
+      bits. This MOD 32 operation limits the count to a maximum of 31 bits,
+      thereby limiting the time that interrupt response is delayed while
+      the instruction is executing.
+
+  6.  Redundant prefixes.
+
+      The 80386 sets a limit of 15 bytes on instruction length. The only
+      way to violate this limit is by putting redundant prefixes before an
+      instruction. Exception 13 occurs if the limit on instruction length
+      is violated. The 8086/8088 has no instruction length limit.
+
+  7.  Operand crossing offset 0 or 65,535.
+
+      On the 8086, an attempt to access a memory operand that crosses
+      offset 65,535 (e.g., MOV a word to offset 65,535) or offset 0 (e.g.,
+      PUSH a word when SP = 1) causes the offset to wrap around modulo
+      65,536. The 80386 raises an exception in these cases--exception 13 if
+      the segment is a data segment (i.e., if CS, DS, ES, FS, or GS is being
+      used to address the segment), exception 12 if the segment is a stack
+      segment (i.e., if SS is being used).
+
+  8.  Sequential execution across offset 65,535.
+
+      On the 8086, if sequential execution of instructions proceeds past
+      offset 65,535, the processor fetches the next instruction byte from
+      offset 0 of the same segment. On the 80386, the processor raises
+      exception 13 in such a case.
+
+  9.  LOCK is restricted to certain instructions.
+
+      The LOCK prefix and its corresponding output signal should only be
+      used to prevent other bus masters from interrupting a data movement
+      operation. The 80386 always asserts the LOCK signal during an XCHG
+      instruction with memory (even if the LOCK prefix is not used). LOCK
+      may only be used with the following 80386 instructions when they
+      update memory: BTS, BTR, BTC, XCHG, ADD, ADC, SUB, SBB, INC, DEC,
+      AND, OR, XOR, NOT, and NEG. An undefined-opcode exception
+      (interrupt 6) results from using LOCK before any other instruction.
+
+ 10.  Single-stepping external interrupt handlers.
+
+      The priority of the 80386 single-step exception is different from that
+      of the 8086/8088. The change prevents an external interrupt handler
+      from being single-stepped if the interrupt occurs while a program is
+      being single-stepped. The 80386 single-step exception has higher
+      priority that any external interrupt. The 80386 will still single-step
+      through an interrupt handler invoked by the INT instructions or by an
+      exception.
+
+ 11.  IDIV exceptions for quotients of 80H or 8000H.
+
+      The 80386 can generate the largest negative number as a quotient for
+      the IDIV instruction. The 8086/8088 causes exception zero instead.
+
+ 12.  Flags in stack.
+
+      The setting of the flags stored by PUSHF, by interrupts, and by
+      exceptions is different from that stored by the 8086 in bit positions
+      12 through 15. On the 8086 these bits are stored as ones, but in
+      80386 real-address mode bit 15 is always zero, and bits 14 through 12
+      reflect the last value loaded into them.
+
+ 13.  NMI interrupting NMI handlers.
+
+      After an NMI is recognized on the 80386, the NMI interrupt is masked
+      until an IRET instruction is executed.
+
+ 14.  Coprocessor errors vector to interrupt 16.
+
+      Any 80386 system with a coprocessor must use interrupt vector 16 for
+      the coprocessor error exception. If an 8086/8088 system uses another
+      vector for the 8087 interrupt, both vectors should point to the
+      coprocessor-error exception handler.
+
+ 15.  Numeric exception handlers should allow prefixes.
+
+      On the 80386, the value of CS:IP saved for coprocessor exceptions
+      points at any prefixes before an ESC instruction. On 8086/8088
+      systems, the saved CS:IP points to the ESC instruction.
+
+ 16.  Coprocessor does not use interrupt controller.
+
+      The coprocessor error signal to the 80386 does not pass through an
+      interrupt controller (an 8087 INT signal does). Some instructions in
+      a coprocessor error handler may need to be deleted if they deal with
+      the interrupt controller.
+
+ 17.  Six new interrupt vectors.
+
+      The 80386 adds six exceptions that arise only if the 8086 program has
+      a hidden bug. It is recommended that exception handlers be added that
+      treat these exceptions as invalid operations. This additional
+      software does not significantly affect the existing 8086 software
+      because the interrupts do not normally occur. These interrupt
+      identifiers should not already have been used by the 8086 software,
+      because they are in the range reserved by Intel. Table 14-2 describes
+      the new 80386 exceptions.
+
+ 18.  One megabyte wraparound.
+
+      The 80386 does not wrap addresses at 1 megabyte in real-address mode.
+      On members of the 8086 family, it possible to specify addresses
+      greater than one megabyte.  For example, with a selector value 0FFFFH
+      and an offset of 0FFFFH, the effective address would be 10FFEFH (1
+      Mbyte + 65519).  The 8086, which can form adresses only up to 20 bits
+      long, truncates the high-order bit, thereby "wrapping" this address
+      to 0FFEFH.  However, the 80386, which can form addresses up to 32
+      bits long does not truncate such an address.
+
+See Also: <A HREF="Tabs.html#Tab.14-2">Tab.14-2</A> <A HREF="Tabs.html#Tab.14-1">Tab.14-1</A> 
+<HR>
+<A Name="14.8"><H2>14.8  Differences from 80286 Real-Address Mode</H2>
+
+14.8  Differences From 80286 Real-Address Mode
+
+The few differences that exist between 80386 real-address mode and 80286
+real-address mode are not likely to affect any existing 80286 programs
+except possibly the system initialization procedures.
+
+<HR>
+<A Name="14.8.1"><H2>14.8.1  Bus Lock</H2>
+
+14.8.1  Bus Lock
+
+The 80286 processor implements the bus lock function differently than the
+80386. Programs that use forms of memory locking specific to the 80286 may
+not execute properly if transported to a specific application of the 80386.
+
+The LOCK prefix and its corresponding output signal should only be used to
+prevent other bus masters from interrupting a data movement operation.  LOCK
+may only be used with the following 80386 instructions when they modify
+memory.  An undefined-opcode exception results from using LOCK before any
+other instruction.
+
+  *  Bit test and change:  BTS, BTR, BTC.
+  *  Exchange: XCHG.
+  *  One-operand arithmetic and logical: INC, DEC, NOT, and NEG.
+  *  Two-operand arithmetic and logical: ADD, ADC, SUB, SBB, AND, OR, XOR.
+
+A locked instruction is guaranteed to lock only the area of memory defined
+by the destination operand, but may lock a larger memory area.  For example,
+typical 8086 and 80286 configurations lock the entire physical memory space.
+With the 80386, the defined area of memory is guranteed to be locked against
+access by a processor executing a locked instruction on exactly the same
+memory area, i.e., an operand with identical starting address and identical
+length.
+
+<HR>
+<A Name="14.8.2"><H2>14.8.2  Location of First Instruction</H2>
+
+14.8.2  Location of First Instruction
+
+The starting location is 0FFFFFFF0H (sixteen bytes from end of 32-bit
+address space) on the 80386 rather than 0FFFFF0H (sixteen bytes from end of
+24-bit address space) as on the 80286.  Many 80286 ROM initialization
+programs will work correctly in this new environment.  Others can be made to
+work correctly with external hardware that redefines the signals on
+A{31-20}.
+
+<HR>
+<A Name="14.8.3"><H2>14.8.3  Initial Values of General Registers</H2>
+
+14.8.3  Initial Values of General Registers
+
+On the 80386, certain general registers may contain different values after
+RESET than on the 80286. This should not cause compatibility problems,
+because the content of 8086 registers after RESET is undefined.  If
+self-test is requested during the reset sequence and errors are detected in
+the 80386 unit, EAX will contain a nonzero value. EDX contains the component
+and revision identifier. Refer to Chapter 10 for more information.
+
+
+<HR>
+<A Name="14.8.4"><H2>14.8.4  MSW Initialization</H2>
+
+
+14.8.4  MSW Initialization
+
+The 80286 initializes the MSW register to FFF0H, but the 80386 initializes
+this register to 0000H. This difference should have no effect, because the
+bits that are different are undefined on the 80286.  Programs that read the
+value of the MSW will behave differently on the 80386 only if they depend on
+the setting of the undefined, high-order bits.
+
+
+

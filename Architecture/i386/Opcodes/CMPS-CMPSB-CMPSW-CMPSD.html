@@ -1,0 +1,116 @@
+<title>Instruction Set CMPS-CMPSB-CMPSW-CMPSD</title><pre>
+<A Name="CMPS/CMPSB/CMPSW/CMPSD"><H2>CMPS/CMPSB/CMPSW/CMPSD    -- Compare String Operands</H2>
+
+CMPS/CMPSB/CMPSW/CMPSD -- Compare String Operands
+
+
+Opcode    Instruction        Clocks   Description
+
+A6        CMPS m8,m8         10       Compare bytes ES:[(E)DI] (second
+                                      operand) with   [(E)SI] (first 
+                                      operand)
+A7        CMPS m16,m16       10       Compare words ES:[(E)DI] (second
+                                      operand) with   [(E)SI] (first 
+                                      operand)
+A7        CMPS m32,m32       10       Compare dwords ES:[(E)DI]
+                                      (second operand) with [(E)SI] 
+                                      (first operand)
+A6        CMPSB              10       Compare bytes ES:[(E)DI] with
+                                      DS:[SI]
+A7        CMPSW              10       Compare words ES:[(E)DI] with
+                                      DS:[SI]
+A7        CMPSD              10       Compare dwords ES:[(E)DI] with
+                                      DS:[SI]
+
+
+Operation
+
+IF (instruction = CMPSD) OR
+   (instruction has operands of type DWORD)
+THEN OperandSize = 32;
+ELSE OperandSize = 16;
+FI;
+IF AddressSize = 16
+THEN
+   use SI for source-index and DI for destination-index
+ELSE (* AddressSize = 32 *)
+   use ESI for source-index and EDI for destination-index;
+FI;
+IF byte type of instruction
+THEN
+   [source-index] - [destination-index]; (* byte comparison *)
+   IF DF = 0 THEN IncDec = 1 ELSE IncDec = -1; FI;
+ELSE
+   IF OperandSize = 16
+   THEN
+      [source-index] - [destination-index]; (* word comparison *)
+      IF DF = 0 THEN IncDec = 2 ELSE IncDec = -2; FI;
+   ELSE (* OperandSize = 32 *)
+      [source-index] - [destination-index]; (* dword comparison *)
+      IF DF = 0 THEN IncDec = 4 ELSE IncDec = -4; FI;
+   FI;
+FI;
+source-index = source-index + IncDec;
+destination-index = destination-index + IncDec;
+
+Description
+
+CMPS compares the byte, word, or doubleword pointed to by the source-index
+register with the byte, word, or doubleword pointed to by the
+destination-index register.
+
+If the address-size attribute of this instruction is 16 bits, SI and DI
+will be used for source- and destination-index registers; otherwise ESI and
+EDI will be used. Load the correct index values into SI and DI (or ESI and
+EDI) before executing CMPS.
+
+The comparison is done by subtracting the operand indexed by
+the destination-index register from the operand indexed by the source-index
+register.
+
+Note that the direction of subtraction for CMPS is [SI] - [DI] or
+[ESI] - [EDI]. The left operand (SI or ESI) is the source and the right
+operand (DI or EDI) is the destination. This is the reverse of the usual
+Intel convention in which the left operand is the destination and the right
+operand is the source.
+
+The result of the subtraction is not stored; only the flags reflect the
+change. The types of the operands determine whether bytes, words, or
+doublewords are compared. For the first operand (SI or ESI), the DS register
+is used, unless a segment override byte is present. The second operand (DI
+or EDI) must be addressable from the ES register; no segment override is
+possible.
+
+After the comparison is made, both the source-index register and
+destination-index register are automatically advanced. If the direction flag
+is 0 (CLD was executed), the registers increment; if the direction flag is 1
+(STD was executed), the registers decrement. The registers increment or
+decrement by 1 if a byte is compared, by 2 if a word is compared, or by 4 if
+a doubleword is compared.
+
+CMPSB, CMPSW and CMPSD are synonyms for the byte, word, and
+doubleword CMPS instructions, respectively.
+
+CMPS can be preceded by the REPE or REPNE prefix for block comparison of CX
+or ECX bytes, words, or doublewords. Refer to the description of the REP
+instruction for more information on this operation.
+
+Flags Affected
+
+OF, SF, ZF, AF, PF, and CF as described in Appendix C
+
+Protected Mode Exceptions
+
+#GP(0) for an illegal memory operand effective address in the CS, DS, ES,
+FS, or GS segments; #SS(0) for an illegal address in the SS segment;
+#PF(fault-code) for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode; #PF (fault-code) for a page fault
+

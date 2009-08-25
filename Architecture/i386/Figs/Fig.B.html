@@ -1,0 +1,380 @@
+<title>Figures Fig.B</title><pre>
+<A Name="Fig.B-1"><H2>Fig.B-1  Segment Descriptor Access Bytes</H2>
+Fig.B-1  Segment Descriptor Access Bytes
+
+                                            CODE SEGMENT      TYPE
+                                             MSB          +-----------+LSB
+                                            +-----------------------------+
+                                            | P | DPL | 1 | 1 | C | R | A |
+                                            +-----------------------------+
+                                              ^ +-----+ ^   ^   ^   ^   ^
+     Present (1 = yes)------------------------+    ^    |   |   |   |   |
+     Descriptor Privilege Level--------------------+    |   |   |   |   |
+     Indicates Segment Descriptor  ---------------------+   |   |   |   |
+     Executable (1 = yes for CODE)--------------------------+   |   |   |
+     Conforming (1 = yes)---------------------------------------+   |   |
+     Readable (1 = yes)---------------------------------------------+   |
+     Accessed (1 = yes)-------------------------------------------------+
+
+                                           DATA OR STACK SEGMENT
+                                            MSB                        LSB
+                                           +------------------------------+
+                                           | P | DPL | 1 | 0 | ED | W | A |
+                                           +------------------------------+
+                                             ^    ^    ^   ^   ^    ^   ^
+     Present (1 = yes)-----------------------+    |    |   |   |    |   |
+     Descriptor Privilege Level-------------------+    |   |   |    |   |
+     Indicates Segment Descriptor  --------------------+   |   |    |   |
+     Executable (0 = no for DATA)  ------------------------+   |    |   |
+     Conforming (1 = yes)--------------------------------------+    |   |
+     Writeable (1 = yes)--------------------------------------------+   |
+     Accessed (1 = yes)-------------------------------------------------+
+
+
+
+<A Name="Fig.B-2."><H2>Fig.B-2.  Error Code Format (on the stack)</H2>
+Fig.B-2.  Error Code Format (on the stack)
+
+    15                                                3   2   1   0
+   +---------------------------------------------------------------+
+   |                                                   | T | I | E |
+   |                       INDEX                       | I | D | X |
+   |                                                   |   | T | T |
+   +---------------------------------------------------------------+
+   +---------------------------------------------------+ |   |   |
+       +---------------------+                           |   |   |
+       |         +---------------------------------------+   |   |
+       |         |             +-----------------------------+   |
+       v         v             v                                 v
+ +-------++---------++---------------++-------------------------------------+
+ | Entry || 1 means || 1 means use   || 1 means that an event external to   |
+ | in    ||   use   ||   IDT and     ||   the program caused the exception  |
+ | IDT,  ||   LDT   ||   ignore      ||   (i.e., external interrupt, single |
+ | GDT,  || 0 means ||   bit 2.      ||   step, processor extension error)  |
+ | or    ||   use   || 0 means bit 2 || 0 means that an exception occurred  |
+ | LDT   ||   GDT   ||   indicates   ||   while processing the instruction  |
+ |       ||         ||   table usage ||   at CS:IP saved on the stack.      |
+ +-------++---------++---------------++-------------------------------------+
+
+<A Name="Fig.B-3."><H2>Fig.B-3.  Selector Fields</H2>
+Fig.B-3.  Selector Fields
+
+                                 SELECTOR
+     +---------------------------------------------------------------+
+     |                       INDEX                       | T |       |
+     |                                                   | I |  RPL  |
+     +---------------------------------------------------------------+
+       15                          8   7                   2   1   0
+
+ +--------------------------------------------------------------------------+
+ | BITS | NAME                 | FUNCTION                                   |
+ |------+----------------------+--------------------------------------------|
+ | 1-0  | REQUESTED PRIVELEGE  | INDICATES SELECTOR PRIVILEGE LEVEL DESIRED |
+ |      |     LEVEL (RPL)      |                                            |
+ |------+----------------------+--------------------------------------------|
+ | 2    | TABLE INDICATOR (TI) | TI = 0 USE GLOBAL DESCRIPTOR TABLE (GDT)   |
+ |      |                      | TI = 1 USE LOCAL DESCRIPTORTABLE (LDT)     |
+ |------+----------------------+--------------------------------------------|
+ | 15-3 | INDEX                | SELECT DESCRIPTOR ENTRY IN TABLE           |
+ +--------------------------------------------------------------------------+
+
+<A Name="Fig.B-4."><H2>Fig.B-4.  Gate Descriptor Format</H2>
+Fig.B-4.  Gate Descriptor Format
+
+                                       0  7                            0
+        +---------------------------------------------------------------+
+     +7 |                        INTEL RESERVED                         |
+        |       Must be set to 0 for compatibility with the 80386       | +6
+        |---------------------------------------------------------------|
+     +5 | P |  DPL  | 0 | 0   1   0   1 |            UNUSED             | +4
+        |---------------------------------------------------------------|
+     +3 |                         TSS SELECTOR                          | +2
+        |---------------------------------------------------------------|
+     +1 |                            UNUSED                             | 0
+        +---------------------------------------------------------------+
+          15                                                           0
+
+                             Gate Descriptor Fields
+  +------------------------------------------------------------------------+
+  | Name          | Value    | Description                                 |
+  |---------------+----------+---------------------------------------------|
+  |               |    4     | Call Gate.                                  |
+  |     TYPE      |    5     | Task Gate.                                  |
+  |               |    6     | Interrupt Gate.                             |
+  |               |    7     | Trap Gate.                                  |
+  |---------------+----------+---------------------------------------------|
+  |       P       |    0     | Descriptor Contents are not valid.          |
+  |               |    1     | Descriptor Contents are valid.              |
+  |---------------+----------+---------------------------------------------|
+  |      DPL      |   0-3    | Descriptor Privilege Level.                 |
+  |---------------+----------+---------------------------------------------|
+  |               |   0-31   | Number of words to copy from caller's       |
+  |  WORD COUNT   |          | stack to called procedure's stack. Only     |
+  |               |          | used with call gate.                        |
+  |---------------+----------+---------------------------------------------|
+  |               |  16-bit  | Selector to the target code segment (Call,  |
+  |  DESTINATION  | selector | Interrupt or Trap Gate).                    |
+  |   SELECTOR    |          | Selector to the target task state segment   |
+  |               |          | (Task Gate).                                |
+  |---------------+----------+---------------------------------------------|
+  |  DESTINATION  |  16-bit  | Entry point within the target code segment. |
+  |    OFFSET     |  offset  |                                             |
+  +------------------------------------------------------------------------+
+
+<A Name="Fig.B-5."><H2>Fig.B-5.  Task State Segment and TSS Registers</H2>
+Fig.B-5.  Task State Segment and TSS Registers
+
+                               .                               .
+                             +-|-------------------------------|
+                             | |        INTEL RESERVED         |
+                             | |-------------------------------|-+
+                 TSS         | |P|DPL|0| TYPE  |  BASE 23-16   | |
+                 DESCRIPTOR -| |-------------------------------| |
+                     ^       | |           BASE 15-0           | | +
+                     |       | |-------------------------------| |
+                             | |          LIMIT 15-0           | | |
+                     |       +-|-------------------------------|-+
+           CPU            +- --|-- -- -- -- -- -- -- -- -- -- -+ --+
++--------------------+--+      ÷                               ÷
+|     TASK REGISTER     | |    |15                            0| BYTE
+|       +-------+    |  |    +-|-------------------------------| OFFSET
+|       |       |-- -+  | |  | |  TASK LDT SELECTOR (STATIC)^2  | 42
+|       +-------+       |    | |-------------------------------|   -+
+|        15    0        | |  | |  DS SELECTOR                  | 40 |
+| +-- -- -- -- -- -- -+ |    | |-------------------------------|    |
+|   PROGRAM INVISIBLE   | |  | |  SS SELECTOR                  | 38 |
+| |      15    0      | |    | |-------------------------------|    |
+|       +-------+   +   | |  | |  CS SELECTOR                  | 36 |
+| |     | LIMIT |-+ | | |    | |-------------------------------|    |
+|   +-----------| | |<- +-+  | |  ES SELECTOR                  | 34 |
+| | |   BASE    | | | | |    | |-------------------------------|    |
+|   +-----------+ | +   |    | |  DI                           | 32 |
+| |  |         0  |   | |    | |-------------------------------|    |
+| +--|-- -- -- -- +- -+ |    | |  SI                           | 30 |
++----+------------+-----+    | |-------------------------------|    |
+     |            | Changed  | |  BP                           | 28 |CURRENT
+     |            | During   | |-------------------------------|    |TASK
+     |            | Task     | |  SP                           | 26 |STATE
+     |            | Switch   | |-------------------------------|    |
+     |            |          | |  BX                           | 24 |
+     |            |          | |-------------------------------|    |
+     |            |     TASK | |  DX                           | 22 |
+     |            +>   STATE | |-------------------------------|    |
+     |               SEGMENT | |  CX                           | 20 |
+     |                       | |-------------------------------|    |
+     |                       | |  AX                           | 18 |
+     |                       | |-------------------------------|    |
+     |                       | |  FLAG WORD                    | 16 |
+     |                       | |-------------------------------|    |
+     |                       | |  IP (ENTRY POINT)             | 14 |
+     |                       | |-------------------------------|   -|
+     |                       | |  SS FOR CPL 2                 | 12 |
+     |                       | |-------------------------------|    |
+     |                    S^2 | |  SP FOR CPL 2                 | 10 |
+     |                    T  | |-------------------------------|    |INITIAL
+     |                    A  | |  SS FOR CPL 1                 | 8  |STACKS
+     |                    T  | |-------------------------------|    |FOR
+     |                    I  | |  SP FOR CPL 1                 | 6  |CPL
+     |                    C  | |-------------------------------|    |0,1,2
+     |                       | |  SS FOR CPL 0                 | 4  |
+     |                       | |-------------------------------|    |
+     |                       | |  SP FOR CPL 0                 | 2  |
+     |                       | |-------------------------------|   -+
+     |                       | |  BACK LINK SELECTOR TO TSS    | 0 <-----
+     +---------------------->+-|-------------------------------|
+                               |                               |
+                               |                               |
+                               .                               .
+
+
+STATIC^2 = Never altered after initialization by O.S. The values as
+initialized for this task are always valid SS:SP values to use upon entry
+to that privilege level (0, 1, or 2) from a level of lesser privilege.
+
+     P of TSS Descriptor
++---------------------------------------+
+| P | DESCRIPTION                       |
+|---+-----------------------------------|
+| 1 | BASE AND LIMIT FIELDS ARE VALID   |
+|---+-----------------------------------|
+| 0 | SEGMENT IS NOT PRESENT IN MEMORY. |
+|   | BASE AND LIMIT ARE NOT DEFINED    |
++---------------------------------------+
+
+    TYPE of TSS Descriptor
++---------------------------------------------------+
+|TYPE|DESCRIPTION                                   |
+|----+----------------------------------------------|
+|  1 |AN AVAILABLE TASK STATE SEGMENT MAY BE USED   |
+|    |AS THE DESTINATION OF A TASK SWITCH OPERATION.|
+|----+----------------------------------------------|
+|    |A BUSY TASK STATE SEGMENT CANNOT BE USED AS   |
+|    |THE DESTINATION OF A TASK SWITCH.             |
++---------------------------------------------------+
+
+<A Name="Fig.B-6."><H2>Fig.B-6.  TSS Descriptor</H2>
+Fig.B-6.  TSS Descriptor
+
+         7                             0 7                             0
+        +---------------------------------------------------------------+
+      +7|                          INTEL RESERVED                       |
+        |       Must be set to 0 for compatibility with 80836           |+6
+        |---------------------------------------------------------------|
+      +5| P |  DPL  | 0 | 0   0   B | 1 |         TSB BASE 23-16        |+4
+        |---------------------------------------------------------------|
+      +3|                          TSS BASE 15-0                        |+2
+        |---------------------------------------------------------------|
+      +1|                            TSS LIMIT                          | 0
+        +---------------------------------------------------------------+
+         15                                                            0
+
+         B=1 MEANS TASK IS BUSY AND NOT AVAILABLE
+
+
+<A Name="Fig.B-7."><H2>Fig.B-7.  Task Gate Descriptor</H2>
+Fig.B-7.  Task Gate Descriptor
+
+         7                             0 7                             0
+        +---------------------------------------------------------------+
+      +7|                          INTEL RESERVED                       |
+        |        Must be set to 0 for compatibility with 80386          |+6
+        |---------------------------------------------------------------|
+      +5| P |  DPL  | O | O   1   O | 1 |            UNUSED             |+4
+        |---------------------------------------------------------------|
+      +3|                         TSS SELECTOR                          |+2
+        |---------------------------------------------------------------|
+      +1|                            UNUSED                             | 0
+        +---------------------------------------------------------------+
+         15                                                            0
+
+
+<A Name="Fig.B-8."><H2>Fig.B-8.  IDT Selector Error Code</H2>
+Fig.B-8.  IDT Selector Error Code
+
+         15  14  13  12  11  10  9   8   7   6   5   4   3   2   1   0
+       +---------------------------------------------------------------+
+       |                   |                               |   |   | E |
+       | 0   0   0   0   0 |          IDT VECTOR           | 0 | 1 | X |
+       |                   |                               |   |   | T |
+       +---------------------------------------------------------------+
+                                   +---------------------------------+
+                                   v
+                                   1 An even external to the program
+                                     caused the exception (i.e. external
+                                     interrupt, single step, processor
+                                     extension error)
+
+                                   0 An exception occurred while
+                                     processing an instruction at CS:IP
+                                     saved on stack
+
+
+<A Name="Fig.B-10."><H2>Fig.B-10.  Trap/Interrupt Gate Descriptors</H2>
+Fig.B-10.  Trap/Interrupt Gate Descriptors
+
+        +---------------------------------------------------------------+
+      +7|                        INTEL RESERVED                         |
+        |       Must be set to 0 for compatibility with IAPX 386        |+6
+        |---------------------------------------------------------------|
+      +5| P |  DP2  | 0 | 0   1   1   T |            UNUSED             |+4
+        |---------------------------------------------------------------|
+      +3|                INTERRUPT CODE SEGMENT SELECTOR                |+2
+        |---------------------------------------------------------------|
+      +1|                     INTERRUPT CODE OFFSET                     | 0
+        +---------------------------------------------------------------+
+
+        T = 1 FOR TRAP GATE
+
+        T = 0 FOR INTERRUPT GATE
+
+
+<A Name="Fig.B-11."><H2>Fig.B-11. /n Instruction Byte Format</H2>
+Fig.B-11. /n Instruction Byte Format
+
+                          pp/n Instruction Byte Format
+  +------------------------------------------------------------------------+
+  | mod|   n   |  r/m  | imm. low   | imm. high  |  disp-low  | disp-high  |
+  +------------------------------------------------------------------------+
+  7   6 5  4  3 2  1  0 7          0 7          0 7          0 7           0
+  Opcode indicates presence and size of immediate field.
+
+                           "mod" Field Bit Assignments
+  +------------------------------------------------------------------------+
+  |    mod   |                     Displacement                            |
+  |----------+-------------------------------------------------------------|
+  |    00    |DISP = 0                                                     |
+  |    01    |DISP = disp-low sign-extended to 16-bit, disp-high is absent |
+  |    10    |DISP = disp-high: disp-low                                   |
+  |    11    |r/m is treated as a "reg" field                              |
+  +------------------------------------------------------------------------+
+  Except if mod = 00 and r/m = 110 then EA = disp-high:disp-low,
+  disp-low and disp-high are absent
+
+                          "r/m" Field Bit Assignments
+  +------------------------------------------------------------------------+
+  |                r/m                 |        Operand Address            |
+  |------------------------------------+-----------------------------------|
+  |                000                 |        (BX) + (SI) + DISP         |
+  |                001                 |        (BX) + (DI) + DISP         |
+  |                010                 |        (BP) + (SI) + DISP         |
+  |                011                 |        (BP) + (DI) + DISP         |
+  |                100                 |        (SI) + DISP                |
+  |                101                 |        (DI) + DISP                |
+  |                110                 |        (BP) + DISP                |
+  |                111                 |        (BX) + DISP                |
+  +------------------------------------------------------------------------+
+  DISP follows 2nd byte of instruction (before data if required).
+  Except if mod = 00 and r/m = 110 then EA = disp-high:disp-low.
+
+
+<A Name="Fig.B-12."><H2>Fig.B-12. /r Instruction Byte Format</H2>
+Fig.B-12. /r Instruction Byte Format
+
+                            /r Instruction Byte Format
+  +------------------------------------------------------------------------+
+  | mod|   r   |  r/m  | imm. low   | imm. high  |  disp-low  | disp-high  |
+  +------------------------------------------------------------------------+
+  7   6 5  4  3 2  1  0 7          0 7          0 7          0 7           0
+  Opcode indicates presence and size of immediate field.
+
+  +------------------------------------------------------------------------+
+  |    mod   |                     Displacement                            |
+  |----------+-------------------------------------------------------------|
+  |    00    |DISP = 0                                                     |
+  |    01    |DISP = disp-low sign-extended to 16-bit, disp-high is absent |
+  |    10    |DISP = disp-high: disp-low                                   |
+  |    11    |r/m is treated as a "reg" field                              |
+  +------------------------------------------------------------------------+
+  Except if mod = 00 and r/m = 110 then EA = disp-high:disp-low,
+  disp-low and disp-high are absent
+
+                          "r" Field Bit Assignments
+  +------------------------------------------------------------------------+
+  |     16-Bit (w = 1)    |     6-Bit (w = 0)     |        Segment         |
+  |-----------------------+-----------------------+------------------------|
+  |        000 AX         |        000 AL         |         00 ES          |
+  |        001 CX         |        001 CL         |         01 CS          |
+  |        010 DX         |        010 DL         |         10 SS          |
+  |        011 BX         |        011 BL         |         11 DS          |
+  |        100 SP         |        100 AH         |                        |
+  |        101 BP         |        101 CH         |                        |
+  |        110 SI         |        110 DH         |                        |
+  |        111 DI         |        111 BH         |                        |
+  +------------------------------------------------------------------------+
+
+                          "r/m" Field Bit Assignments
+  +------------------------------------------------------------------------+
+  |                r/m                 |        Operand Address            |
+  |------------------------------------+-----------------------------------|
+  |                000                 |        (BX) + (SI) + DISP         |
+  |                001                 |        (BX) + (DI) + DISP         |
+  |                010                 |        (BP) + (SI) + DISP         |
+  |                011                 |        (BP) + (DI) + DISP         |
+  |                100                 |        (SI) + DISP                |
+  |                101                 |        (DI) + DISP                |
+  |                110                 |        (BP) + DISP                |
+  |                111                 |        (BX) + DISP                |
+  +------------------------------------------------------------------------+
+  DISP follows 2nd byte of instruction (before data if required).
+  Except if mod = 00 and r/m = 110 then EA = disp-high:disp-low.
+

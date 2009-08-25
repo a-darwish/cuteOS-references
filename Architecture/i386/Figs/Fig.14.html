@@ -1,0 +1,21 @@
+<title>Figures Fig.14</title><pre>
+<A Name="Fig.14-1"><H2>Fig.14-1    Real-Address Mode Address Formation</H2>
+
+Figure 14-1.  Real-Address Mode Address Formation
+
+                      19                                3       0
+                     +---------------------------------+---------+
+         BASE        |     16-BIT SEGMENT SELECTOR     | 0 0 0 0 |
+                     +---------------------------------+---------+
+
+         +
+                      19        15                              0
+                     +---------+---------------------------------+
+         OFFSET      | 0 0 0 0 |    16-BIT EFFECTIVE ADDRESS     |
+                     +---------+---------------------------------+
+
+         =
+                    20                                          0
+         LINEAR    +---------------------------------------------+
+         ADDRESS   | X X X X X X X X X X X X X X X X X X X X X X |
+                   +---------------------------------------------+

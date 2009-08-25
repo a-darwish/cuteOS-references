@@ -1,0 +1,939 @@
+<pre>
+<title> Chapter 9    Exceptions and Interrupts</title><body>
+<H1><font color=red> Chapter 9  </font>  Exceptions and Interrupts</H1>
+<pre>
+
+
+  Chapter 9  Exceptions and Interrupts
+
+----------------------------------------------------------------------------
+
+Interrupts and exceptions are special kinds of control transfer; they work
+somewhat like unprogrammed CALLs. They alter the normal program flow to
+handle external events or to report errors or exceptional conditions. The
+difference between interrupts and exceptions is that interrupts are used to
+handle asynchronous events external to the processor, but exceptions handle
+conditions detected by the processor itself in the course of executing
+instructions.
+
+There are two sources for external interrupts and two sources for
+exceptions:
+
+  1.  Interrupts
+
+      *  Maskable interrupts, which are signalled via the INTR pin.
+
+      *  Nonmaskable interrupts, which are signalled via the NMI
+         (Non-Maskable Interrupt) pin.
+
+  2.  Exceptions
+
+      *  Processor detected. These are further classified as faults, traps,
+         and aborts.
+
+      *  Programmed. The instructions INTO, INT 3, INT n, and BOUND can
+         trigger exceptions. These instructions are often called "software
+         interrupts", but the processor handles them as exceptions.
+
+This chapter explains the features that the 80386 offers for controlling
+and responding to interrupts when it is executing in protected mode.
+
+
+<HR>
+<A Name="9.1"><H2>9.1  Identifying Interrupts</H2>
+
+9.1  Identifying Interrupts
+
+The processor associates an identifying number with each different type of
+interrupt or exception.
+
+The NMI and the exceptions recognized by the processor are assigned
+predetermined identifiers in the range 0 through 31. Not all of these
+numbers are currently used by the 80386; unassigned identifiers in this
+range are reserved by Intel for possible future expansion.
+
+The identifiers of the maskable interrupts are determined by external
+interrupt controllers (such as Intel's 8259A Programmable Interrupt
+Controller) and communicated to the processor during the processor's
+interrupt-acknowledge sequence. The numbers assigned by an 8259A PIC can be
+specified by software. Any numbers in the range 32 through 255 can be used.
+Table 9-1 shows the assignment of interrupt and exception identifiers.
+
+Exceptions are classified as faults, traps, or aborts depending on the way
+they are reported and whether restart of the instruction that caused the
+exception is supported.
+
+Faults  Faults are exceptions that are reported "before" the
+        instruction causingthe exception. Faults are either detected before
+        the instruction begins to execute, or during execution of the
+        instruction. If detected during the instruction, the fault is
+        reported with the machine restored to a state that permits the
+        instruction to be restarted.
+
+Traps   A trap is an exception that is reported at the instruction
+        boundary immediately after the instruction in which the
+        exception was detected.
+
+Aborts  An abort is an exception that permits neither precise location
+        of the instruction causing the exception nor restart of the program
+        that caused the exception. Aborts are used to report severe errors,
+        such as hardware errors and inconsistent or illegal values in system
+        tables.
+
+See Also: <A HREF="Tabs.html#Tab.9-1">Tab.9-1</A> 
+
+<HR>
+<A Name="9.2"><H2>9.2  Enabling and Disabling Interrupts</H2>
+
+9.2  Enabling and Disabling Interrupts
+
+The processor services interrupts and exceptions only between the end of
+one instruction and the beginning of the next. When the repeat prefix is
+used to repeat a string instruction, interrupts and exceptions may occur
+between repetitions. Thus, operations on long strings do not delay interrupt
+response.
+
+Certain conditions and flag settings cause the processor to inhibit certain
+interrupts and exceptions at instruction boundaries.
+
+<HR>
+<A Name="9.2.1"><H2>9.2.1  NMI Masks Further NMls</H2>
+
+9.2.1  NMI Masks Further NMIs
+
+While an NMI handler is executing, the processor ignores further interrupt
+signals at the NMI pin until the next IRET instruction is executed.
+
+<HR>
+<A Name="9.2.2"><H2>9.2.2  IF Masks INTR</H2>
+
+9.2.2  IF Masks INTR
+
+The IF (interrupt-enable flag) controls the acceptance of external
+interrupts signalled via the INTR pin. When IF=0, INTR interrupts are
+inhibited; when IF=1, INTR interrupts are enabled. As with the other flag
+bits, the processor clears IF in response to a RESET signal. The
+instructions CLI and STI alter the setting of IF.
+
+CLI (Clear Interrupt-Enable Flag) and STI (Set Interrupt-Enable Flag)
+explicitly alter IF (bit 9 in the flag register). These instructions may be
+executed only if CPL <= IOPL. A protection exception occurs if they are
+executed when CPL > IOPL.
+
+The IF is also affected implicitly by the following operations:
+
+  *  The instruction PUSHF stores all flags, including IF, in the stack
+     where they can be examined.
+
+  *  Task switches and the instructions POPF and IRET load the flags
+     register; therefore, they can be used to modify IF.
+
+  *  Interrupts through interrupt gates automatically reset IF, disabling
+     interrupts. (Interrupt gates are explained later in this chapter.)
+
+<HR>
+<A Name="9.2.3"><H2>9.2.3  RF Masks Debug Faults</H2>
+
+9.2.3  RF Masks Debug Faults
+
+The RF bit in EFLAGS controls the recognition of debug faults. This permits
+debug faults to be raised for a given instruction at most once, no matter
+how many times the instruction is restarted. (Refer to Chapter 12 for more
+information on debugging.)
+
+<HR>
+<A Name="9.2.4"><H2>9.2.4  MOV or POP to SS Masks Some Interrupts and Exceptions</H2>
+
+9.2.4  MOV or POP to SS Masks Some Interrupts and Exceptions
+
+Software that needs to change stack segments often uses a pair of
+instructions; for example:
+
+  MOV SS, AX
+  MOV ESP, StackTop
+
+If an interrupt or exception is processed after SS has been changed but
+before ESP has received the corresponding change, the two parts of the stack
+pointer SS:ESP are inconsistent for the duration of the interrupt handler or
+exception handler.
+
+To prevent this situation, the 80386, after both a MOV to SS and a POP to
+SS instruction, inhibits NMI, INTR, debug exceptions, and single-step traps
+at the instruction boundary following the instruction that changes SS. Some
+exceptions may still occur; namely, page fault and general protection fault.
+Always use the 80386 LSS instruction, and the problem will not occur.
+
+<HR>
+<A Name="9.3"><H2>9.3  Priority Among Simultaneous Interrupts and Exceptions</H2>
+
+9.3  Priority Among Simultaneous Interrupts and Exceptions
+
+If more than one interrupt or exception is pending at an instruction
+boundary, the processor services one of them at a time. The priority among
+classes of interrupt and exception sources is shown in Table 9-2. The
+processor first services a pending interrupt or exception from the class
+that has the highest priority, transferring control to the first
+instruction of the interrupt handler. Lower priority exceptions are
+discarded; lower priority interrupts are held pending. Discarded exceptions
+will be rediscovered when the interrupt handler returns control to the point
+of interruption.
+
+
+See Also: <A HREF="Tabs.html#Tab.9-2">Tab.9-2</A> 
+<HR>
+<A Name="9.4"><H2>9.4  Interrupt Descriptor Table</H2>
+
+9.4  Interrupt Descriptor Table
+
+The interrupt descriptor table (IDT) associates each interrupt or exception
+identifier with a descriptor for the instructions that service the
+associated event. Like the GDT and LDTs, the IDT is an array of 8-byte
+descriptors. Unlike the GDT and LDTs, the first entry of the IDT may contain
+a descriptor. To form an index into the IDT, the processor multiplies the
+interrupt or exception identifier by eight. Because there are only 256
+identifiers, the IDT need not contain more than 256 descriptors. It can
+contain fewer than 256 entries; entries are required only for interrupt
+identifiers that are actually used.
+
+The IDT may reside anywhere in physical memory. As Figure 9-1 shows, the
+processor locates the IDT by means of the IDT register (IDTR). The
+instructions LIDT and SIDT operate on the IDTR. Both instructions have one
+explicit operand: the address in memory of a 6-byte area. Figure 9-2 shows
+the format of this area.
+
+LIDT (Load IDT register) loads the IDT register with the linear base
+address and limit values contained in the memory operand.  This instruction
+can be executed only when the CPL is zero. It is normally used by the
+initialization logic of an operating system when creating an IDT.  An
+operating system may also use it to change from one IDT to another.
+
+SIDT (Store IDT register) copies the base and limit value stored in IDTR
+to a memory location. This instruction can be executed at any privilege
+level.
+
+See Also: <A HREF="Tabs.html#Tab.9-2">Tab.9-2</A> <A HREF="Figs/Fig.9.html#Fig.9-1">Fig.9-1</A> <A HREF="Figs/Fig.9.html#Fig.9-2">Fig.9-2</A> 
+
+<HR>
+<A Name="9.5"><H2>9.5  IDT Descriptors</H2>
+
+9.5  IDT Descriptors
+
+The IDT may contain any of three kinds of descriptor:
+
+   *  Task gates
+   *  Interrupt gates
+   *  Trap gates
+
+Figure 9-3 illustrates the format of task gates and 80386 interrupt gates
+and trap gates. (The task gate in an IDT is the same as the task gate
+already discussed in Chapter 7.)
+
+
+See Also: <A HREF="Figs/Fig.9.html#Fig.9-3">Fig.9-3</A> <A HREF="Contents.html#"Chapter">"Chapter</A> <A HREF="7".html#7"">7"</A> 
+
+<HR>
+<A Name="9.6"><H2>9.6  Interrupt Tasks and Interrupt Procedures</H2>
+
+9.6  Interrupt Tasks and Interrupt Procedures
+
+Just as a CALL instruction can call either a procedure or a task, so an
+interrupt or exception can "call" an interrupt handler that is either a
+procedure or a task. When responding to an interrupt or exception, the
+processor uses the interrupt or exception identifier to index a descriptor
+in the IDT. If the processor indexes to an interrupt gate or trap gate, it
+invokes the handler in a manner similar to a CALL to a call gate. If the
+processor finds a task gate, it causes a task switch in a manner similar to
+a CALL to a task gate.
+
+<HR>
+<A Name="9.6.1"><H2>9.6.1  Interrupt Procedures</H2>
+
+9.6.1  Interrupt Procedures
+
+An interrupt gate or trap gate points indirectly to a procedure which will
+execute in the context of the currently executing task as illustrated by
+Figure 9-4. The selector of the gate points to an executable-segment
+descriptor in either the GDT or the current LDT. The offset field of the
+gate points to the beginning of the interrupt or exception handling
+procedure.
+
+The 80386 invokes an interrupt or exception handling procedure in much the
+same manner as it CALLs a procedure; the differences are explained in the
+following sections.
+
+See Also: <A HREF="Figs/Fig.9.html#Fig.9-4">Fig.9-4</A> 
+
+<HR>
+<A Name="9.6.1.1"><H2>9.6.1.1  Stack of Interrupt Procedure</H2>
+
+9.6.1.1  Stack of Interrupt Procedure
+
+Just as with a control transfer due to a CALL instruction, a control
+transfer to an interrupt or exception handling procedure uses the stack to
+store the information needed for returning to the original procedure. As
+Figure 9-5 shows, an interrupt pushes the EFLAGS register onto the stack
+before the pointer to the interrupted instruction.
+
+Certain types of exceptions also cause an error code to be pushed on the
+stack. An exception handler can use the error code to help diagnose the
+exception.
+
+
+See Also: <A HREF="Figs/Fig.9.html#Fig.9-5">Fig.9-5</A> 
+
+<HR>
+<A Name="9.6.1.2"><H2>9.6.1.2  Returning from an Interrupt Procedure</H2>
+
+9.6.1.2  Returning from an Interrupt Procedure
+
+An interrupt procedure also differs from a normal procedure in the method
+of leaving the procedure. The IRET instruction is used to exit from an
+interrupt procedure. IRET is similar to RET except that IRET increments EIP
+by an extra four bytes (because of the flags on the stack) and moves the
+saved flags into the EFLAGS register. The IOPL field of EFLAGS is changed
+only if the CPL is zero. The IF flag is changed only if CPL <= IOPL.
+
+
+See Also: <A HREF="Figs/Fig.9.html#Fig.9-5">Fig.9-5</A> 
+<HR>
+<A Name="9.6.1.3"><H2>9.6.1.3  Flags Usage by Interrupt Procedure</H2>
+
+9.6.1.3  Flags Usage by Interrupt Procedure
+
+Interrupts that vector through either interrupt gates or trap gates cause
+TF (the trap flag) to be reset after the current value of TF is saved on the
+stack as part of EFLAGS. By this action the processor prevents debugging
+activity that uses single-stepping from affecting interrupt response. A
+subsequent IRET instruction restores TF to the value in the EFLAGS image on
+the stack.
+
+The difference between an interrupt gate and a trap gate is in the effect
+on IF (the interrupt-enable flag). An interrupt that vectors through an
+interrupt gate resets IF, thereby preventing other interrupts from
+interfering with the current interrupt handler. A subsequent IRET
+instruction restores IF to the value in the EFLAGS image on the stack. An
+interrupt through a trap gate does not change IF.
+
+<HR>
+<A Name="9.6.1.4"><H2>9.6.1.4  Protection in Interrupt Procedures</H2>
+
+9.6.1.4  Protection in Interrupt Procedures
+
+The privilege rule that governs interrupt procedures is similar to that for
+procedure calls: the CPU does not permit an interrupt to transfer control to
+a procedure in a segment of lesser privilege (numerically greater privilege
+level) than the current privilege level. An attempt to violate this rule
+results in a general protection exception.
+
+Because occurrence of interrupts is not generally predictable, this
+privilege rule effectively imposes restrictions on the privilege levels at
+which interrupt and exception handling procedures can execute. Either of the
+following strategies can be employed to ensure that the privilege rule is
+never violated.
+
+  *  Place the handler in a conforming segment. This strategy suits the
+     handlers for certain exceptions (divide error, for example). Such a
+     handler must use only the data available to it from the stack. If it
+     needed data from a data segment, the data segment would have to have
+     privilege level three, thereby making it unprotected.
+
+  *  Place the handler procedure in a privilege level zero segment.
+
+<HR>
+<A Name="9.6.2"><H2>9.6.2  Interrupt Tasks</H2>
+
+9.6.2  Interrupt Tasks
+
+A task gate in the IDT points indirectly to a task, as Figure 9-6
+illustrates. The selector of the gate points to a TSS descriptor in the GDT.
+
+When an interrupt or exception vectors to a task gate in the IDT, a task
+switch results. Handling an interrupt with a separate task offers two
+advantages:
+
+  *  The entire context is saved automatically.
+
+  *  The interrupt handler can be isolated from other tasks by giving it a
+     separate address space, either via its LDT or via its page directory.
+
+The actions that the processor takes to perform a task switch are discussed
+in Chapter 7. The interrupt task returns to the interrupted task by
+executing an IRET instruction.
+
+If the task switch is caused by an exception that has an error code, the
+processor automatically pushes the error code onto the stack that
+corresponds to the privilege level of the first instruction to be executed
+in the interrupt task.
+
+When interrupt tasks are used in an operating system for the 80386, there
+are actually two schedulers: the software scheduler (part of the operating
+system) and the hardware scheduler (part of the processor's interrupt
+mechanism). The design of the software scheduler should account for the fact
+that the hardware scheduler may dispatch an interrupt task whenever
+interrupts are enabled.
+
+See Also: <A HREF="Figs/Fig.9.html#Fig.9-6">Fig.9-6</A> <A HREF="contents.html#"Chapter">"Chapter</A> <A HREF="7".html#7"">7"</A> 
+<HR>
+<A Name="9.7"><H2>9.7  Error Code</H2>
+
+9.7  Error Code
+
+With exceptions that relate to a specific segment, the processor pushes an
+error code onto the stack of the exception handler (whether procedure or
+task). The error code has the format shown in Figure 9-7. The format of the
+error code resembles that of a selector; however, instead of an RPL field,
+the error code contains two one-bit items:
+
+  1.  The processor sets the EXT bit if an event external to the program
+      caused the exception.
+
+  2.  The processor sets the I-bit (IDT-bit) if the index portion of the
+      error code refers to a gate descriptor in the IDT.
+
+If the I-bit is not set, the TI bit indicates whether the error code refers
+to the GDT (value 0) or to the LDT (value 1). The remaining 14 bits are the
+upper 14 bits of the segment selector involved. In some cases the error code
+on the stack is null, i.e., all bits in the low-order word are zero.
+
+See Also: <A HREF="Figs/Fig.9.html#Fig.9-7">Fig.9-7</A> 
+
+
+<HR>
+<A Name="9.8"><H2>9.8  Exception Conditions</H2>
+
+9.8  Exception Conditions
+
+The following sections describe each of the possible exception conditions
+in detail. Each description classifies the exception as a fault, trap, or
+abort. This classification provides information needed by systems
+programmers for restarting the procedure in which the exception occurred:
+
+Faults   The CS and EIP values saved when a fault is reported point to the
+         instruction causing the fault.
+
+Traps    The CS and EIP values stored when the trap is reported point to the
+         instruction dynamically after the instruction causing the trap. If
+         a trap is detected during an instruction that alters program flow,
+         the reported values of CS and EIP reflect the alteration of program
+         flow. For example, if a trap is detected in a JMP instruction, the
+         CS and EIP values pushed onto the stack point to the target of the
+         JMP, not to the instruction after the JMP.
+
+Aborts   An abort is an exception that permits neither precise location of
+         the instruction causing the exception nor restart of the program
+         that caused the exception. Aborts are used to report severe errors,
+         such as hardware errors and inconsistent or illegal values in
+         system tables.
+
+<HR>
+<A Name="9.8.1"><H2>9.8.1  Interrupt 0 -- Divide Error</H2>
+
+9.8.1  Interrupt 0 -- Divide Error
+
+The divide-error fault occurs during a DIV or an IDIV instruction when the
+divisor is zero.
+
+<HR>
+<A Name="9.8.2"><H2>9.8.2  Interrupt 1 -- Debug Exceptions</H2>
+
+9.8.2  Interrupt 1 -- Debug Exceptions
+
+The processor triggers this interrupt for any of a number of conditions;
+whether the exception is a fault or a trap depends on the condition:
+
+   *  Instruction address breakpoint fault.
+   *  Data address breakpoint trap.
+   *  General detect fault.
+   *  Single-step trap.
+   *  Task-switch breakpoint trap.
+
+The processor does not push an error code for this exception. An exception
+handler can examine the debug registers to determine which condition caused
+the exception. Refer to Chapter 12 for more detailed information about
+debugging and the debug registers.
+
+<HR>
+<A Name="9.8.3"><H2>9.8.3  Interrupt 3 -- Breakpoint</H2>
+
+9.8.3  Interrupt 3 -- Breakpoint
+
+The INT 3 instruction causes this trap. The INT 3 instruction is one byte
+long, which makes it easy to replace an opcode in an executable segment with
+the breakpoint opcode. The operating system or a debugging subsystem can use
+a data-segment alias for an executable segment to place an INT 3 anywhere it
+is convenient to arrest normal execution so that some sort of special
+processing can be performed. Debuggers typically use breakpoints as a way of
+displaying registers, variables, etc., at crucial points in a task.
+
+The saved CS:EIP value points to the byte following the breakpoint. If a
+debugger replaces a planted breakpoint with a valid opcode, it must subtract
+one from the saved EIP value before returning. Refer also to Chapter 12 for
+more information on debugging.
+
+<HR>
+<A Name="9.8.4"><H2>9.8.4  Interrupt 4 -- Overflow</H2>
+
+9.8.4  Interrupt 4 -- Overflow
+
+This trap occurs when the processor encounters an INTO instruction and the
+OF (overflow) flag is set. Since signed arithmetic and unsigned arithmetic
+both use the same arithmetic instructions, the processor cannot determine
+which is intended and therefore does not cause overflow exceptions
+automatically. Instead it merely sets OF when the results, if interpreted as
+signed numbers, would be out of range. When doing arithmetic on signed
+operands, careful programmers and compilers either test OF directly or use
+the INTO instruction.
+
+<HR>
+<A Name="9.8.5"><H2>9.8.5  Interrupt 5 -- Bounds Check</H2>
+
+9.8.5  Interrupt 5 -- Bounds Check
+
+This fault occurs when the processor, while executing a BOUND instruction,
+finds that the operand exceeds the specified limits. A program can use the
+BOUND instruction to check a signed array index against signed limits
+defined in a block of memory.
+
+<HR>
+<A Name="9.8.6"><H2>9.8.6  Interrupt 6 -- Invalid Opcode</H2>
+
+9.8.6  Interrupt 6 -- Invalid Opcode
+
+This fault occurs when an invalid opcode is detected by the execution unit.
+(The exception is not detected until an attempt is made to execute the
+invalid opcode; i.e., prefetching an invalid opcode does not cause this
+exception.) No error code is pushed on the stack. The exception can be
+handled within the same task.
+
+This exception also occurs when the type of operand is invalid for the
+given opcode. Examples include an intersegment JMP referencing a register
+operand, or an LES instruction with a register source operand.
+
+<HR>
+<A Name="9.8.7"><H2>9.8.7  Interrupt 7 -- Coprocessor Not Available</H2>
+
+9.8.7  Interrupt 7 -- Coprocessor Not Available
+
+This exception occurs in either of two conditions:
+
+  *  The processor encounters an ESC (escape) instruction, and the EM
+     (emulate) bit ofCR0 (control register zero) is set.
+
+  *  The processor encounters either the WAIT instruction or an ESC
+     instruction, and both the MP (monitor coprocessor) and TS (task
+     switched) bits of CR0 are set.
+
+Refer to Chapter 11 for information about the coprocessor interface.
+
+<HR>
+<A Name="9.8.8"><H2>9.8.8  Interrupt 8 -- Double Fault</H2>
+
+9.8.8  Interrupt 8 -- Double Fault
+
+Normally, when the processor detects an exception while trying to invoke
+the handler for a prior exception, the two exceptions can be handled
+serially. If, however, the processor cannot handle them serially, it signals
+the double-fault exception instead. To determine when two faults are to be
+signalled as a double fault, the 80386 divides the exceptions into three
+classes: benign exceptions, contributory exceptions, and page faults. Table
+9-3 shows this classification.
+
+Table 9-4 shows which combinations of exceptions cause a double fault and
+which do not.
+
+The processor always pushes an error code onto the stack of the
+double-fault handler; however, the error code is always zero. The faulting
+instruction may not be restarted. If any other exception occurs while
+attempting to invoke the double-fault handler, the processor shuts down.
+
+See Also: <A HREF="Tabs.html#Tab.9-3">Tab.9-3</A> <A HREF="Tabs.html#Tab.9-4">Tab.9-4</A> 
+
+<HR>
+<A Name="9.8.9"><H2>9.8.9  Interrupt 9 -- Coprocessor Segment Overrun</H2>
+
+9.8.9  Interrupt 9 -- Coprocessor Segment Overrun
+
+This exception is raised in protected mode if the 80386 detects a page or
+segment violation while transferring the middle portion of a coprocessor
+operand to the NPX. This exception is avoidable. Refer to Chapter 11 for
+more information about the coprocessor interface.
+
+<HR>
+<A Name="9.8.10"><H2>9.8.10 Interrupt 10 -- Invalid TSS</H2>
+
+9.8.10  Interrupt 10 -- Invalid TSS
+
+Interrupt 10 occurs if during a task switch the new TSS is invalid. A TSS
+is considered invalid in the cases shown in Table 9-5. An error code is
+pushed onto the stack to help identify the cause of the fault. The EXT bit
+indicates whether the exception was caused by a condition outside the
+control of the program; e.g., an external interrupt via a task gate
+triggered a switch to an invalid TSS.
+
+This fault can occur either in the context of the original task or in the
+context of the new task. Until the processor has completely verified the
+presence of the new TSS, the exception occurs in the context of the original
+task. Once the existence of the new TSS is verified, the task switch is
+considered complete; i.e., TR is updated and, if the switch is due to a
+CALL or interrupt, the backlink of the new TSS is set to the old TSS. Any
+errors discovered by the processor after this point are handled in the
+context of the new task.
+
+To insure a proper TSS to process it, the handler for exception 10 must be
+a task invoked via a task gate.
+
+See Also: <A HREF="Tabs.html#Tab.9-5">Tab.9-5</A> 
+
+<HR>
+<A Name="9.8.11"><H2>9.8.11 Interrupt 11 -- Segment Not Present</H2>
+
+9.8.11  Interrupt 11 -- Segment Not Present
+
+Exception 11 occurs when the processor detects that the present bit of a
+descriptor is zero. The processor can trigger this fault in any of these
+cases:
+
+  *  While attempting to load the CS, DS, ES, FS, or GS registers; loading
+     the SS register, however, causes a stack fault.
+
+  *  While attempting loading the LDT register with an LLDT instruction;
+     loading the LDT register during a task switch operation, however,
+     causes the "invalid TSS" exception.
+
+  *  While attempting to use a gate descriptor that is marked not-present.
+
+This fault is restartable. If the exception handler makes the segment
+present and returns, the interrupted program will resume execution.
+
+If a not-present exception occurs during a task switch, not all the steps
+of the task switch are complete. During a task switch, the processor first
+loads all the segment registers, then checks their contents for validity. If
+a not-present exception is discovered, the remaining segment registers have
+not been checked and therefore may not be usable for referencing memory. The
+not-present handler should not rely on being able to use the values found
+in CS, SS, DS, ES, FS, and GS without causing another exception. The
+exception handler should check all segment registers before trying to resume
+the new task; otherwise, general protection faults may result later under
+conditions that make diagnosis more difficult. There are three ways to
+handle this case:
+
+  1.  Handle the not-present fault with a task. The task switch back to the
+      interrupted task will cause the processor to check the registers as it
+      loads them from the TSS.
+
+  2.  PUSH and POP all segment registers. Each POP causes the processor to
+      check the new contents of the segment register.
+
+  3.  Scrutinize the contents of each segment-register image in the TSS,
+      simulating the test that the processor makes when it loads a segment
+      register.
+
+This exception pushes an error code onto the stack. The EXT bit of the
+error code is set if an event external to the program caused an interrupt
+that subsequently referenced a not-present segment. The I-bit is set if the
+error code refers to an IDT entry, e.g., an INT instruction referencing a
+not-present gate.
+
+An operating system typically uses the "segment not present" exception to
+implement virtual memory at the segment level. A not-present indication in a
+gate descriptor, however, usually does not indicate that a segment is not
+present (because gates do not necessarily correspond to segments).
+Not-present gates may be used by an operating system to trigger exceptions
+of special significance to the operating system.
+
+<HR>
+<A Name="9.8.12"><H2>9.8.12 Interrupt 12 -- Stack Exception</H2>
+
+9.8.12  Interrupt 12 -- Stack Exception
+
+A stack fault occurs in either of two general conditions:
+
+  *  As a result of a limit violation in any operation that refers to the
+     SS register. This includes stack-oriented instructions such as POP,
+     PUSH, ENTER, and LEAVE, as well as other memory references that
+     implicitly use SS (for example, MOV AX, [BP+6]). ENTER causes this
+     exception when the stack is too small for the indicated local-variable
+     space.
+
+  *  When attempting to load the SS register with a descriptor that is
+     marked not-present but is otherwise valid. This can occur in a task
+     switch, an interlevel CALL, an interlevel return, an LSS instruction,
+     or a MOV or POP instruction to SS.
+
+When the processor detects a stack exception, it pushes an error code onto
+the stack of the exception handler. If the exception is due to a not-present
+stack segment or to overflow of the new stack during an interlevel CALL, the
+error code contains a selector to the segment in question (the exception
+handler can test the present bit in the descriptor to determine which
+exception occurred); otherwise the error code is zero.
+
+An instruction that causes this fault is restartable in all cases. The
+return pointer pushed onto the exception handler's stack points to the
+instruction that needs to be restarted. This instruction is usually the one
+that caused the exception; however, in the case of a stack exception due to
+loading of a not-present stack-segment descriptor during a task switch, the
+indicated instruction is the first instruction of the new task.
+
+When a stack fault occurs during a task switch, the segment registers may
+not be usable for referencing memory. During a task switch, the selector
+values are loaded before the descriptors are checked. If a stack fault is
+discovered, the remaining segment registers have not been checked and
+therefore may not be usable for referencing memory. The stack fault handler
+should not rely on being able to use the values found in CS, SS, DS, ES,
+FS, and GS without causing another exception. The exception handler should
+check all segment registers before trying to resume the new task; otherwise,
+general protection faults may result later under conditions that make
+diagnosis more difficult.
+
+<HR>
+<A Name="9.8.13"><H2>9.8.13 Interrupt 13 -- General Protection Exception</H2>
+
+9.8.13  Interrupt 13 -- General Protection Exception
+
+All protection violations that do not cause another exception cause a
+general protection exception. This includes (but is not limited to):
+
+  1.  Exceeding segment limit when using CS, DS, ES, FS, or GS
+
+  2.  Exceeding segment limit when referencing a descriptor table
+
+  3.  Transferring control to a segment that is not executable
+
+  4.  Writing into a read-only data segment or into a code segment
+
+  5.  Reading from an execute-only segment
+
+  6.  Loading the SS register with a read-only descriptor (unless the 
+      selector comes from the TSS during a task switch, in which case a TSS 
+      exception occurs
+
+  7.  Loading SS, DS, ES, FS, or GS with the descriptor of a system segment
+
+  8.  Loading DS, ES, FS, or GS with the descriptor of an executable 
+      segment that is not also readable
+
+  9.  Loading SS with the descriptor of an executable segment
+
+  10. Accessing memory via DS, ES, FS, or GS when the segment register
+      contains a null selector
+
+  11. Switching to a busy task
+
+  12. Violating privilege rules
+
+  13. Loading CR0 with PG=1 and PE=0.
+
+  14. Interrupt or exception via trap or interrupt gate from V86 mode to
+      privilege level other than zero.
+
+  15. Exceeding the instruction length limit of 15 bytes (this can occur
+      only if redundant prefixes are placed before an instruction)
+
+The general protection exception is a fault. In response to a general
+protection exception, the processor pushes an error code onto the exception
+handler's stack. If loading a descriptor causes the exception, the error
+code contains a selector to the descriptor; otherwise, the error code is
+null. The source of the selector in an error code may be any of the
+following:
+
+  1.  An operand of the instruction.
+  2.  A selector from a gate that is the operand of the instruction.
+  3.  A selector from a TSS involved in a task switch.
+
+<HR>
+<A Name="9.8.14"><H2>9.8.14 Interrupt 14 -- Page Fault</H2>
+
+9.8.14  Interrupt 14 -- Page Fault
+
+This exception occurs when paging is enabled (PG=1) and the processor
+detects one of the following conditions while translating a linear address
+to a physical address:
+
+  *  The page-directory or page-table entry needed for the address
+     translation has zero in its present bit.
+
+  *  The current procedure does not have sufficient privilege to access the
+     indicated page.
+
+The processor makes available to the page fault handler two items of
+information that aid in diagnosing the exception and recovering from it:
+
+  *  An error code on the stack. The error code for a page fault has a
+     format different from that for other exceptions (see Figure 9-8). The
+     error code tells the exception handler three things:
+
+     1.  Whether the exception was due to a not present page or to an access
+         rights violation.
+
+     2.  Whether the processor was executing at user or supervisor level at
+         the time of the exception.
+
+     3.  Whether the memory access that caused the exception was a read or
+         write.
+
+  *  CR2 (control register two). The processor stores in CR2 the linear
+     address used in the access that caused the exception (see Figure 9-9).
+     The exception handler can use this address to locate the corresponding
+     page directory and page table entries. If another page fault can occur
+     during execution of the page fault handler, the handler should push CR2
+     onto the stack.
+
+See Also: <A HREF="Figs/Fig.9.html#Fig.9-8">Fig.9-8</A> <A HREF="Figs/Fig.9.html#Fig.9-9">Fig.9-9</A> 
+
+<HR>
+<A Name="9.8.14.1"><H2>9.8.14.1  Page Fault during Task Switch</H2>
+
+9.8.14.1  Page Fault During Task Switch
+
+The processor may access any of four segments during a task switch:
+
+  1.  Writes the state of the original task in the TSS of that task.
+
+  2.  Reads the GDT to locate the TSS descriptor of the new task.
+
+  3.  Reads the TSS of the new task to check the types of segment
+      descriptors from the TSS.
+
+  4.  May read the LDT of the new task in order to verify the segment
+      registers stored in the new TSS.
+
+A page fault can result from accessing any of these segments. In the latter
+two cases the exception occurs in the context of the new task. The
+instruction pointer refers to the next instruction of the new task, not to
+the instruction that caused the task switch. If the design of the operating
+system permits page faults to occur during task-switches, the page-fault
+handler should be invoked via a task gate.
+
+See Also: <A HREF="Figs/Fig.9.html#Fig.9-9">Fig.9-9</A> 
+
+<HR>
+<A Name="9.8.14.2"><H2>9.8.14.2  Page Fault with Inconsistent Stack Pointer</H2>
+
+9.8.14.2  Page Fault with Inconsistent Stack Pointer
+
+Special care should be taken to ensure that a page fault does not cause the
+processor to use an invalid stack pointer (SS:ESP). Software written for
+earlier processors in the 8086 family often uses a pair of instructions to
+change to a new stack; for example:
+
+MOV SS, AX
+MOV SP, StackTop
+
+With the 80386, because the second instruction accesses memory, it is
+possible to get a page fault after SS has been changed but before SP has
+received the corresponding change. At this point, the two parts of the stack
+pointer SS:SP (or, for 32-bit programs, SS:ESP) are inconsistent.
+
+The processor does not use the inconsistent stack pointer if the handling
+of the page fault causes a stack switch to a well defined stack (i.e., the
+handler is a task or a more privileged procedure). However, if the page
+fault handler is invoked by a trap or interrupt gate and the page fault
+occurs at the same privilege level as the page fault handler, the processor
+will attempt to use the stack indicated by the current (invalid) stack
+pointer.
+
+In systems that implement paging and that handle page faults within the
+faulting task (with trap or interrupt gates), software that executes at the
+same privilege level as the page fault handler should initialize a new stack
+by using the new LSS instruction rather than an instruction pair shown
+above. When the page fault handler executes at privilege level zero (the
+normal case), the scope of the problem is limited to privilege-level zero
+code, typically the kernel of the operating system.
+
+<HR>
+<A Name="9.8.15"><H2>9.8.15 Interrupt 16 -- Coprocessor Error</H2>
+
+9.8.15  Interrupt 16 -- Coprocessor Error
+
+The 80386 reports this exception when it detects a signal from the 80287 or
+80387 on the 80386's ERROR# input pin. The 80386 tests this pin only at the
+beginning of certain ESC instructions and when it encounters a WAIT
+instruction while the EM bit of the MSW is zero (no emulation). Refer to
+Chapter 11 for more information on the coprocessor interface.
+
+<HR>
+<A Name="9.9"><H2>9.9  Exception Summary</H2>
+
+9.9  Exception Summary
+
+
+Table 9-6 summarizes the exceptions recognized by the 386.
+
+Table 9-6. Exception Summary
+
+
+Description               Interrupt   Return Address  Exception     Function That Can Generate
+                          Number      Points to       Type          the Exception
+                                      Faulting
+                                      Instruction
+
+Divide error               0          YES             FAULT         DIV, IDIV
+Debug exceptions           1          
+Some debug exceptions are traps and some are faults.  The exception
+handler can determine which has occurred by examining DR6.  (Refer to
+Chapter 12.)               
+Some debug exceptions are traps and some are faults.  The exception
+handler can determine which has occurred by examining DR6.  (Refer to
+Chapter 12.)             Any instruction
+Breakpoint                 3          NO              TRAP          One-byte INT 3
+Overflow                   4          NO              TRAP          INTO
+Bounds check               5          YES             FAULT         BOUND
+Invalid opcode             6          YES             FAULT         Any illegal instruction
+Coprocessor not available  7          YES             FAULT         ESC, WAIT
+Double fault               8          YES             ABORT         Any instruction that can
+                                                                    generate an exception
+Coprocessor Segment
+Overrun                    9          NO              ABORT         Any operand of an ESC
+                                                                    instruction that wraps around
+                                                                    the end of a segment.
+Invalid TSS               10          YES             FAULT
+An invalid-TSS fault is not restartable if it occurs during the
+processing of an external interrupt.        JMP, CALL, IRET, any interrupt
+Segment not present       11          YES             FAULT         Any segment-register modifier
+Stack exception           12          YES             FAULT         Any memory reference thru SS
+General Protection        13          YES             FAULT/ABORT
+All GP faults are restartable. If the fault occurs while attempting to
+vector to the handler for an external interrupt, the interrupted program is
+restartable, but the interrupt may be lost.  Any memory reference or code
+                                                                    fetch
+Page fault                14          YES             FAULT         Any memory reference or code
+                                                                    fetch
+Coprocessor error         16          YES             FAULT
+Coprocessor errors are reported as a fault on the first ESC or WAIT
+instruction executed after the ESC instruction that caused the error.        ESC, WAIT
+Two-byte SW Interrupt     0-255       NO              TRAP          INT n
+
+<HR>
+<A Name="9.10"><H2>9.10  Error Code Summary</H2>
+
+
+9.10  Error Code Summary
+
+Table 9-7 summarizes the error information that is available with each
+exception.
+
+
+Table 9-7. Error-Code Summary
+
+Description                       Interrupt     Error Code
+                                  Number
+
+Divide error                       0            No
+Debug exceptions                   1            No
+Breakpoint                         3            No
+Overflow                           4            No
+Bounds check                       5            No
+Invalid opcode                     6            No
+Coprocessor not available          7            No
+System error                       8            Yes (always 0)
+Coprocessor Segment Overrun        9            No
+Invalid TSS                       10            Yes
+Segment not present               11            Yes
+Stack exception                   12            Yes
+General protection fault          13            Yes
+Page fault                        14            Yes
+Coprocessor error                 16            No
+Two-byte SW interrupt             0-255         No
+
+
+

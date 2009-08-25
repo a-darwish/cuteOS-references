@@ -1,0 +1,1724 @@
+<pre>
+<title>Chapter 3    Applications Instruction Set</title><body>
+<H1><font color=red>Chapter 3  </font>  Applications Instruction Set</H1>
+<pre>
+
+
+
+Chapter 3  Applications Instruction Set
+
+----------------------------------------------------------------------------
+
+This chapter presents an overview of the instructions which programmers can
+use to write application software for the 80386 executing in protected
+virtual-address mode. The instructions are grouped by categories of related
+functions.
+
+The instructions not discussed in this chapter are those that are normally
+used only by operating-system programmers. Part II describes the operation
+of these instructions.
+
+The descriptions in this chapter assume that the 80386 is operating in
+protected mode with 32-bit addressing in effect; however, all instructions
+discussed are also available when 16-bit addressing is in effect in
+protected mode, real mode, or virtual 8086 mode. For any differences of
+operation that exist in the various modes, refer to Chapter 13,
+Chapter 14, or Chapter 15.
+
+The instruction dictionary in Chapter 17 contains more detailed
+descriptions of all instructions, including encoding, operation, timing,
+effect on flags, and exceptions.
+
+
+
+<HR>
+<A Name="3.1"><H2>3.1  Data Movement Instructions</H2>
+
+3.1  Data Movement Instructions
+
+These instructions provide convenient methods for moving bytes, words, or
+doublewords of data between memory and the registers of the base
+architecture. They fall into the following classes:
+
+  1.  General-purpose data movement instructions.
+  2.  Stack manipulation instructions.
+  3.  Type-conversion instructions.
+
+<HR>
+<A Name="3.1.1"><H2>3.1.1  General-Purpose Data Movement Instructions</H2>
+
+3.1.1  General-Purpose Data Movement Instructions
+
+MOV (Move) transfers a byte, word, or doubleword from the source operand to
+the destination operand. The MOV instruction is useful for transferring data
+along any of these paths
+There are also variants of MOV that operate on segment registers.  These
+are covered in a later section of this chapter.:
+
+  *  To a register from memory
+  *  To memory from a register
+  *  Between general registers
+  *  Immediate data to a register
+  *  Immediate data to a memory
+
+The MOV instruction cannot move from memory to memory or from segment
+register to segment register are not allowed. Memory-to-memory moves can be
+performed, however, by the string move instruction MOVS.
+
+XCHG (Exchange) swaps the contents of two operands. This instruction takes
+the place of three MOV instructions. It does not require a temporary
+location to save the contents of one operand while load the other is being
+loaded. XCHG is especially useful for implementing semaphores or similar
+data structures for process synchronization.
+
+The XCHG instruction can swap two byte operands, two word operands, or two
+doubleword operands. The operands for the XCHG instruction may be two
+register operands, or a register operand with a memory operand. When used
+with a memory operand, XCHG automatically activates the LOCK signal. (Refer
+to Chapter 11 for more information on the bus lock.)
+
+<HR>
+<A Name="3.1.2"><H2>3.1.2  Stack Manipulation Instructions</H2>
+
+3.1.2  Stack Manipulation Instructions
+
+PUSH (Push) decrements the stack pointer (ESP), then transfers the source
+operand to the top of stack indicated by ESP (see Figure 3-1). PUSH is
+often used to place parameters on the stack before calling a procedure; it
+is also the basic means of storing temporary variables on the stack. The
+PUSH instruction operates on memory operands, immediate operands, and
+register operands (including segment registers).
+
+PUSHA (Push All Registers) saves the contents of the eight general
+registers on the stack (see Figure 3-2). This instruction simplifies
+procedure calls by reducing the number of instructions required to retain
+the contents of the general registers for use in a procedure. The processor
+pushes the general registers on the stack in the following order: EAX, ECX,
+EDX, EBX, the initial value of ESP before EAX was pushed, EBP, ESI, and
+EDI. PUSHA is complemented by the POPA instruction.
+
+POP (Pop) transfers the word or doubleword at the current top of stack
+(indicated by ESP) to the destination operand, and then increments ESP to
+point to the new top of stack. See Figure 3-3. POP moves information from
+the stack to a general register, or to memory
+There are also a variant of POP that operates on segment registers. This
+is covered in a later section of this chapter..
+
+POPA (Pop All Registers) restores the registers saved on the stack by
+PUSHA, except that it ignores the saved value of ESP. See Figure 3-4.
+
+See Also: <A HREF="Figs/Fig.3.html#Fig.3-1">Fig.3-1</A> <A HREF="Figs/Fig.3.html#Fig.3-2">Fig.3-2</A> <A HREF="Figs/Fig.3.html#Fig.3-3">Fig.3-3</A> <A HREF="Figs/Fig.3.html#Fig.3-4">Fig.3-4</A> 
+
+
+<HR>
+<A Name="3.1.3"><H2>3.1.3  Type Conversion Instructions</H2>
+
+
+3.1.3  Type Conversion Instructions
+
+The type conversion instructions convert bytes into words, words into
+doublewords, and doublewords into 64-bit items (quad-words). These
+instructions are especially useful for converting signed integers, because
+they automatically fill the extra bits of the larger item with the value of
+the sign bit of the smaller item. This kind of conversion, illustrated by
+Figure 3-5, is called sign extension.
+
+There are two classes of type conversion instructions:
+
+  1.  The forms CWD, CDQ, CBW, and CWDE which operate only on data in the
+      EAX register.
+
+  2.  The forms MOVSX and MOVZX, which permit one operand to be in any
+      general register while permitting the other operand to be in memory or
+      in a register.
+
+CWD (Convert Word to Doubleword) and CDQ (Convert Doubleword to Quad-Word)
+double the size of the source operand. CWD extends the sign of the
+word in register AX throughout register DX. CDQ extends the sign of the
+doubleword in EAX throughout EDX. CWD can be used to produce a doubleword
+dividend from a word before a word division, and CDQ can be used to produce
+a quad-word dividend from a doubleword before doubleword division.
+
+CBW (Convert Byte to Word) extends the sign of the byte in register AL
+throughout AX.
+
+CWDE (Convert Word to Doubleword Extended) extends the sign of the word in
+register AX throughout EAX.
+
+MOVSX (Move with Sign Extension) sign-extends an 8-bit value to a 16-bit
+value and a 8- or 16-bit value to 32-bit value.
+
+MOVZX (Move with Zero Extension) extends an 8-bit value to a 16-bit value
+and an 8- or 16-bit value to 32-bit value by inserting high-order zeros.
+
+See Also: <A HREF="Figs/Fig.3.html#Fig.3-5">Fig.3-5</A> 
+
+<HR>
+<A Name="3.2"><H2>3.2  Binary Arithmetic Instructions</H2>
+
+3.2  Binary Arithmetic Instructions
+
+The arithmetic instructions of the 80386 processor simplify the
+manipulation of numeric data that is encoded in binary. Operations include
+the standard add, subtract, multiply, and divide as well as increment,
+decrement, compare, and change sign. Both signed and unsigned binary
+integers are supported. The binary arithmetic instructions may also be used
+as one step in the process of performing arithmetic on decimal integers.
+
+Many of the arithmetic instructions operate on both signed and unsigned
+integers. These instructions update the flags ZF, CF, SF, and OF in such a
+manner that subsequent instructions can interpret the results of the
+arithmetic as either signed or unsigned. CF contains information relevant to
+unsigned integers; SF and OF contain information relevant to signed
+integers. ZF is relevant to both signed and unsigned integers; ZF is set
+when all bits of the result are zero.
+
+If the integer is unsigned, CF may be tested after one of these arithmetic
+operations to determine whether the operation required a carry or borrow of
+a one-bit in the high-order position of the destination operand. CF is set
+if a one-bit was carried out of the high-order position (addition
+instructions ADD, ADC, AAA, and DAA) or if a one-bit was carried (i.e.
+borrowed) into the high-order bit (subtraction instructions SUB, SBB, AAS,
+DAS, CMP, and NEG).
+
+If the integer is signed, both SF and OF should be tested. SF always has
+the same value as the sign bit of the result. The most significant bit (MSB)
+of a signed integer is the bit next to the sign--bit 6 of a byte, bit 14 of
+a word, or bit 30 of a doubleword. OF is set in either of these cases:
+
+  *  A one-bit was carried out of the MSB into the sign bit but no one bit
+     was carried out of the sign bit (addition instructions ADD, ADC, INC,
+     AAA, and DAA). In other words, the result was greater than the greatest
+     positive number that could be contained in the destination operand.
+
+  *  A one-bit was carried from the sign bit into the MSB but no one bit
+     was carried into the sign bit (subtraction instructions SUB, SBB, DEC,
+     AAS, DAS, CMP, and NEG). In other words, the result was smaller that
+     the smallest negative number that could be contained in the destination
+     operand.
+
+These status flags are tested by executing one of the two families of
+conditional instructions: Jcc (jump on condition cc) or SETcc (byte set on
+condition).
+
+<HR>
+<A Name="3.2.1"><H2>3.2.1  Addition and Subtraction Instructions</H2>
+
+3.2.1  Addition and Subtraction Instructions
+
+ADD (Add Integers) replaces the destination operand with the sum of the
+source and destination operands. Sets CF if overflow.
+
+ADC (Add Integers with Carry) sums the operands, adds one if CF is set, and
+replaces the destination operand with the result. If CF is cleared, ADC
+performs the same operation as the ADD instruction. An ADD followed by
+multiple ADC instructions can be used to add numbers longer than 32 bits.
+
+INC (Increment) adds one to the destination operand. INC does not affect
+CF. Use ADD with an immediate value of 1 if an increment that updates carry
+(CF) is needed.
+
+SUB (Subtract Integers) subtracts the source operand from the destination
+operand and replaces the destination operand with the result. If a borrow is
+required, the CF is set. The operands may be signed or unsigned bytes,
+words, or doublewords.
+
+SBB (Subtract Integers with Borrow) subtracts the source operand from the
+destination operand, subtracts 1 if CF is set, and returns the result to the
+destination operand. If CF is cleared, SBB performs the same operation as
+SUB. SUB followed by multiple SBB instructions may be used to subtract
+numbers longer than 32 bits. If CF is cleared, SBB performs the same
+operation as SUB.
+
+DEC (Decrement) subtracts 1 from the destination operand. DEC does not
+update CF. Use SUB with an immediate value of 1 to perform a decrement that
+affects carry.
+
+<HR>
+<A Name="3.2.2"><H2>3.2.2  Comparison and Sign Change Instruction</H2>
+
+3.2.2  Comparison and Sign Change Instruction
+
+CMP (Compare) subtracts the source operand from the destination operand. It
+updates OF, SF, ZF, AF, PF, and CF but does not alter the source and
+destination operands. A subsequent Jcc or SETcc instruction can test the
+appropriate flags.
+
+NEG (Negate) subtracts a signed integer operand from zero. The effect of
+NEG is to reverse the sign of the operand from positive to negative or from
+negative to positive.
+
+<HR>
+<A Name="3.2.3"><H2>3.2.3  Multiplication Instructions</H2>
+
+3.2.3  Multiplication Instructions
+
+The 80386 has separate multiply instructions for unsigned and signed
+operands. MUL operates on unsigned numbers, while IMUL operates on signed
+integers as well as unsigned.
+
+MUL (Unsigned Integer Multiply) performs an unsigned multiplication of the
+source operand and the accumulator. If the source is a byte, the processor
+multiplies it by the contents of AL and returns the double-length result to
+AH and AL. If the source operand is a word, the processor multiplies it by
+the contents of AX and returns the double-length result to DX and AX. If the
+source operand is a doubleword, the processor multiplies it by the contents
+of EAX and returns the 64-bit result in EDX and EAX. MUL sets CF and OF
+when the upper half of the result is nonzero; otherwise, they are cleared.
+
+IMUL (Signed Integer Multiply) performs a signed multiplication operation.
+IMUL has three variations:
+
+  1.  A one-operand form. The operand may be a byte, word, or doubleword
+      located in memory or in a general register. This instruction uses EAX
+      and EDX as implicit operands in the same way as the MUL instruction.
+
+  2.  A two-operand form. One of the source operands may be in any general
+      register while the other may be either in memory or in a general
+      register. The product replaces the general-register operand.
+
+  3.  A three-operand form; two are source and one is the destination
+      operand. One of the source operands is an immediate value stored in
+      the instruction; the second may be in memory or in any general
+      register. The product may be stored in any general register. The
+      immediate operand is treated as signed. If the immediate operand is a
+      byte, the processor automatically sign-extends it to the size of the
+      second operand before performing the multiplication.
+
+The three forms are similar in most respects:
+
+  *  The length of the product is calculated to twice the length of the
+     operands.
+
+  *  The CF and OF flags are set when significant bits are carried into the
+     high-order half of the result. CF and OF are cleared when the
+     high-order half of the result is the sign-extension of the low-order
+     half.
+
+However, forms 2 and 3 differ in that the product is truncated to the
+length of the operands before it is stored in the destination register.
+Because of this truncation, OF should be tested to ensure that no
+significant bits are lost. (For ways to test OF, refer to the INTO and PUSHF
+instructions.)
+
+Forms 2 and 3 of IMUL may also be used with unsigned operands because,
+whether the operands are signed or unsigned, the low-order half of the
+product is the same.
+
+<HR>
+<A Name="3.2.4"><H2>3.2.4  Division Instructions</H2>
+
+
+3.2.4  Division Instructions
+
+The 80386 has separate division instructions for unsigned and signed
+operands. DIV operates on unsigned numbers, while IDIV operates on signed
+integers as well as unsigned. In either case, an exception (interrupt zero)
+occurs if the divisor is zero or if the quotient is too large for AL, AX, or
+EAX.
+
+DIV (Unsigned Integer Divide) performs an unsigned division of the
+accumulator by the source operand. The dividend (the accumulator) is twice
+the size of the divisor (the source operand); the quotient and remainder
+have the same size as the divisor, as the following table shows.
+
+Size of Source Operand
+      (divisor)             Dividend       Quotient      Remainder
+
+Byte                        AX             AL            AH
+Word                        DX:AX          AX            DX
+Doubleword                  EDX:EAX        EAX           EDX
+
+Non-integral quotients are truncated to integers toward 0. The remainder is
+always less than the divisor. For unsigned byte division, the largest
+quotient is 255. For unsigned word division, the largest quotient is 65,535.
+For unsigned doubleword division the largest quotient is 2^(32) -1.
+
+IDIV (Signed Integer Divide) performs a signed division of the accumulator
+by the source operand. IDIV uses the same registers as the DIV instruction.
+
+For signed byte division, the maximum positive quotient is +127, and the
+minimum negative quotient is -128. For signed word division, the maximum
+positive quotient is +32,767, and the minimum negative quotient is -32,768.
+For signed doubleword division the maximum positive quotient is 2^(31) -1,
+the minimum negative quotient is -2^(31). Non-integral results are truncated
+towards 0. The remainder always has the same sign as the dividend and is
+less than the divisor in magnitude.
+
+<HR>
+<A Name="3.3"><H2>3.3  Decimal Arithmetic Instructions</H2>
+
+3.3  Decimal Arithmetic Instructions
+
+Decimal arithmetic is performed by combining the binary arithmetic
+instructions (already discussed in the prior section) with the decimal
+arithmetic instructions. The decimal arithmetic instructions are used in one
+of the following ways:
+
+  *  To adjust the results of a previous binary arithmetic operation to
+     produce a valid packed or unpacked decimal result.
+
+  *  To adjust the inputs to a subsequent binary arithmetic operation so
+     that the operation will produce a valid packed or unpacked decimal
+     result.
+
+These instructions operate only on the AL or AH registers. Most utilize the
+AF flag.
+
+<HR>
+<A Name="3.3.1"><H2>3.3.1  Packed BCD Adjustment Instructions</H2>
+
+3.3.1  Packed BCD Adjustment Instructions
+
+DAA (Decimal Adjust after Addition) adjusts the result of adding two valid
+packed decimal operands in AL. DAA must always follow the addition of two
+pairs of packed decimal numbers (one digit in each half-byte) to obtain a
+pair of valid packed decimal digits as results. The carry flag is set if
+carry was needed.
+
+DAS (Decimal Adjust after Subtraction) adjusts the result of subtracting
+two valid packed decimal operands in AL. DAS must always follow the
+subtraction of one pair of packed decimal numbers (one digit in each half-
+byte) from another to obtain a pair of valid packed decimal digits as
+results. The carry flag is set if a borrow was needed.
+
+<HR>
+<A Name="3.3.2"><H2>3.3.2  Unpacked BCD Adjustment Instructions</H2>
+
+
+3.3.2  Unpacked BCD Adjustment Instructions
+
+AAA (ASCII Adjust after Addition) changes the contents of register AL to a
+valid unpacked decimal number, and zeros the top 4 bits. AAA must always
+follow the addition of two unpacked decimal operands in AL. The carry flag
+is set and AH is incremented if a carry is necessary.
+
+AAS (ASCII Adjust after Subtraction) changes the contents of register AL to
+a valid unpacked decimal number, and zeros the top 4 bits. AAS must always
+follow the subtraction of one unpacked decimal operand from another in AL.
+The carry flag is set and AH decremented if a borrow is necessary.
+
+AAM (ASCII Adjust after Multiplication) corrects the result of a
+multiplication of two valid unpacked decimal numbers. AAM must always follow
+the multiplication of two decimal numbers to produce a valid decimal result.
+The high order digit is left in AH, the low order digit in AL.
+
+AAD (ASCII Adjust before Division) modifies the numerator in AH and AL to
+prepare for the division of two valid unpacked decimal operands so that the
+quotient produced by the division will be a valid unpacked decimal number.
+AH should contain the high-order digit and AL the low-order digit. This
+instruction adjusts the value and places the result in AL. AH will contain
+zero.
+
+<HR>
+<A Name="3.4"><H2>3.4  Logical Instructions</H2>
+
+3.4  Logical Instructions
+
+The group of logical instructions includes:
+
+  *  The Boolean operation instructions
+  *  Bit test and modify instructions
+  *  Bit scan instructions
+  *  Rotate and shift instructions
+  *  Byte set on condition
+
+<HR>
+<A Name="3.4.1"><H2>3.4.1  Boolean Operation Instructions</H2>
+
+3.4.1  Boolean Operation Instructions
+
+The logical operations are AND, OR, XOR, and NOT.
+
+NOT (Not) inverts the bits in the specified operand to form a one's
+complement of the operand. The NOT instruction is a unary operation that
+uses a single operand in a register or memory. NOT has no effect on the
+flags.
+
+The AND, OR, and XOR instructions perform the standard logical operations
+"and", "(inclusive) or", and "exclusive or". These instructions can use the
+following combinations of operands:
+
+  *  Two register operands
+
+  *  A general register operand with a memory operand
+
+  *  An immediate operand with either a general register operand or a
+     memory operand.
+
+AND, OR, and XOR clear OF and CF, leave AF undefined, and update SF, ZF,
+and PF.
+
+<HR>
+<A Name="3.4.2"><H2>3.4.2  Bit Test and Modify Instructions</H2>
+
+3.4.2  Bit Test and Modify Instructions
+
+This group of instructions operates on a single bit which can be in memory
+or in a general register. The location of the bit is specified as an offset
+from the low-order end of the operand. The value of the offset either may be
+given by an immediate byte in the instruction or may be contained in a
+general register.
+
+These instructions first assign the value of the selected bit to CF, the
+carry flag. Then a new value is assigned to the selected bit, as determined
+by the operation. OF, SF, ZF, AF, PF are left in an undefined state. Table
+3-1 defines these instructions.
+
+See Also: <A HREF="Tabs.html#Tab.3-1">Tab.3-1</A> 
+<HR>
+<A Name="3.4.3"><H2>3.4.3  Bit Scan Instructions</H2>
+
+3.4.3  Bit Scan Instructions
+
+These instructions scan a word or doubleword for a one-bit and store the
+index of the first set bit into a register.  The bit string being scanned
+may be either in a register or in memory. The ZF flag is set if the entire
+word is zero (no set bits are found); ZF is cleared if a one-bit is found.
+If no set bit is found, the value of the destination register is undefined.
+
+BSF (Bit Scan Forward) scans from low-order to high-order (starting from
+bit index zero).
+
+BSR (Bit Scan Reverse) scans from high-order to low-order (starting from
+bit index 15 of a word or index 31 of a doubleword).
+
+<HR>
+<A Name="3.4.4"><H2>3.4.4  Shift and Rotate Instructions</H2>
+
+3.4.4  Shift and Rotate Instructions
+
+The shift and rotate instructions reposition the bits within the specified
+operand.
+
+These instructions fall into the following classes:
+
+  *  Shift instructions
+  *  Double shift instructions
+  *  Rotate instructions
+
+<HR>
+<A Name="3.4.4.1"><H2>3.4.4.1  Shift Instructions</H2>
+
+3.4.4.1  Shift Instructions
+
+The bits in bytes, words, and doublewords may be shifted arithmetically or
+logically. Depending on the value of a specified count, bits can be shifted
+up to 31 places.
+
+A shift instruction can specify the count in one of three ways. One form of
+shift instruction implicitly specifies the count as a single shift. The
+second form specifies the count as an immediate value. The third form
+specifies the count as the value contained in CL. This last form allows the
+shift count to be a variable that the program supplies during execution.
+Only the low order 5 bits of CL are used.
+
+CF always contains the value of the last bit shifted out of the destination
+operand. In a single-bit shift, OF is set if the value of the high-order
+(sign) bit was changed by the operation. Otherwise, OF is cleared. Following
+a multibit shift, however, the content of OF is always undefined.
+
+The shift instructions provide a convenient way to accomplish division or
+multiplication by binary power. Note however that division of signed numbers
+by shifting right is not the same kind of division performed by the IDIV
+instruction.
+
+SAL (Shift Arithmetic Left) shifts the destination byte, word, or
+doubleword operand left by one or by the number of bits specified in the
+count operand (an immediate value or the value contained in CL). The
+processor shifts zeros in from the right (low-order) side of the operand as
+bits exit from the left (high-order) side. See Figure 3-6.
+
+SHL (Shift Logical Left) is a synonym for SAL (refer to SAL).
+
+SHR (Shift Logical Right) shifts the destination byte, word, or doubleword
+operand right by one or by the number of bits specified in the count operand
+(an immediate value or the value contained in CL). The processor shifts
+zeros in from the left side of the operand as bits exit from the right side.
+See Figure 3-7.
+
+SAR (Shift Arithmetic Right) shifts the destination byte, word, or
+doubleword operand to the right by one or by the number of bits specified in
+the count operand (an immediate value or the value contained in CL). The
+processor preserves the sign of the operand by shifting in zeros on the left
+(high-order) side if the value is positive or by shifting by ones if the
+value is negative. See Figure 3-8.
+
+Even though this instruction can be used to divide integers by a power of
+two, the type of division is not the same as that produced by the IDIV
+instruction. The quotient of IDIV is rounded toward zero, whereas the
+"quotient" of SAR is rounded toward negative infinity. This difference is
+apparent only for negative numbers. For example, when IDIV is used to divide
+-9 by 4, the result is -2 with a remainder of -1. If SAR is used to shift
+-9 right by two bits, the result is -3. The "remainder" of this kind of
+division is +3; however, the SAR instruction stores only the high-order bit
+of the remainder (in CF).
+
+The code sequence in Figure 3-9 produces the same result as IDIV for any M
+= 2^(N), where 0 < N < 32. This sequence takes about 12 to 18 clocks,
+depending on whether the jump is taken; if ECX contains M, the corresponding
+IDIV ECX instruction will take about 43 clocks.
+
+See Also: <A HREF="Figs/Fig.3.html#Fig.3-6">Fig.3-6</A> <A HREF="Figs/Fig.3.html#Fig.3-7">Fig.3-7</A> <A HREF="Figs/Fig.3.html#Fig.3-8">Fig.3-8</A> <A HREF="Figs/Fig.3.html#Fig.3-9">Fig.3-9</A> 
+
+<HR>
+<A Name="3.4.4.2"><H2>3.4.4.2  Double-Shift Instructions</H2>
+
+3.4.4.2  Double-Shift Instructions
+
+These instructions provide the basic operations needed to implement
+operations on long unaligned bit strings. The double shifts operate either
+on word or doubleword operands, as follows:
+
+  1.  Taking two word operands as input and producing a one-word output.
+
+  2.  Taking two doubleword operands as input and producing a doubleword
+      output.
+
+Of the two input operands, one may either be in a general register or in
+memory, while the other may only be in a general register. The results
+replace the memory or register operand. The number of bits to be shifted is
+specified either in the CL register or in an immediate byte of the
+instruction.
+
+Bits are shifted from the register operand into the memory or register
+operand. CF is set to the value of the last bit shifted out of the
+destination operand. SF, ZF, and PF are set according to the value of the
+result. OF and AF are left undefined.
+
+SHLD (Shift Left Double) shifts bits of the R/M field to the left, while
+shifting high-order bits from the Reg field into the R/M field on the right
+(see Figure 3-10). The result is stored back into the R/M operand. The Reg
+field is not modified.
+
+SHRD (Shift Right Double) shifts bits of the R/M field to the right, while
+shifting low-order bits from the Reg field into the R/M field on the left
+(see Figure 3-11). The result is stored back into the R/M operand. The Reg
+field is not modified.
+
+See Also: <A HREF="Figs/Fig.3.html#Fig.3-10">Fig.3-10</A> <A HREF="Figs/Fig.3.html#Fig.3-11">Fig.3-11</A> 
+
+<HR>
+<A Name="3.4.4.3"><H2>3.4.4.3  Rotate Instructions</H2>
+
+3.4.4.3  Rotate Instructions
+
+Rotate instructions allow bits in bytes, words, and doublewords to be
+rotated. Bits rotated out of an operand are not lost as in a shift, but are
+"circled" back into the other "end" of the operand.
+
+Rotates affect only the carry and overflow flags. CF may act as an
+extension of the operand in two of the rotate instructions, allowing a bit
+to be isolated and then tested by a conditional jump instruction (JC or
+JNC). CF always contains the value of the last bit rotated out, even if the
+instruction does not use this bit as an extension of the rotated operand.
+
+In single-bit rotates, OF is set if the operation changes the high-order
+(sign) bit of the destination operand. If the sign bit retains its original
+value, OF is cleared. On multibit rotates, the value of OF is always
+undefined.
+
+ROL (Rotate Left) rotates the byte, word, or doubleword destination operand
+left by one or by the number of bits specified in the count operand (an
+immediate value or the value contained in CL). For each rotation specified,
+the high-order bit that exits from the left of the operand returns at the
+right to become the new low-order bit of the operand. See Figure 3-12.
+
+ROR (Rotate Right) rotates the byte, word, or doubleword destination
+operand right by one or by the number of bits specified in the count operand
+(an immediate value or the value contained in CL). For each rotation
+specified, the low-order bit that exits from the right of the operand
+returns at the left to become the new high-order bit of the operand.
+See Figure 3-13.
+
+RCL (Rotate Through Carry Left) rotates bits in the byte, word, or
+doubleword destination operand left by one or by the number of bits
+specified in the count operand (an immediate value or the value contained in
+CL).
+
+This instruction differs from ROL in that it treats CF as a high-order
+one-bit extension of the destination operand. Each high-order bit that exits
+from the left side of the operand moves to CF before it returns to the
+operand as the low-order bit on the next rotation cycle. See Figure 3-14.
+
+RCR (Rotate Through Carry Right) rotates bits in the byte, word, or
+doubleword destination operand right by one or by the number of bits
+specified in the count operand (an immediate value or the value contained in
+CL).
+
+This instruction differs from ROR in that it treats CF as a low-order
+one-bit extension of the destination operand. Each low-order bit that exits
+from the right side of the operand moves to CF before it returns to the
+operand as the high-order bit on the next rotation cycle. See Figure 3-15.
+
+See Also: <A HREF="Figs/Fig.3.html#Fig.3-12">Fig.3-12</A> <A HREF="Figs/Fig.3.html#Fig.3-13">Fig.3-13</A> <A HREF="Figs/Fig.3.html#Fig.3-14">Fig.3-14</A> <A HREF="Figs/Fig.3.html#Fig.3-15">Fig.3-15</A> 
+
+
+<HR>
+<A Name="3.4.4.4"><H2>3.4.4.4  Fast"bit-blt" Using Double Shift Instructions</H2>
+
+3.4.4.4  Fast "BIT BLT" Using Double Shift Instructions
+
+One purpose of the double shifts is to implement a bit string move, with
+arbitrary misalignment of the bit strings.  This is called a "bit blt" (BIT
+BLock Transfer.)  A simple example is to move a bit string from an arbitrary
+offset into a doubleword-aligned byte string.  A left-to-right string is
+moved 32 bits at a time if a double shift is used inside the move loop.
+
+     MOV   ESI,ScrAddr
+     MOV   EDI,DestAddr
+     MOV   EBX,WordCnt
+     MOV   CL,RelOffset      ; relative offset Dest-Src
+     MOV   EDX,[ESI]         ; load first word of source
+     ADD   ESI,4             ; bump source address
+BltLoop:
+     LODS                    ; new low order part
+     SHLD  EDX,EAX,CL        ; EDX overwritten with aligned stuff
+     XCHG  EDX,EAS           ; Swap high/low order parts
+     STOS                    ; Write out next aligned chunk
+     DEC   EBX
+     JA    BltLoop
+
+This loop is simple yet allows the data to be moved in 32-bit pieces for
+the highest possible performance. Without a double shift, the best that can
+be achieved is 16 bits per loop iteration by using a 32-bit shift and
+replacing the XCHG with a ROR by 16 to swap high and low order parts of
+registers. A more general loop than shown above would require some extra
+masking on the first doubleword moved (before the main loop), and on the
+last doubleword moved (after the main loop), but would have the same basic
+32-bits per loop iteration as the code above.
+
+<HR>
+<A Name="3.4.4.5"><H2>3.4.4.5  Fast Bit-String Insert and Extract</H2>
+
+
+3.4.4.5  Fast Bit-String Insert and Extract
+
+The double shift instructions also enable:
+
+  *  Fast insertion of a bit string from a register into an arbitrary bit
+     location in a larger bit string in memory without disturbing the bits
+     on either side of the inserted bits.
+
+  *  Fast extraction of a bits string into a register from an arbitrary bit
+     location in a larger bit string in memory without disturbing the bits
+     on either side of the extracted bits.
+
+The following coded examples illustrate bit insertion and extraction under
+variousconditions:
+
+  1.  Bit String Insert into Memory (when bit string is 1-25 bits long,
+      i.e., spans four bytes or less):
+
+      ; Insert a right-justified bit string from register into
+      ; memory bit string.
+      ;
+      ; Assumptions:
+      ; 1) The base of the string array is dword aligned, and
+      ; 2) the length of the bit string is an immediate value
+      ;    but the bit offset is held in a register.
+      ;
+      ; Register ESI holds the right-justified bit string
+      ; to be inserted.
+      ; Register EDI holds the bit offset of the start of the
+      ; substring.
+      ; Registers EAX and ECX are also used by this
+      ; "insert" operation.
+      ;
+      MOV   ECX,EDI      ; preserve original offset for later use
+      SHR   EDI,3        ; signed divide offset by 8 (byte address)
+      AND   CL,7H        ; isolate low three bits of offset in CL
+      MOV   EAX,[EDI]strg_base      ; move string dword into EAX
+      ROR   EAX,CL       ; right justify old bit field
+      SHRD  EAX,ESI,length          ; bring in new bits
+      ROL   EAX,length   ; right justify new bit field
+      ROL   EAX,CL       ; bring to final position
+      MOV   [EDI]strg_base,EAX      ; replace dword in memory
+
+  2.  Bit String Insert into Memory (when bit string is 1-31 bits long, i.e.
+      spans five bytes or less):
+
+      ; Insert a right-justified bit string from register into
+      ; memory bit string.
+      ;
+      ; Assumptions:
+      ; 1) The base of the string array is dword aligned, and
+      ; 2) the length of the bit string is an immediate value
+      ;    but the bit offset is held in a register.
+      ;
+      ; Register ESI holds the right-justified bit string
+      ; to be inserted.
+      ; Register EDI holds the bit offset of the start of the
+      ; substring.
+      ; Registers EAX, EBX, ECX, and EDI are also used by
+      ; this "insert" operation.
+      ;
+      MOV   ECX,EDI     ; temp storage for offset
+      SHR   EDI,5       ; signed divide offset by 32 (dword address)
+      SHL   EDI,2       ; multiply by 4 (in byte address format)
+      AND   CL,1FH      ; isolate low five bits of offset in CL
+      MOV   EAX,[EDI]strg_base      ; move low string dword into EAX
+      MOV   EDX,[EDI]strg_base+4    ; other string dword into EDX
+      MOV   EBX,EAX     ; temp storage for part of string     + rotate
+      SHRD  EAX,EDX,CL  ; double shift by offset within dword | EDX:EAX
+      SHRD  EAX,EBX,CL  ; double shift by offset within dword + right
+      SHRD  EAX,ESI,length          ; bring in new bits
+      ROL   EAX,length  ; right justify new bit field
+      MOV   EBX,EAX     ; temp storage for part of string         + rotate
+      SHLD  EAX,EDX,CL  ; double shift back by offset within word | EDX:EAX
+      SHLD  EDX,EBX,CL  ; double shift back by offset within word + left
+      MOV   [EDI]strg_base,EAX      ; replace dword in memory
+      MOV   [EDI]strg_base+4,EDX    ; replace dword in memory
+
+  3.  Bit String Insert into Memory (when bit string is exactly 32 bits
+      long, i.e., spans five or four types of memory):
+
+      ; Insert right-justified bit string from register into
+      ; memory bit string.
+      ;
+      ; Assumptions:
+      ; 1) The base of the string array is dword aligned, and
+      ; 2) the length of the bit string is 32
+      ;    but the bit offset is held in a register.
+      ;
+      ; Register ESI holds the 32-bit string to be inserted.
+      ; Register EDI holds the bit offset of the start of the
+      ; substring.
+      ; Registers EAX, EBX, ECX, and EDI are also used by
+      ; this "insert" operation.
+      ;
+      MOV   EDX,EDI     ; preserve original offset for later use
+      SHR   EDI,5       ; signed divide offset by 32 (dword address)
+      SHL   EDI,2       ; multiply by 4 (in byte address format)
+      AND   CL,1FH      ; isolate low five bits of offset in CL
+      MOV   EAX,[EDI]strg_base      ; move low string dword into EAX
+      MOV   EDX,[EDI]strg_base+4    ; other string dword into EDX
+      MOV   EBX,EAX     ; temp storage for part of string     + rotate
+      SHRD  EAX,EDX     ; double shift by offset within dword | EDX:EAX
+      SHRD  EDX,EBX     ; double shift by offset within dword + right
+      MOV   EAX,ESI     ; move 32-bit bit field into position
+      MOV   EBX,EAX     ; temp storage for part of string         + rotate
+      SHLD  EAX,EDX     ; double shift back by offset within word | EDX:EAX
+      SHLD  EDX,EBX     ; double shift back by offset within word + left
+      MOV   [EDI]strg_base,EAX      ; replace dword in memory
+      MOV   [EDI]strg_base,+4,EDX   ; replace dword in memory
+
+  4.  Bit String Extract from Memory (when bit string is 1-25 bits long,
+      i.e., spans four bytes or less):
+
+      ; Extract a right-justified bit string from memory bit
+      ; string into register
+      ;
+      ; Assumptions:
+      ; 1) The base of the string array is dword aligned, and
+      ; 2) the length of the bit string is an immediate value
+      ;    but the bit offset is held in a register.
+      ;
+      ; Register EAX holds the right-justified, zero-padded
+      ; bit string that was extracted.
+      ; Register EDI holds the bit offset of the start of the
+      ; substring.
+      ; Registers EDI, and ECX are also used by this "extract."
+      ;
+      MOV  ECX,EDI      ; temp storage for offset
+      SHR  EDI,3        ; signed divide offset by 8 (byte address)
+      AND  CL,7H        ; isolate low three bits of offset
+      MOV  EAX,[EDI]strg_base       ; move string dword into EAX
+      SHR  EAX,CL       ; shift by offset within dword
+      AND  EAX,mask     ; extracted bit field in EAX
+
+  5.  Bit String Extract from Memory (when bit string is 1-32 bits long, 
+      i.e., spans five bytes or less):
+
+      ; Extract a right-justified bit string from memory bit
+      ; string into register.
+      ;
+      ; Assumptions:
+      ; 1) The base of the string array is dword aligned, and
+      ; 2) the length of the bit string is an immediate
+      ;    value but the bit offset is held in a register.
+      ;
+      ; Register EAX holds the right-justified, zero-padded
+      ; bit string that was extracted.
+      ; Register EDI holds the bit offset of the start of the
+      ; substring.
+      ; Registers EAX, EBX, and ECX are also used by this "extract."
+      MOV   ECX,EDI     ; temp storage for offset
+      SHR   EDI,5       ; signed divide offset by 32 (dword address)
+      SHL   EDI,2       ; multiply by 4 (in byte address format)
+      AND   CL,1FH      ; isolate low five bits of offset in CL
+      MOV   EAX,[EDI]strg_base      ; move low string dword into EAX
+      MOV   EDX,[EDI]strg_base+4    ; other string dword into EDX
+      SHRD  EAX,EDX,CL  ; double shift right by offset within dword
+      AND   EAX,mask    ; extracted bit field in EAX
+
+<HR>
+<A Name="3.4.5"><H2>3.4.5  Byte-Set-On-Condition Instructions</H2>
+
+3.4.5  Byte-Set-On-Condition Instructions
+
+This group of instructions sets a byte to zero or one depending on any of
+the 16 conditions defined by the status flags. The byte may be in memory or
+may be a one-byte general register. These instructions are especially useful
+for implementing Boolean expressions in high-level languages such as Pascal.
+
+SETcc (Set Byte on Condition cc) set a byte to one if condition cc is true;
+sets the byte to zero otherwise. Refer to Appendix D for a definition of
+the possible conditions.
+
+<HR>
+<A Name="3.4.6"><H2>3.4.6  Test Instruction</H2>
+
+
+3.4.6  Test Instruction
+
+TEST (Test) performs the logical "and" of the two operands, clears OF and
+CF, leaves AF undefined, and updates SF, ZF, and PF. The flags can be tested
+by conditional control transfer instructions or by the byte-set-on-condition
+instructions. The operands may be doublewords, words, or bytes.
+
+The difference between TEST and AND is that TEST does not alter the
+destination operand. TEST differs from BT in that TEST is useful for testing
+the value of multiple bits in one operations, whereas BT tests a single bit.
+
+<HR>
+<A Name="3.5"><H2>3.5  Control Transfer Instructions</H2>
+
+3.5  Control Transfer Instructions
+
+The 80386 provides both conditional and unconditional control transfer
+instructions to direct the flow of execution. Conditional control transfers
+depend on the results of operations that affect the flag register.
+Unconditional control transfers are always executed.
+
+<HR>
+<A Name="3.5.1"><H2>3.5.1  Unconditional Transfer Instructions</H2>
+
+3.5.1  Unconditional Transfer Instructions
+
+JMP, CALL, RET, INT and IRET instructions transfer control from one code
+segment location to another. These locations can be within the same code
+segment (near control transfers) or in different code segments (far control
+transfers). The variants of these instructions that transfer control to
+other segments are discussed in a later section of this chapter. If the
+model of memory organization used in a particular 80386 application does
+not make segments visible to applications programmers, intersegment control
+transfers will not be used.
+
+<HR>
+<A Name="3.5.1.1"><H2>3.5.1.1  Jump Instruction</H2>
+
+3.5.1.1  Jump Instruction
+
+JMP (Jump) unconditionally transfers control to the target location. JMP is
+a one-way transfer of execution; it does not save a return address on the
+stack.
+
+The JMP instruction always performs the same basic function of transferring
+control from the current location to a new location. Its implementation
+varies depending on whether the address is specified directly within the
+instruction or indirectly through a register or memory.
+
+A direct JMP instruction includes the destination address as part of the
+instruction. An indirect JMP instruction obtains the destination address
+indirectly through a register or a pointer variable.
+
+Direct near JMP. A direct JMP uses a relative displacement value contained
+in the instruction. The displacement is signed and the size of the
+displacement may be a byte, word, or doubleword. The processor forms an
+effective address by adding this relative displacement to the address
+contained in EIP. When the additions have been performed, EIP refers to the
+next instruction to be executed.
+
+Indirect near JMP. Indirect JMP instructions specify an absolute address in
+one of several ways:
+
+  1.  The program can JMP to a location specified by a general register
+      (any of EAX, EDX, ECX, EBX, EBP, ESI, or EDI). The processor moves
+      this 32-bit value into EIP and resumes execution.
+
+  2.  The processor can obtain the destination address from a memory
+      operand specified in the instruction.
+
+  3.  A register can modify the address of the memory pointer to select a
+      destination address.
+
+<HR>
+<A Name="3.5.1.2"><H2>3.5.1.2  Call Instruction</H2>
+
+3.5.1.2  Call Instruction
+
+CALL (Call Procedure) activates an out-of-line procedure, saving on the
+stack the address of the instruction following the CALL for later use by a
+RET (Return) instruction. CALL places the current value of EIP on the stack.
+The RET instruction in the called procedure uses this address to transfer
+control back to the calling program.
+
+CALL instructions, like JMP instructions have relative, direct, and
+indirect versions.
+
+Indirect CALL instructions specify an absolute address in one of these
+ways:
+
+  1.  The program can CALL a location specified by a general register (any
+      of EAX, EDX, ECX, EBX, EBP, ESI, or EDI). The processor moves this
+      32-bit value into EIP.
+
+  2.  The processor can obtain the destination address from a memory
+      operand specified in the instruction.
+
+<HR>
+<A Name="3.5.1.3"><H2>3.5.1.3  Return and Return-From-Interrupt Instruction</H2>
+
+
+3.5.1.3  Return and Return-From-Interrupt Instruction
+
+RET (Return From Procedure) terminates the execution of a procedure and
+transfers control through a back-link on the stack to the program that
+originally invoked the procedure. RET restores the value of EIP that was
+saved on the stack by the previous CALL instruction.
+
+RET instructions may optionally specify an immediate operand. By adding
+this constant to the new top-of-stack pointer, RET effectively removes any
+arguments that the calling program pushed on the stack before the execution
+of the CALL instruction.
+
+IRET (Return From Interrupt) returns control to an interrupted procedure.
+IRET differs from RET in that it also pops the flags from the stack into the
+flags register. The flags are stored on the stack by the interrupt
+mechanism.
+
+<HR>
+<A Name="3.5.2"><H2>3.5.2  Conditional Transfer Instructions</H2>
+
+3.5.2  Conditional Transfer Instructions
+
+The conditional transfer instructions are jumps that may or may not
+transfer control, depending on the state of the CPU flags when the
+instruction executes.
+
+<HR>
+<A Name="3.5.2.1"><H2>3.5.2.1  Conditional Jump Instructions</H2>
+
+3.5.2.1  Conditional Jump Instructions
+
+Table 3-2 shows the conditional transfer mnemonics and their
+interpretations. The conditional jumps that are listed as pairs are actually
+the same instruction. The assembler provides the alternate mnemonics for
+greater clarity within a program listing.
+
+Conditional jump instructions contain a displacement which is added to the
+EIP register if the condition is true. The displacement may be a byte, a
+word, or a doubleword. The displacement is signed; therefore, it can be used
+to jump forward or backward.
+
+See Also: <A HREF="Tabs.html#Tab.3-2">Tab.3-2</A> 
+
+<HR>
+<A Name="3.5.2.2"><H2>3.5.2.2  Loop Instructions</H2>
+
+3.5.2.2  Loop Instructions
+
+The loop instructions are conditional jumps that use a value placed in ECX
+to specify the number of repetitions of a software loop. All loop
+instructions automatically decrement ECX and terminate the loop when ECX=0.
+Four of the five loop instructions specify a condition involving ZF that
+terminates the loop before ECX reaches zero.
+
+LOOP (Loop While ECX Not Zero) is a conditional transfer that automatically
+decrements the ECX register before testing ECX for the branch condition. If
+ECX is non-zero, the program branches to the target label specified in the
+instruction. The LOOP instruction causes the repetition of a code section
+until the operation of the LOOP instruction decrements ECX to a value of
+zero. If LOOP finds ECX=0, control transfers to the instruction immediately
+following the LOOP instruction. If the value of ECX is initially zero, then
+the LOOP executes 2^(32) times.
+
+LOOPE (Loop While Equal) and LOOPZ (Loop While Zero) are synonyms for the
+same instruction. These instructions automatically decrement the ECX
+register before testing ECX and ZF for the branch conditions. If ECX is
+non-zero and ZF=1, the program branches to the target label specified in the
+instruction. If LOOPE or LOOPZ finds that ECX=0 or ZF=0, control transfers
+to the instruction immediately following the LOOPE or LOOPZ instruction.
+
+LOOPNE (Loop While Not Equal) and LOOPNZ (Loop While Not Zero) are synonyms
+for the same instruction. These instructions automatically decrement the ECX
+register before testing ECX and ZF for the branch conditions. If ECX is
+non-zero and ZF=0, the program branches to the target label specified in the
+instruction. If LOOPNE or LOOPNZ finds that ECX=0 or ZF=1, control transfers
+to the instruction immediately following the LOOPNE or LOOPNZ instruction.
+
+<HR>
+<A Name="3.5.2.3"><H2>3.5.2.3  Executing a Loop or Repeat Zero Times</H2>
+
+
+3.5.2.3  Executing a Loop or Repeat Zero Times
+
+JCXZ (Jump if ECX Zero) branches to the label specified in the instruction
+if it finds a value of zero in ECX. JCXZ is useful in combination with the
+LOOP instruction and with the string scan and compare instructions, all of
+which decrement ECX. Sometimes, it is desirable to design a loop that
+executes zero times if the count variable in ECX is initialized to zero.
+Because the LOOP instructions (and repeat prefixes) decrement ECX before
+they test it, a loop will execute 2^(32) times if the program enters the
+loop with a zero value in ECX. A programmer may conveniently overcome this
+problem with JCXZ, which enables the program to branch around the code
+within the loop if ECX is zero when JCXZ executes. When used with repeated
+string scan and compare instructions, JCXZ can determine whether the
+repetitions terminated due to zero in ECX or due to satisfaction of the
+scan or compare conditions.
+
+<HR>
+<A Name="3.5.3"><H2>3.5.3  Software-Generated Interrupts</H2>
+
+
+3.5.3  Software-Generated Interrupts
+
+The INT n, INTO, and BOUND instructions allow the programmer to specify a
+transfer to an interrupt service routine from within a program.
+
+INT n (Software Interrupt) activates the interrupt service routine that
+corresponds to the number coded within the instruction. The INT instruction
+may specify any interrupt type. Programmers may use this flexibility to
+implement multiple types of internal interrupts or to test the operation of
+interrupt service routines. (Interrupts 0-31 are reserved by Intel.) The
+interrupt service routine terminates with an IRET instruction that returns
+control to the instruction that follows INT.
+
+INTO (Interrupt on Overflow) invokes interrupt 4 if OF is set. Interrupt 4
+is reserved for this purpose. OF is set by several arithmetic, logical, and
+string instructions.
+
+BOUND (Detect Value Out of Range) verifies that the signed value contained
+in the specified register lies within specified limits. An interrupt (INT 5)
+occurs if the value contained in the register is less than the lower bound
+or greater than the upper bound.
+
+The BOUND instruction includes two operands. The first operand specifies
+the register being tested. The second operand contains the effective
+relative address of the two signed BOUND limit values. The BOUND instruction
+assumes that the upper limit and lower limit are in adjacent memory
+locations. These limit values cannot be register operands; if they are, an
+invalid opcode exception occurs.
+
+BOUND is useful for checking array bounds before using a new index value to
+access an element within the array. BOUND provides a simple way to check the
+value of an index register before the program overwrites information in a
+location beyond the limit of the array.
+
+The block of memory that specifies the lower and upper limits of an array
+might typically reside just before the array itself. This makes the array
+bounds accessible at a constant offset from the beginning of the array.
+Because the address of the array will already be present in a register, this
+practice avoids extra calculations to obtain the effective address of the
+array bounds.
+
+The upper and lower limit values may each be a word or a doubleword.
+
+<HR>
+<A Name="3.6"><H2>3.6  String and Character Translation Instructions</H2>
+
+3.6  String and Character Translation Instructions
+
+The instructions in this category operate on strings rather than on logical
+or numeric values. Refer also to the section on I/O for information about
+the string I/O instructions (also known as block I/O).
+
+The power of 80386 string operations derives from the following features of
+the architecture:
+
+1.  A set of primitive string operations
+
+   MOVS   -- Move String
+   CMPS   -- Compare string
+   SCAS   -- Scan string
+   LODS   -- Load string
+   STOS   -- Store string
+
+2.  Indirect, indexed addressing, with automatic incrementing or
+    decrementing of the indexes.
+
+   Indexes:
+
+      ESI    -- Source index register
+      EDI    -- Destination index register
+
+   Control flag:
+
+      DF     -- Direction flag
+
+   Control flag instructions:
+
+      CLD    -- Clear direction flag instruction
+      STD    -- Set direction flag instruction
+
+3.  Repeat prefixes
+
+   REP          -- Repeat while ECX not xero
+   REPE/REPZ    -- Repeat while equal or zero
+   REPNE/REPNZ  -- Repeat while not equal or not zero
+
+The primitive string operations operate on one element of a string. A
+string element may be a byte, a word, or a doubleword. The string elements
+are addressed by the registers ESI and EDI. After every primitive operation
+ESI and/or EDI are automatically updated to point to the next element of the
+string. If the direction flag is zero, the index registers are incremented;
+if one, they are decremented. The amount of the increment or decrement is
+1, 2, or 4 depending on the size of the string element.
+
+<HR>
+<A Name="3.6.1"><H2>3.6.1  Repeat Prefixes</H2>
+
+3.6.1  Repeat Prefixes
+
+The repeat prefixes REP (Repeat While ECX Not Zero), REPE/REPZ (Repeat
+While Equal/Zero), and REPNE/REPNZ (Repeat While Not Equal/Not Zero) specify
+repeated operation of a string primitive. This form of iteration allows the
+CPU to process strings much faster than would be possible with a regular
+software loop.
+
+When a primitive string operation has a repeat prefix, the operation is
+executed repeatedly, each time using a different element of the string. The
+repetition terminates when one of the conditions specified by the prefix is
+satisfied.
+
+At each repetition of the primitive instruction, the string operation may
+be suspended temporarily in order to handle an exception or external
+interrupt. After the interruption, the string operation can be restarted
+again where it left off. This method of handling strings allows operations
+on strings of arbitrary length, without affecting interrupt response.
+
+All three prefixes causes the hardware to automatically repeat the
+associated string primitive until ECX=0. The differences among the repeat
+prefixes have to do with the second termination condition. REPE/REPZ and
+REPNE/REPNZ are used exclusively with the SCAS (Scan String) and CMPS
+(Compare String) primitives. When these prefixes are used, repetition of the
+next instruction depends on the zero flag (ZF) as well as the ECX register.
+ZF does not require initialization before execution of a repeated string
+instruction, because both SCAS and CMPS set ZF according to the results of
+the comparisons they make. The differences are summarized in the
+accompanying table.
+
+Prefix                      Termination         Termination
+                            Condition 1         Condition 2
+
+REP                           ECX = 0             (none)
+REPE/REPZ                     ECX = 0             ZF = 0
+REPNE/REPNZ                   ECX = 0             ZF = 1
+
+<HR>
+<A Name="3.6.2"><H2>3.6.2  Indexing and Direction Flag Control</H2>
+
+3.6.2  Indexing and Direction Flag Control
+
+The addresses of the operands of string primitives are determined by the
+ESI and EDI registers. ESI points to source operands. By default, ESI refers
+to a location in the segment indicated by the DS segment register. A
+segment-override prefix may be used, however, to cause ESI to refer to CS,
+SS, ES, FS, or GS. EDI points to destination operands in the segment
+indicated by ES; no segment override is possible. The use of two different
+segment registers in one instruction allows movement of strings between
+different segments.
+
+This use of ESI and DSI has led to the descriptive names source index and
+destination index for the ESI and EDI registers, respectively. In all
+cases other than string instructions, however, the ESI and EDI registers may
+be used as general-purpose registers.
+
+When ESI and EDI are used in string primitives, they are automatically
+incremented or decremented after to operation. The direction flag determines
+whether they are incremented or decremented. The instruction CLD puts zero
+in DF, causing the index registers to be incremented; the instruction STD
+puts one in DF, causing the index registers to be decremented. Programmers
+should always put a known value in DF before using string instructions in a
+procedure.
+
+<HR>
+<A Name="3.6.3"><H2>3.6.3  String Instructions</H2>
+
+
+3.6.3  String Instructions
+
+MOVS (Move String) moves the string element pointed to by ESI to the
+location pointed to by EDI. MOVSB operates on byte elements, MOVSW operates
+on word elements, and MOVSD operates on doublewords. The destination segment
+register cannot be overridden by a segment override prefix, but the source
+segment register can be overridden.
+
+The MOVS instruction, when accompanied by the REP prefix, operates as a
+memory-to-memory block transfer. To set up for this operation, the program
+must initialize ECX and the register pairs ESI and EDI. ECX specifies the
+number of bytes, words, or doublewords in the block.
+
+If DF=0, the program must point ESI to the first element of the source
+string and point EDI to the destination address for the first element. If
+DF=1, the program must point these two registers to the last element of the
+source string and to the destination address for the last element,
+respectively.
+
+CMPS (Compare Strings) subtracts the destination string element (at ES:EDI)
+from the source string element (at ESI) and updates the flags AF, SF, PF, CF
+and OF. If the string elements are equal, ZF=1; otherwise, ZF=0. If DF=0,
+the processor increments the memory pointers (ESI and EDI) for the two
+strings. CMPSB compares bytes, CMPSW compares words, and CMPSD compares
+doublewords. The segment register used for the source address can be changed
+with a segment override prefix while the destination segment register
+cannot be overridden.
+
+SCAS (Scan String) subtracts the destination string element at ES:EDI from
+EAX, AX, or AL and updates the flags AF, SF, ZF, PF, CF and OF. If the
+values are equal, ZF=1; otherwise, ZF=0. If DF=0, the processor increments
+the memory pointer (EDI) for the string. SCASB scans bytes; SCASW scans
+words; SCASD scans doublewords. The destination segment register (ES) cannot
+be overridden.
+
+When either the REPE or REPNE prefix modifies either the SCAS or CMPS
+primitives, the processor compares the value of the current string element
+with the value in EAX for doubleword elements, in AX for word elements, or
+in AL for byte elements. Termination of the repeated operation depends on
+the resulting state of ZF as well as on the value in ECX.
+
+LODS (Load String) places the source string element at ESI into EAX for
+doubleword strings, into AX for word strings, or into AL for byte strings.
+LODS increments or decrements ESI according to DF.
+
+STOS (Store String) places the source string element from EAX, AX, or AL
+into the string at ES:DSI. STOS increments or decrements EDI according to
+DF.
+
+<HR>
+<A Name="3.7"><H2>3.7  Instructions for Block-Structured Languages</H2>
+
+3.7  Instructions for Block-Structured Languages
+
+The instructions in this section provide machine-language support for
+functions normally found in high-level languages. These instructions include
+ENTER and LEAVE, which simplify the programming of procedures.
+
+ENTER (Enter Procedure) creates a stack frame that may be used to implement
+the scope rules of block-structured high-level languages. A LEAVE
+instruction at the end of a procedure complements an ENTER at the beginning
+of the procedure to simplify stack management and to control access to
+variables for nested procedures.
+
+The ENTER instruction includes two parameters. The first parameter
+specifies the number of bytes of dynamic storage to be allocated on the
+stack for the routine being entered. The second parameter corresponds to the
+lexical nesting level (0-31) of the routine. (Note that the lexical level
+has no relationship to either the protection privilege levels or to the I/O
+privilege level.)
+
+The specified lexical level determines how many sets of stack frame
+pointers the CPU copies into the new stack frame from the preceding frame.
+This list of stack frame pointers is sometimes called the display. The first
+word of the display is a pointer to the last stack frame. This pointer
+enables a LEAVE instruction to reverse the action of the previous ENTER
+instruction by effectively discarding the last stack frame.
+
+   Example: ENTER 2048,3
+
+   Allocates 2048 bytes of dynamic storage on the stack and sets up pointers
+   to two previous stack frames in the stack frame that ENTER creates for
+   this procedure.
+
+After ENTER creates the new display for a procedure, it allocates the
+dynamic storage space for that procedure by decrementing ESP by the number
+of bytes specified in the first parameter. This new value of ESP serves as a
+starting point for all PUSH and POP operations within that procedure.
+
+To enable a procedure to address its display, ENTER leaves EBP pointing to
+the beginning of the new stack frame. Data manipulation instructions that
+specify EBP as a base register implicitly address locations within the stack
+segment instead of the data segment.
+
+The ENTER instruction can be used in two ways: nested and non-nested. If
+the lexical level is 0, the non-nested form is used. Since the second
+operand is 0, ENTER pushes EBP, copies ESP to EBP and then subtracts the
+first operand from ESP. The nested form of ENTER occurs when the second
+parameter (lexical level) is not 0.
+
+Figure 3-16 gives the formal definition of ENTER.
+
+The main procedure (with other procedures nested within) operates at the
+highest lexical level, level 1. The first procedure it calls operates at the
+next deeper lexical level, level 2. A level 2 procedure can access the
+variables of the main program which are at fixed locations specified by the
+compiler. In the case of level 1, ENTER allocates only the requested
+dynamic storage on the stack because there is no previous display to copy.
+
+A program operating at a higher lexical level calling a program at a lower
+lexical level requires that the called procedure should have access to the
+variables of the calling program. ENTER provides this access through a
+display that provides addressability to the calling program's stack frame.
+
+A procedure calling another procedure at the same lexical level implies
+that they are parallel procedures and that the called procedure should not
+have access to the variables of the calling procedure. In this case, ENTER
+copies only that portion of the display from the calling procedure which
+refers to previously nested procedures operating at higher lexical levels.
+The new stack frame does not include the pointer for addressing the calling
+procedure's stack frame.
+
+ENTER treats a reentrant procedure as a procedure calling another procedure
+at the same lexical level. In this case, each succeeding iteration of the
+reentrant procedure can address only its own variables and the variables of
+the calling procedures at higher lexical levels. A reentrant procedure can
+always address its own variables; it does not require pointers to the stack
+frames of previous iterations.
+
+By copying only the stack frame pointers of procedures at higher lexical
+levels, ENTER makes sure that procedures access only those variables of
+higher lexical levels, not those at parallel lexical levels (see Figure
+3-17). Figures 3-18 through 3-21 demonstrate the actions of the ENTER
+instruction if the modules shown in Figure 3-17 were to call one another in
+alphabetic order.
+
+Block-structured high-level languages can use the lexical levels defined by
+ENTER to control access to the variables of previously nested procedures.
+Referring to Figure 3-17 for example, if PROCEDURE A calls PROCEDURE B
+which, in turn, calls PROCEDURE C, then PROCEDURE C will have access to the
+variables of MAIN and PROCEDURE A, but not PROCEDURE B because they operate
+at the same lexical level. Following is the complete definition of access to
+variables for Figure 3-17.
+
+  1.  MAIN PROGRAM has variables at fixed locations.
+
+  2.  PROCEDURE A can access only the fixed variables of MAIN.
+
+  3.  PROCEDURE B can access only the variables of PROCEDURE A and MAIN.
+      PROCEDURE B cannot access the variables of PROCEDURE C or PROCEDURE D.
+
+  4.  PROCEDURE C can access only the variables of PROCEDURE A and MAIN.
+      PROCEDURE C cannot access the variables of PROCEDURE B or PROCEDURE D.
+
+  5.  PROCEDURE D can access the variables of PROCEDURE C, PROCEDURE A, and
+      MAIN. PROCEDURE D cannot access the variables of PROCEDURE B.
+
+ENTER at the beginning of the MAIN PROGRAM creates dynamic storage space
+for MAIN but copies no pointers. The first and only word in the display
+points to itself because there is no previous value for LEAVE to return to
+EBP. See Figure 3-18.
+
+After MAIN calls PROCEDURE A, ENTER creates a new display for PROCEDURE A
+with the first word pointing to the previous value of EBP (BPM for LEAVE to
+return to the MAIN stack frame) and the second word pointing to the current
+value of EBP. Procedure A can access variables in MAIN since MAIN is at
+level 1. Therefore the base for the dynamic storage for MAIN is at [EBP-2].
+All dynamic variables for MAIN are at a fixed offset from this value. See
+Figure 3-19.
+
+After PROCEDURE A calls PROCEDURE B, ENTER creates a new display for
+PROCEDURE B with the first word pointing to the previous value of EBP, the
+second word pointing to the value of EBP for MAIN, and the third word
+pointing to the value of EBP for A and the last word pointing to the current
+EBP. B can access variables in A and MAIN by fetching from the display the
+base addresses of the respective dynamic storage areas. See Figure 3-20.
+
+After PROCEDURE B calls PROCEDURE C, ENTER creates a new display for
+PROCEDURE C with the first word pointing to the previous value of EBP, the
+second word pointing to the value of EBP for MAIN, and the third word
+pointing to the EBP value for A and the third word pointing to the current
+value of EBP. Because PROCEDURE B and PROCEDURE C have the same lexical
+level, PROCEDURE C is not allowed access to variables in B and therefore
+does not receive a pointer to the beginning of PROCEDURE B's stack frame.
+See Figure 3-21.
+
+LEAVE (Leave Procedure) reverses the action of the previous ENTER
+instruction. The LEAVE instruction does not include any operands. LEAVE
+copies EBP to ESP to release all stack space allocated to the procedure by
+the most recent ENTER instruction. Then LEAVE pops the old value of EBP from
+the stack. A subsequent RET instruction can then remove any arguments that
+were pushed on the stack by the calling program for use by the called
+procedure.
+
+See Also: <A HREF="Figs/Fig.3.html#Fig.3-16">Fig.3-16</A> <A HREF="Figs/Fig.3.html#Fig.3-17">Fig.3-17</A> <A HREF="Figs/Fig.3.html#Fig.3-18">Fig.3-18</A> <A HREF="Figs/Fig.3.html#Fig.3-19">Fig.3-19</A> <A HREF="Figs/Fig.3.html#Fig.3-20">Fig.3-20</A> <A HREF="Figs/Fig.3.html#Fig.3-21">Fig.3-21</A> 
+
+<HR>
+<A Name="3.8"><H2>3.8  Flag Control Instructions</H2>
+
+3.8  Flag Control Instructions
+
+The flag control instructions provide a method for directly changing the
+state of bits in the flag register.
+
+<HR>
+<A Name="3.8.1"><H2>3.8.1  Carry and Direction Flag Control Instructions</H2>
+
+3.8.1  Carry and Direction Flag Control Instructions
+
+The carry flag instructions are useful in conjunction with
+rotate-with-carry instructions RCL and RCR. They can initialize the carry
+flag, CF, to a known state before execution of a rotate that moves the carry
+bit into one end of the rotated operand.
+
+The direction flag control instructions are specifically included to set or
+clear the direction flag, DF, which controls the left-to-right or
+right-to-left direction of string processing. If DF=0, the processor
+automatically increments the string index registers, ESI and EDI, after each
+execution of a string primitive. If DF=1, the processor decrements these
+index registers. Programmers should use one of these instructions before any
+procedure that uses string instructions to insure that DF is set properly.
+
+Flag Control Instruction                  Effect
+
+STC (Set Carry Flag)                      CF = 1
+CLC (Clear Carry Flag)                    CF = 0
+CMC (Complement Carry Flag)               CF = NOT (CF)
+CLD (Clear Direction Flag)                DF = 0
+STD (Set Direction Flag)                  DF = 1
+
+<HR>
+<A Name="3.8.2"><H2>3.8.2  Flag Transfer Instructions</H2>
+
+
+3.8.2  Flag Transfer Instructions
+
+Though specific instructions exist to alter CF and DF, there is no direct
+method of altering the other applications-oriented flags. The flag transfer
+instructions allow a program to alter the other flag bits with the bit
+manipulation instructions after transferring these flags to the stack or the
+AH register.
+
+The instructions LAHF and SAHF deal with five of the status flags, which
+are used primarily by the arithmetic and logical instructions.
+
+LAHF (Load AH from Flags) copies SF, ZF, AF, PF, and CF to AH bits 7, 6, 4,
+2, and 0, respectively (see Figure 3-22). The contents of the remaining bits
+(5, 3, and 1) are undefined. The flags remain unaffected.
+
+SAHF (Store AH into Flags) transfers bits 7, 6, 4, 2, and 0 from AH into
+SF, ZF, AF, PF, and CF, respectively (see Figure 3-22).
+
+The PUSHF and POPF instructions are not only useful for storing the flags
+in memory where they can be examined and modified but are also useful for
+preserving the state of the flags register while executing a procedure.
+
+PUSHF (Push Flags) decrements ESP by two and then transfers the low-order
+word of the flags register to the word at the top of stack pointed to by ESP
+(see Figure 3-23). The variant PUSHFD decrements ESP by four, then
+transfers both words of the extended flags register to the top of the stack
+pointed to by ESP (the VM and RF flags are not moved, however).
+
+POPF (Pop Flags) transfers specific bits from the word at the top of stack
+into the low-order byte of the flag register (see Figure 3-23), then
+increments ESP by two. The variant POPFD transfers specific bits from the
+doubleword at the top of the stack into the extended flags register (the RF
+and VM flags are not changed, however), then increments ESP by four.
+
+See Also: <A HREF="Figs/Fig.3.html#Fig.3-22">Fig.3-22</A> <A HREF="Figs/Fig.3.html#Fig.3-23">Fig.3-23</A> 
+
+<HR>
+<A Name="3.9"><H2>3.9  Coprocessor Interface Instructions</H2>
+
+3.9  Coprocessor Interface Instructions
+
+A numerics coprocessor (e.g., the 80387 or 80287) provides an extension to
+the instruction set of the base architecture. The coprocessor extends the
+instruction set of the base architecture to support high-precision integer
+and floating-point calculations. This extended instruction set includes
+arithmetic, comparison, transcendental, and data transfer instructions. The
+coprocessor also contains a set of useful constants to enhance the speed of
+numeric calculations.
+
+A program contains instructions for the coprocessor in line with the
+instructions for the CPU. The system executes these instructions in the same
+order as they appear in the instruction stream. The coprocessor operates
+concurrently with the CPU to provide maximum throughput for numeric
+calculations.
+
+The 80386 also has features to support emulation of the numerics
+coprocessor when the coprocessor is absent. The software emulation of the
+coprocessor is transparent to application software but requires more time
+for execution. Refer to Chapter 11 for more information on coprocessor
+emulation.
+
+ESC (Escape) is a 5-bit sequence that begins the opcodes that identify
+floating point numeric instructions. The ESC pattern tells the 80386 to send
+the opcode and addresses of operands to the numerics coprocessor. The
+numerics coprocessor uses the escape instructions to perform
+high-performance, high-precision floating point arithmetic that conforms to
+the IEEE floating point standard 754.
+
+WAIT (Wait) is an 80386 instruction that suspends program execution until
+the 80386 CPU detects that the BUSY pin is inactive. This condition
+indicates that the coprocessor has completed its processing task and that
+the CPU may obtain the results.
+
+
+See Also: <A HREF="Figs/Fig.3.html#Fig.3-23">Fig.3-23</A> 
+
+<HR>
+<A Name="3.10"><H2>3.10 Segment Register Instructions</H2>
+
+3.10  Segment Register Instructions
+
+This category actually includes several distinct types of instructions.
+These various types are grouped together here because, if systems designers
+choose an unsegmented model of memory organization, none of these
+instructions is used by applications programmers. The instructions that deal
+with segment registers are:
+
+1.  Segment-register transfer instructions.
+
+   MOV SegReg, ...
+   MOV ..., SegReg
+   PUSH SegReg
+   POP SegReg
+
+2.  Control transfers to another executable segment.
+
+   JMP far    ; direct and indirect
+   CALL far
+   RET far
+
+3.  Data pointer instructions.
+
+   LDS
+   LES
+   LFS
+   LGS
+   LSS
+
+Note that the following interrupt-related instructions are different; all
+are capable of transferring control to another segment, but the use of
+segmentation is not apparent to the applications programmer.
+
+INT n
+INTO
+BOUND
+IRET
+
+<HR>
+<A Name="3.10.1"><H2>3.10.1  Segment-Register Transfer Instructions</H2>
+
+3.10.1  Segment-Register Transfer Instructions
+
+The MOV, POP, and PUSH instructions also serve to load and store segment
+registers. These variants operate similarly to their general-register
+counterparts except that one operand can be a segment register. MOV cannot
+move segment register to a segment register. Neither POP nor MOV can place a
+value in the code-segment register CS; only the far control-transfer
+instructions can change CS.
+
+<HR>
+<A Name="3.10.2"><H2>3.10.2  Far Control Transfer Instructions</H2>
+
+3.10.2  Far Control Transfer Instructions
+
+The far control-transfer instructions transfer control to a location in
+another segment by changing the content of the CS register.
+
+Direct far JMP. Direct JMP instructions that specify a target location
+outside the current code segment contain a far pointer. This pointer
+consists of a selector for the new code segment and an offset within the new
+segment.
+
+Indirect far JMP. Indirect JMP instructions that specify a target location
+outside the current code segment use a 48-bit variable to specify the far
+pointer.
+
+Far CALL. An intersegment CALL places both the value of EIP and CS on the
+stack.
+
+Far RET. An intersegment RET restores the values of both CS and EIP which
+were saved on the stack by the previous intersegment CALL instruction.
+
+<HR>
+<A Name="3.10.3"><H2>3.10.3  Data Pointer Instructions</H2>
+
+
+3.10.3  Data Pointer Instructions
+
+The data pointer instructions load a pointer (consisting of a segment
+selector and an offset) to a segment register and a general register.
+
+LDS (Load Pointer Using DS) transfers a pointer variable from the source
+operand to DS and the destination register. The source operand must be a
+memory operand, and the destination operand must be a general register. DS
+receives the segment-selector of the pointer. The destination register
+receives the offset part of the pointer, which points to a specific location
+within the segment.
+
+Example: LDS ESI, STRING_X
+
+Loads DS with the selector identifying the segment pointed to by a
+STRING_X, and loads the offset of STRING_X into ESI.  Specifying ESI as the
+destination operand is a convenient way to prepare for a string operation on
+a source string that is not in the current data segment.
+
+LES (Load Pointer Using ES) operates identically to LDS except that ES
+receives the segment selector rather than DS.
+
+Example: LES EDI, DESTINATION_X
+
+Loads ES with the selector identifying the segment pointed to by
+DESTINATION_X, and loads the offset of DESTINATION_X into EDI. This
+instruction provides a convenient way to select a destination for a string
+operation if the desired location is not in the current extra segment.
+
+LFS (Load Pointer Using FS) operates identically to LDS except that FS
+receives the segment selector rather than DS.
+
+LGS (Load Pointer Using GS) operates identically to LDS except that GS
+receives the segment selector rather than DS.
+
+LSS (Load Pointer Using SS) operates identically to LDS except that SS
+receives the segment selector rather than DS.  This instruction is
+especially important, because it allows the two registers that identify the
+stack (SS:ESP) to be changed in one uninterruptible operation.  Unlike the
+other instructions which load SS, interrupts are not inhibited at the end
+of the LSS instruction.  The other instructions (e.g., POP SS) inhibit
+interrupts to permit the following instruction to load ESP, thereby forming
+an indivisible load of SS:ESP.  Since both SS and ESP can be loaded by LSS,
+there is no need to inhibit interrupts.
+
+<HR>
+<A Name="3.11"><H2>3.11  Miscellaneous Instructions</H2>
+
+3.11  Miscellaneous Instructions
+
+The following instructions do not fit in any of the previous categories,
+but are nonetheless useful.
+
+<HR>
+<A Name="3.11.1"><H2>3.11.1  Address Calculation Instruction</H2>
+
+3.11.1  Address Calculation Instruction
+
+LEA (Load Effective Address) transfers the offset of the source operand
+(rather than its value) to the destination operand.  The source operand must
+be a memory operand, and the destination operand must be a general register.
+This instruction is especially useful for initializing registers before the
+execution of the string primitives (ESI, EDI) or the XLAT instruction (EBX).
+The LEA can perform any indexing or scaling that may be needed.
+
+Example: LEA EBX, EBCDIC_TABLE
+
+Causes the processor to place the address of the starting location of the
+table labeled EBCDIC_TABLE into EBX.
+
+<HR>
+<A Name="3.11.2"><H2>3.11.2  No-Operation Instruction</H2>
+
+3.11.2  No-Operation Instruction
+
+NOP (No Operation) occupies a byte of storage but affects nothing but the
+instruction pointer, EIP.
+
+<HR>
+<A Name="3.11.3"><H2>3.11.3  Translate Instruction</H2>
+
+
+3.11.3  Translate Instruction
+
+XLAT (Translate) replaced a byte in the AL register with a byte from a
+user-coded translation table. When XLAT is executed, AL should have the
+unsigned index to the table addressed by EBX. XLAT changes the contents of
+AL from table index to table entry. EBX is unchanged. The XLAT instruction
+is useful for translating from one coding system to another such as from
+ASCII to EBCDIC.  The translate table may be up to 256 bytes long.  The
+value placed in the AL register serves as an index to the location of the
+corresponding translation value.
+
+
+

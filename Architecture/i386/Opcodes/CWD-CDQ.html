@@ -1,0 +1,45 @@
+<title>Instruction Set CWD-CDQ</title><pre>
+<A Name="CWD/CDQ"><H2>CWD/CDQ 		   -- Word to Doubleword/Doubleword to Quadword</H2>
+       
+CWD/CDQ -- Convert Word to Doubleword/Convert Doubleword to Quadword
+
+Opcode    Instruction        Clocks   Description
+
+99        CWD                2        DX:AX = sign-extend of AX
+99        CDQ                2        EDX:EAX = sign-extend of EAX
+
+
+Operation
+
+IF OperandSize = 16 (* CWD instruction *)
+THEN
+   IF AX < 0 THEN DX = 0FFFFH; ELSE DX = 0; FI;
+ELSE (* OperandSize = 32, CDQ instruction *)
+   IF EAX < 0 THEN EDX = 0FFFFFFFFH; ELSE EDX = 0; FI;
+FI;
+
+Description
+
+CWD converts the signed word in AX to a signed doubleword in DX:AX
+by extending the most significant bit of AX into all the bits of DX. CDQ
+converts the signed doubleword in EAX to a signed 64-bit integer in the
+register pair EDX:EAX by extending the most significant bit of EAX
+(the sign bit) into all the bits of EDX. Note that CWD is different from
+CWDE. CWDE uses EAX as a destination, instead of DX:AX.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+None
+
+Real Address Mode Exceptions
+
+None
+
+Virtual 8086 Mode Exceptions
+
+None
+

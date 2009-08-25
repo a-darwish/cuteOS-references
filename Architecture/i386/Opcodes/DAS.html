@@ -1,0 +1,49 @@
+<title>Instruction Set DAS</title><pre>
+<A Name="DAS"><H2>DAS 			   -- Decimal Adjust AL after Subtraction</H2>
+
+ DAS -- Decimal Adjust AL after Subtraction
+
+Opcode    Instruction        Clocks   Description
+
+2F        DAS                4        Decimal adjust AL after subtraction
+
+
+Operation
+
+IF (AL AND 0FH) > 9 OR AF = 1
+THEN
+   AL = AL - 6;
+   AF = 1;
+ELSE
+   AF = 0;
+FI;
+IF (AL > 9FH) OR (CF = 1)
+THEN
+   AL = AL - 60H;
+   CF = 1;
+ELSE CF = 0;
+FI;
+
+Description
+
+Execute DAS only after a subtraction instruction that leaves a
+two-BCD-digit byte result in the AL register. The operands should consist
+of two packed BCD digits. DAS adjusts AL to contain the correct packed
+two-digit decimal result.
+
+Flags Affected
+
+AF and CF as described above; SF, ZF, and PF as described in Appendix C.
+
+Protected Mode Exceptions
+
+None
+
+Real Address Mode Exceptions
+
+None
+
+Virtual 8086 Mode Exceptions
+
+None
+

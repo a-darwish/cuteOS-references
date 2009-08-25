@@ -1,0 +1,52 @@
+<title>Instruction Set POPF-POPFD</title><pre>
+<A Name="POPF/POPFD"><H2>POPF/POPFD 		   -- Pop Stack into FLAGS or EFLAGS Register</H2>
+
+POPF/POPFD -- Pop Stack into FLAGS or EFLAGS Register
+
+
+Opcode   Instruction   Clocks   Description
+
+9D       POPF          5        Pop top of stack FLAGS
+9D       POPFD         5        Pop top of stack into EFLAGS
+
+
+Operation
+
+Flags = Pop();
+
+Description
+
+POPF/POPFD pops the word or doubleword on the top of the stack and
+stores the value in the flags register. If the operand-size attribute of
+the instruction is 16 bits, then a word is popped and the value is stored in
+FLAGS. If the operand-size attribute is 32 bits, then a doubleword is popped
+and the value is stored in EFLAGS.
+
+Refer to Chapter 2 and Chapter 4 for information about the FLAGS
+and EFLAGS registers. Note that bits 16 and 17 of EFLAGS, called
+VM and RF, respectively, are not affected by POPF or POPFD.
+
+The I/O privilege level is altered only when executing at privilege level
+0. The interrupt flag is altered only when executing at a level at least as
+privileged as the I/O privilege level. (Real-address mode is equivalent to
+privilege level 0.) If a POPF instruction is executed with insufficient
+privilege, an exception does not occur, but the privileged bits do not
+change.
+
+Flags Affected
+
+All flags except VM and RF
+
+Protected Mode Exceptions
+
+#SS(0) if the top of stack is not within the stack segment
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+#GP(0) fault if IOPL is less than 3, to permit emulation
+

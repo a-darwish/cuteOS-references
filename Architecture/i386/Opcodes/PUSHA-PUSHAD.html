@@ -1,0 +1,69 @@
+<title>Instruction Set PUSHA-PUSHAD</title><pre>
+<A Name="PUSHA/PUSHAD"><H2>PUSHA/PUSHAD 		   -- Push all General Registers</H2>
+
+PUSHA/PUSHAD -- Push all General Registers
+
+
+Opcode  Instruction  Clocks   Description
+
+60      PUSHA        18       Push AX, CX, DX, BX, original SP, BP, SI, and
+                              DI
+60      PUSHAD       18       Push EAX, ECX, EDX, EBX, original ESP, EBP,
+                              ESI, and EDI
+
+
+Operation
+
+IF OperandSize = 16 (* PUSHA instruction *)
+THEN
+   Temp = (SP);
+   Push(AX);
+   Push(CX);
+   Push(DX);
+   Push(BX);
+   Push(Temp);
+   Push(BP);
+   Push(SI);
+   Push(DI);
+ELSE (* OperandSize = 32, PUSHAD instruction *)
+   Temp = (ESP);
+   Push(EAX);
+   Push(ECX);
+   Push(EDX);
+   Push(EBX);
+   Push(Temp);
+   Push(EBP);
+   Push(ESI);
+   Push(EDI);
+FI;
+
+Description
+
+PUSHA and PUSHAD save the 16-bit or 32-bit general registers,
+respectively, on the 80386 stack. PUSHA decrements the stack pointer
+(SP) by 16 to hold the eight word values. PUSHAD decrements the
+stack pointer (ESP) by 32 to hold the eight doubleword values. Because
+the registers are pushed onto the stack in the order in which they were
+given, they appear in the 16 or 32 new stack bytes in reverse order. The
+last register pushed is DI or EDI.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#SS(0) if the starting or ending stack address is outside the stack segment
+limit; #PF(fault-code) for a page fault
+
+Real Address Mode Exceptions
+
+Before executing PUSHA or PUSHAD, the 80386 shuts down if SP or
+ESP equals 1, 3, or 5; if SP or ESP equals 7, 9, 11, 13, or 15, exception
+13 occurs
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in real-address mode; #PF(fault-code) for a page
+fault
+

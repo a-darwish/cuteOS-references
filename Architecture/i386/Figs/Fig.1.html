@@ -1,0 +1,39 @@
+<title>Figures Fig.1</title><pre>
+<A Name="Fig.1-1"><H2>Fig.1-1     Example Data Structure</H2>
+Figure 1-1.  Example Data Structure
+
+ GREATEST                 DATA STRUCTURE
+ ADDRESS
+  31              23              15              7             0 <--BIT
+ +---------------+---------------+---------------+---------------+   OFFSET
+ |                                                               |28
+ |---------------+---------------+---------------+---------------|
+ |                                                               |24
+ |---------------+---------------+---------------+---------------|
+ |                                                               |20
+ |---------------+---------------+---------------+---------------|
+ |                                                               |16
+ |---------------+---------------+---------------+---------------|
+ |                                                               |12
+ |---------------+---------------+---------------+---------------|
+ |                                                               |8
+ |---------------+---------------+---------------+---------------|
+ |                           UNDEFINED                           |4
+ |---------------+---------------+---------------+---------------|  SMALLEST
+ |    BYTE 3          BYTE 2          BYTE 1          BYTE 0     |0 ADDRESS
+ +---------------+---------------+---------------+---------------+^
+                                                    BYTE OFFSET---+
+
+
+
+----------------------------------------------------------------------------
+NOTE
+  Depending upon the values of undefined register bits will make software
+  dependent upon the unspecified manner in which the 80386 handles these
+  bits. Depending upon undefined values risks making software incompatible
+  with future processors that define usages for these bits. AVOID ANY
+  SOFTWARE DEPENDENCE UPON THE STATE OF UNDEFINED 80386 REGISTER BITS.
+----------------------------------------------------------------------------
+
+
+

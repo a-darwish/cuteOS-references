@@ -1,0 +1,362 @@
+<pre>
+<title>Chapter 1   Introduction to the 80386</title><body>
+<H1><font color=red>Chapter 1  </font> Introduction to the 80386</H1>
+<pre>
+
+Chapter 1  Introduction to the 80386
+
+----------------------------------------------------------------------------
+
+The 80386 is an advanced 32-bit microprocessor optimized for multitasking
+operating systems and designed for applications needing very high
+performance. The 32-bit registers and data paths support 32-bit addresses
+and data types. The processor can address up to four gigabytes of physical
+memory and 64 terabytes (2^(46) bytes) of virtual memory. The on-chip
+memory-management facilities include address translation registers,
+advanced multitasking hardware, a protection mechanism, and paged virtual
+memory. Special debugging registers provide data and code breakpoints even
+in ROM-based software.
+
+
+<HR>
+<A Name="1.1"><H2>1.1  Organization of This Manual</H2>
+
+1.1  Organization of This Manual
+
+This book presents the architecture of the 80386 in five parts:
+
+   Part I      -- Applications Programming
+   Part II     -- Systems Programming
+   Part III    -- Compatibility
+   Part IV     -- Instruction Set
+   Appendices
+
+These divisions are determined in part by the architecture itself and in
+part by the different ways the book will be used. As the following table
+indicates, the latter two parts are intended as reference material for
+programmers actually engaged in the process of developing software for the
+80386. The first three parts are explanatory, showing the purpose of
+architectural features, developing terminology and concepts, and describing
+instructions as they relate to specific purposes or to specific
+architectural features.
+
+Explanation                Part I   -- Applications Programming
+                           Part II  -- Systems Programming
+                           Part III -- Compatibility
+
+Reference                  Part IV  -- Instruction Set
+                           Appendices
+
+The first three parts follow the execution modes and protection features of
+the 80386 CPU. The distinction between applications features and systems
+features is determined by the protection mechanism of the 80386. One purpose
+of protection is to prevent applications from interfering with the operating
+system; therefore, the processor makes certain registers and instructions
+inaccessible to applications programs. The features discussed in Part I are
+those that are accessible to applications; the features in Part II are
+available only to systems software that has been given special privileges or
+in unprotected systems.
+
+The processing mode of the 80386 also determines the features that are
+accessible. The 80386 has three processing modes:
+
+   1.  Protected Mode.
+   2.  Real-Address Mode.
+   3.  Virtual 8086 Mode.
+
+Protected mode is the natural 32-bit environment of the 80386 processor. In
+this mode all instructions and features are available.
+
+Real-address mode (often called just "real mode") is the mode of the
+processor immediately after RESET. In real mode the 80386 appears to
+programmers as a fast 8086 with some new instructions. Most applications of
+the 80386 will use real mode for initialization only.
+
+Virtual 8086 mode (also called V86 mode) is a dynamic mode in the sense
+that the processor can switch repeatedly and rapidly between V86 mode and
+protected mode. The CPU enters V86 mode from protected mode to execute an
+8086 program, then leaves V86 mode and enters protected mode to continue
+executing a native 80386 program.
+
+The features that are available to applications programs in protected mode
+and to all programs in V86 mode are the same. These features form the
+content of Part I. The additional features that are available to systems
+software in protected mode form Part II. Part III explains real-address
+mode and V86 mode, as well as how to execute a mix of 32-bit and 16-bit
+programs.
+
+Available in All Modes             Part I -- Applications Programming
+
+Available in Protected             Part II -- Systems Programming
+Mode Only
+
+Compatibility Modes                Part III -- Compatibility
+
+<HR>
+<A Name="1.1.1"><H2>1.1.1  Part I -- Applications Programming</H2>
+1.1.1  Part I -- Applications Programming
+
+This part presents those aspects of the architecture that are customarily
+used by applications programmers.
+
+Chapter 2 -- Basic Programming Model: Introduces the models of memory
+organization. Defines the data types. Presents the register set used by
+applications. Introduces the stack. Explains string operations. Defines the
+parts of an instruction. Explains addressing calculations. Introduces
+interrupts and exceptions as they may apply to applications programming.
+
+Chapter 3 -- Application Instruction Set: Surveys the instructions commonly
+used for applications programming. Considers instructions in functionally
+related groups; for example, string instructions are considered in one
+section, while control-transfer instructions are considered in another.
+Explains the concepts behind the instructions. Details of individual
+instructions are deferred until Part IV, the instruction-set reference.
+
+<HR>
+<A Name="1.1.2"><H2>1.1.2  Part II -- Systems Programming</H2>
+
+1.1.2  Part II -- Systems Programming
+
+This part presents those aspects of the architecture that are customarily
+used by programmers who write operating systems, device drivers, debuggers,
+and other software that supports applications programs in the protected mode
+of the 80386.
+
+Chapter 4 -- Systems Architecture: Surveys the features of the 80386 that 
+are used by systems programmers. Introduces the remaining registers and data
+structures of the 80386 that were not discussed in Part I. Introduces the
+systems-oriented instructions in the context of the registers and data
+structures they support. Points to the chapter where each register, data
+structure, and instruction is considered in more detail.
+
+Chapter 5 -- Memory Management: Presents details of the data structures,
+registers, and instructions that support virtual memory and the concepts of
+segmentation and paging. Explains how systems designers can choose a model
+of memory organization ranging from completely linear ("flat") to fully
+paged and segmented.
+
+Chapter 6 -- Protection: Expands on the memory management features of the
+80386 to include protection as it applies to both segments and pages.
+Explains the implementation of privilege rules, stack switching, pointer
+validation, user and supervisor modes. Protection aspects of multitasking
+are deferred until the following chapter.
+
+Chapter 7 -- Multitasking: Explains how the hardware of the 80386 supports
+multitasking with context-switching operations and intertask protection.
+
+Chapter 8 -- Input/Output: Reveals the I/O features of the 80386, including
+I/O instructions, protection as it relates to I/O, and the I/O permission
+map.
+
+Chapter 9 -- Exceptions and Interrupts: Explains the basic interrupt
+mechanisms of the 80386. Shows how interrupts and exceptions relate to
+protection. Discusses all possible exceptions, listing causes and including
+information needed to handle and recover from the exception.
+
+Chapter 10 -- Initialization: Defines the condition of the processor after
+RESET or power-up. Explains how to set up registers, flags, and data
+structures for either real-address mode or protected mode. Contains an
+example of an initialization program.
+
+Chapter 11 -- Coprocessing and Multiprocessing: Explains the instructions
+and flags that support a numerics coprocessor and multiple CPUs with shared
+memory.
+
+Chapter 12 -- Debugging: Tells how to use the debugging registers of the
+80386.
+
+<HR>
+<A Name="1.1.3"><H2>1.1.3  Part III -- Compatibility</H2>
+
+1.1.3  Part III -- Compatibility
+
+Other parts of the book treat the processor primarily as a 32-bit machine,
+omitting for simplicity its facilities for 16-bit operations. Indeed, the
+80386 is a 32-bit machine, but its design fully supports 16-bit operands and
+addressing, too. This part completes the picture of the 80386 by explaining
+the features of the architecture that support 16-bit programs and 16-bit
+operations in 32-bit programs. All three processor modes are used to
+execute 16-bit programs: protected mode can directly execute 16-bit 80286
+protected mode programs, real mode executes 8086 programs and real-mode
+80286 programs, and virtual 8086 mode executes 8086 programs in a
+multitasking environment with other 80386 protected-mode programs. In
+addition, 32-bit and 16-bit modules and individual 32-bit and 16-bit
+operations can be mixed in protected mode.
+
+Chapter 13 -- Executing 80286 Protected-Mode Code: In its protected mode,
+the 80386 can execute complete 80286 protected-mode systems, because 80286
+capabilities are a subset of 80386 capabilities.
+
+Chapter 14 -- 80386 Real-Address Mode: Explains the real mode of the 80386
+CPU. In this mode the 80386 appears as a fast real-mode 80286 or fast 8086
+enhanced with additional instructions.
+
+Chapter 15 -- Virtual 8086 Mode: The 80386 can switch rapidly between its
+protected mode and V86 mode, giving it the ability to multiprogram 8086
+programs along with "native mode" 32-bit programs.
+
+Chapter 16 -- Mixing 16-Bit and 32-Bit Code: Even within a program or task,
+the 80386 can mix 16-bit and 32-bit modules. Furthermore, any given module
+can utilize both 16-bit and 32-bit operands and addresses.
+
+<HR>
+<A Name="1.1.4"><H2>1.1.4  Part IV -- Instruction Set</H2>
+
+1.1.4  Part IV -- Instruction Set
+
+Parts I, II, and III present overviews of the instructions as they relate
+to specific aspects of the architecture, but this part presents the
+instructions in alphabetical order, providing the detail needed by
+assembly-language programmers and programmers of debuggers, compilers,
+operating systems, etc. Instruction descriptions include algorithmic
+description of operation, effect of flag settings, effect on flag settings,
+effect of operand- or address-size attributes, effect of processor modes,
+and possible exceptions.
+
+<HR>
+<A Name="1.1.5"><H2>1.1.5  Appendices</H2>
+
+1.1.5  Appendices
+
+The appendices present tables of encodings and other details in a format
+designed for quick reference by assembly-language and systems programmers.
+
+
+<HR>
+<A Name="1.2"><H2>1.2  Related Literature</H2>
+
+1.2  Related Literature
+
+The following books contain additional material concerning the 80386
+microprocessor:
+
+  *  Introduction to the 80386, order number 231252
+
+  *  80386 Hardware Reference Manual, order number 231732
+
+  *  80386 System Software Writer's Guide, order number 231499
+
+  *  80386 High Performance 32-bit Microprocessor with Integrated Memory
+     Management (Data Sheet), order number 231630
+
+<HR>
+<A Name="1.3"><H2>1.3  Notational Conventions</H2>
+
+1.3  Notational Conventions
+
+This manual uses special notations for data-structure formats, for symbolic
+representation of instructions, for hexadecimal numbers, and for super- and
+sub-scripts. Subscript characters are surrounded by {curly brackets}, for
+example 10{2} = 10 base 2. Superscript characters are preceeded by a caret
+and enclosed within (parentheses), for example 10^(3) = 10 to the third
+power. A review of these notations will make it easier to read the
+manual.
+
+<HR>
+<A Name="1.3.1"><H2>1.3.1  Data-Structure Formats</H2>
+
+1.3.1  Data-Structure Formats
+
+In illustrations of data structures in memory, smaller addresses appear at
+the lower-right part of the figure; addresses increase toward the left and
+upwards. Bit positions are numbered from right to left. Figure 1-1
+illustrates this convention.
+
+See Also: <A HREF="Figs/Fig.1.html#Fig.1-1">Fig.1-1</A> 
+<HR>
+<A Name="1.3.2"><H2>1.3.2  Undefined Bits and Software Compatibility</H2>
+
+1.3.2  Undefined Bits and Software Compatibility
+
+In many register and memory layout descriptions, certain bits are marked as
+undefined. When bits are marked as undefined (as illustrated in Figure
+1-1), it is essential for compatibility with future processors that
+software treat these bits as undefined. Software should follow these
+guidelines in dealing with undefined bits:
+
+  *  Do not depend on the states of any undefined bits when testing the
+     values of registers that contain such bits. Mask out the undefined bits
+     before testing.
+
+  *  Do not depend on the states of any undefined bits when storing them in
+     memory or in another register.
+
+  *  Do not depend on the ability to retain information written into any
+     undefined bits.
+
+  *  When loading a register, always load the undefined bits as zeros or
+     reload them with values previously stored from the same register.
+
+----------------------------------------------------------------------------
+NOTE
+  Depending upon the values of undefined register bits will make software
+  dependent upon the unspecified manner in which the 80386 handles these
+  bits. Depending upon undefined values risks making software incompatible
+  with future processors that define usages for these bits. AVOID ANY
+  SOFTWARE DEPENDENCE UPON THE STATE OF UNDEFINED 80386 REGISTER BITS.
+----------------------------------------------------------------------------
+
+See Also: <A HREF="Figs/Fig.1.html#Fig.1-1">Fig.1-1</A> 
+
+
+<HR>
+<A Name="1.3.3"><H2>1.3.3  Instruction Operands</H2>
+
+1.3.3  Instruction Operands
+
+When instructions are represented symbolically, a subset of the 80386
+Assembly Language is used. In this subset, an instruction has the following
+format:
+
+label: prefix mnemonic argument1, argument2, argument3
+
+where:
+
+  *  A label is an identifier that is followed by a colon.
+
+  *  A prefix is an optional reserved name for one of the instruction
+     prefixes.
+
+  *  A mnemonic is a reserved name for a class of instruction opcodes that
+     have the same function.
+
+  *  The operands argument1, argument2, and argument3 are optional. There
+     may be from zero to three operands, depending on the opcode.  When
+     present, they take the form of either literals or identifiers for data
+     items.  Operand identifiers are either reserved names of registers or
+     are assumed to be assigned to data items declared in another part of
+     the program (which may not be shown in the example). When two operands
+     are present in an instruction that modifies data, the right operand is
+     the source and the left operand is the destination.
+
+For example:
+
+LOADREG: MOV EAX, SUBTOTAL
+
+In this example LOADREG is a label, MOV is the mnemonic identifier of an
+opcode, EAX is the destination operand, and SUBTOTAL is the source operand.
+
+<HR>
+<A Name="1.3.4"><H2>1.3.4  Hexadecimal Numbers</H2>
+
+1.3.4  Hexadecimal Numbers
+
+Base 16 numbers are represented by a string of hexadecimal digits followed
+by the character H.  A hexadecimal digit is a character from the set (0, 1,
+2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F).  In some cases, especially in
+examples of program syntax, a leading zero is added if the number would
+otherwise begin with one of the digits A-F.  For example, 0FH is equivalent
+to the decimal number 15.
+
+<HR>
+<A Name="1.3.5"><H2>1.3.5  Sub- and Super-Scripts</H2>
+
+1.3.5  Sub- and Super-Scripts
+
+This manual uses special notation to represent sub- and super-script
+characters. Sub-script characters are surrounded by {curly brackets}, for
+example 10{2} = 10 base 2. Super-script characters are preceeded by a
+caret and enclosed within (parentheses), for example 10^(3) = 10 to the
+third power.
+
+

@@ -1,0 +1,46 @@
+<title>Instruction Set DEC</title><pre>
+<A Name="DEC"><H2>DEC 			   -- Decrement by 1</H2>
+
+DEC -- Decrement by 1
+
+
+Opcode    Instruction        Clocks   Description
+
+FE /1     DEC r/m8           2/6      Decrement r/m byte by 1
+FF /1     DEC r/m16          2/6      Decrement r/m word by 1
+          DEC r/m32          2/6      Decrement r/m dword by 1
+48+rw     DEC r16            2        Decrement word register by 1
+48+rw     DEC r32            2        Decrement dword register by 1
+
+
+Operation
+
+DEST = DEST - 1;
+
+Description
+
+DEC subtracts 1 from the operand. DEC does not change the carry flag.
+To affect the carry flag, use the SUB instruction with an immediate
+operand of 1.
+
+Flags Affected
+
+OF, SF, ZF, AF, and PF as described in Appendix C.
+
+Protected Mode Exceptions
+
+#GP(0) if the result is a nonwritable segment; #GP(0) for an illegal
+memory operand effective address in the CS, DS, ES, FS, or GS
+segments; #SS(0) for an illegal address in the SS segment; #PF(fault-code)
+for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode; #PF(fault-code) for a page
+fault
+

@@ -1,0 +1,1131 @@
+Document Addressing standard:
+-----------------------------
+
+
+ GREATEST                 DATA STRUCTURE
+ ADDRESS
+  31              23              15              7             0 <--BIT
+ +---------------+---------------+---------------+---------------+   OFFSET
+ |                                                               |28
+ |---------------+---------------+---------------+---------------|
+ |                                                               |24
+ |---------------+---------------+---------------+---------------|
+ |                                                               |20
+ |---------------+---------------+---------------+---------------|
+ |                                                               |16
+ |---------------+---------------+---------------+---------------|
+ |                                                               |12
+ |---------------+---------------+---------------+---------------|
+ |                                                               |8
+ |---------------+---------------+---------------+---------------|
+ |                           UNDEFINED                           |4
+ |---------------+---------------+---------------+---------------|  SMALLEST
+ |    BYTE 3          BYTE 2          BYTE 1          BYTE 0     |0 ADDRESS
+ +---------------+---------------+---------------+---------------+^
+                                                    BYTE OFFSET---+
+
+  7              0
+ +---------------+
+ |     BYTE      |  BYTE
+ +---------------+
+
+  15              7              0
+ +-------------------------------+
+ |   HIGH BYTE   |   LOW BYTE    |  WORD - 2 Bytes
+ +-------------------------------+
+    address n+1      address n
+
+  31              23              15              7             0
+ +---------------+---------------+---------------+--------------+
+ |           HIGH WORD           |            LOW WORD          | DOUBLEWORD - 4 Bytes
+ +---------------+---------------+---------------+--------------+
+    address n+3     address n+2     address n+1      address n
+
+
+IMPORTANT - On Data/Structures/Stack Alignment:
+
+* Each byte within a word has its own address, and the smaller of the
+  addresses represent the address of the whole word.
+
+* Each byte within the double word has its own address. The smallest of the byte
+  addresses is the address of the double word.
+
+* ``Note that words need not be aligned at even-numbered addresses and
+  doublewords need not be aligned at addresses evenly divisible by four.
+  This allows maximum flexibility in data structures (e.g., records containing
+  mixed byte, word, and doubleword items) and efficiency in memory
+  utilization.
+
+  ## When used in a configuration with a 32-bit bus, actual transfers of
+  data between processor and memory take place in units of doublewords (4bytes)
+  beginning at addresses evenly divisible by four ##
+
+  However, the processor converts requests for misaligned words or doublewords
+  into the appropriate sequences of requests acceptable to the memory interface.
+  ## Such misaligned data transfers reduce performance by requiring extra memory
+  cycles. For maximum performance, data structures (including stacks) should
+  be designed in such a way that, whenever possible, word operands are aligned
+  at even addresses and doubleword operands are aligned at addresses evenly
+  divisible by four. ##
+
+  Due to instruction prefetching and queuing within the CPU, there is no
+  requirement for instructions to be aligned on word or doubleword boundaries.
+  However, a slight increase in speed results if the target addresses of control
+  transfers are evenly divisible by four.' '
+  	    	       		    	   -- Intel 386 Reference Manual
+
+* ``The reason for this is that the processor requires two memory accesses to
+  make an unaligned memory access; whereas, aligned accesses require only one
+  memory access. A word or doubleword operand that crosses a 4-byte boundary
+  or a quadword operand that crosses an 8-byte boundary is considered unaligned
+  and requires two separate memory bus cycles to access it; a word that starts
+  on an odd address but does not cross a word boundary is considered aligned
+  and can still be accessed in one bus cycle.' '
+      	  	   	       	       	   -- Intel 686 Reference Manual
+
+********************************************************************************
+
+Common Data Types:
+------------------
+
+* Integer (Signed):
+  A signed binary numeric value contained in a 32-bit doubleword,16-bit word,
+  or 8-bit byte. All operations assume a 2's complement representation. The
+  sign bit is located in bit 7 in a byte, bit 15 in a word, and bit 31 in a
+  doubleword. The sign bit has the value zero for positive integers and one
+  for negative. Since the high-order bit is used for a sign, the range of an
+  8-bit integer is -128 through +127; 16-bit integers may range from -32,768
+  through +32,767; 32-bit integers may range from -2^(31) through +2^(31) -1.
+  The value zero has a positive sign.
+
+* Ordinal (Unsigned):
+  An unsigned binary numeric value contained in a 32-bit doubleword,
+  16-bit word, or 8-bit byte. All bits are considered in determining
+  magnitude of the number. The value range of an 8-bit ordinal number
+  is 0-255; 16 bits can represent values from 0 through 65,535; 32 bits
+  can represent values from 0 through 2^(32) -1.
+
+* Near Pointer: Offset within a segment, a 32 bit value
+
+* Far Pointer: 48bit value, 16bit segment selector, 32bit offset component.
+  Only for applications under a segmented memory organization operating
+  system (Not Linux. DOS and Win9x).
+
+********************************************************************************
+
+Registers:
+----------
+
+16 registers to the interest of the application programmer. 
+
+a - General registers
+
+                             GENERAL REGISTERS
+
+  31                23                15                7               0
+ +-----------------+-----------------+-----------------------------------+
+ |                                  EAX       AH       AX      AL        |
+ |-----------------+-----------------+-----------------------------------|
+ |                                  EDX       DH       DX      DL        |
+ |-----------------+-----------------+-----------------------------------|
+ |                                  ECX       CH       CX      CL        |
+ |-----------------+-----------------+-----------------------------------|
+ |                                  EBX       BH       BX      BL        |
+ |-----------------+-----------------+-----------------------------------|
+ |                                  EBP                BP                |
+ |-----------------+-----------------+-----------------+-----------------|
+ |                                  ESI                SI                |
+ |-----------------+-----------------+-----------------+-----------------|
+ |                                  EDI                DI                |
+ |-----------------+-----------------+-----------------+-----------------|
+ |                                  ESP                SP                |
+ +-----------------+-----------------+-----------------+-----------------+
+
+
+32bit registers EAX, EBX, ECX, EDX, EBP, ESP, ESI and EDI. low-order word of
+those registers AX, BX, CX, DX, BP, SP, SI and DI has a separated name and can be
+treated as a unit. Each byte of the 16bit registers AX, BX, CX, DX can be treated
+as a unit and can be used for handling characters. Byte registers are named AH,
+BH, CH, DH (high bytes) and AL, BL, CL, DL (low bytes).
+
+b - Segment registers
+
+                    15                7               0
+                     +-----------------+-----------------+
+                     |         CS (CODE SEGMENT)         |
+                     |-----------------+-----------------|
+                     |         SS (STACK SEGMENT)        |
+    SEGMENT          |-----------------+-----------------|
+    REGISTERS        |         DS (DATA SEGMENT)         |
+                     |-----------------+-----------------|
+                     |         ES (DATA SEGMENT)         |
+                     |-----------------+-----------------|
+                     |         FS (DATA SEGMENT)         |
+                     |-----------------+-----------------|
+                     |         GS (DATA SEGMENT)         |
+                     +-----------------+-----------------+
+
+CS specifies the current code segment. 80386 fetches all instructions from this
+code segment. 
+
+All stack operations use the SS register to locate the stack. SS can be loaded
+explicitly allowing programmers to define stacks dynamically.
+
+c - Status and Instructions register
+
+                       STATUS AND INSTRUCTION REGISTERS
+
+     31               23                15                7              0
+   +-----------------+-----------------+-----------------+-----------------+
+   |                                EFLAGS                                 |
+   |-----------------------------------------------------------------------|
+   |                        EIP (INSTRUCTION POINTER)                      |
+   +-----------------+-----------------+-----------------+-----------------+
+
+
+********************************************************************************
+
+80386 Stack:
+------------
+
+     31                         0
+     +------+------+------+------+ <-------BOTTOM OF STACK
+     |                           |       (INITIAL ESP VALUE)
+     |------+------+------+------|
+     |                           |
+     |------+------+------+------|        ^
+     |                           |        |POP
+     |------+------+------+------|        |
+     |                           |        |
+     |------+------+------+------|        |      TOP OF     +-------------+
+     |                           | <------+-----------------|     ESP     |
+     |------+------+------+------|        |      STACK      +-------------+
+     |                           |        |
+     |                           |        |
+     |                           |        |PUSH
+     |                           |        v
+
+
+********************************************************************************
+
+EFLAGS Register:
+
+                                              16-BIT FLAGS REGISTER
+                                                        A
+                                       +--------------------------------+
+
+        31              23          17  15  13       9 8 7 6 5 4 3 2 1 0
+       ++---------------+---------------+----------------+--------------+
+       |                           |V|R| |N|I/O |O|D|I|T|S|Z| |A| |P| |C|
+       |0 0 0 0 0 0 0 0 0 0 0 0 0 0| | |0| |    | | | | | | |0| |0| |1| |
+       |                           |M|F| |T| PL |F|F|F|F|F|F| |F| |F| |F|
+       +----------------------------------------------------------------+
+                                    | |   |  |   | | | | | |   |   |   |
+       VIRTUAL 8086 MODE---X--------+ |   |  |   | | | | | |   |   |   |
+             RESUME FLAG---X----------+   |  |   | | | | | |   |   |   |
+        NESTED TASK FLAG---X--------------+  |   | | | | | |   |   |   |
+     I/O PRIVILEGE LEVEL---X-----------------+   | | | | | |   |   |   |
+                OVERFLOW---S---------------------+ | | | | |   |   |   |
+          DIRECTION FLAG---C-----------------------+ | | | |   |   |   |
+        INTERRUPT ENABLE---X-------------------------+ | | |   |   |   |
+               TRAP FLAG---S---------------------------+ | |   |   |   |
+               SIGN FLAG---S-----------------------------+ |   |   |   |
+               ZERO FLAG---S-------------------------------+   |   |   |
+         AUXILIARY CARRY---S-----------------------------------+   |   |
+             PARITY FLAG---S---------------------------------------+   |
+              CARRY FLAG---S-------------------------------------------+
+
+          S = STATUS FLAG, C = CONTROL FLAG, X = SYSTEM FLAG
+
+          NOTE: 0 OR 1 INDICATES INTEL RESERVED. DO NOT DEFINE
+
+The low order of the 16bit of EFLAGS is named FLAGS and can be treated as a unit
+suitable for 8086 and 80826 backward compability.
+
+See reference appendix C for each flag meaning.
+
+********************************************************************************
+
+Instruction Pointer:
+
+EIP contains the offset address, relative to the start of the current code
+segment.
+
+                                                16-BIT IP REGISTER
+                                       +-----------------------------------+
+    31                23                15                7               0
+   +-----------------+-----------------+-----------------+-----------------+
+   |                       EIP (INSTRUCTION POINTER)                       |
+   +-----------------+-----------------+-----------------+-----------------+
+
+the 16bit value is used as usual for backward compability
+
+********************************************************************************
+Important General Info for System Programmers:
+----------------------------------------------
+
+Interrupts and Exceptions:
+--------------------------
+
+80386 has two mechanisms for interrupting program execution:
+
+1 - Exceptions which are synchronus events, reproducable by the program and data
+  caused by the exception.
+
+2 - Interrupts which are asynchronus events typcially triggered by external
+  devices needing attention.
+
+Reserved Interrupts and exceptions:
+
+Vector Number      Description
+
+0                  Divide Error
+1                  Debug Exceptions
+2                  NMI Interrupt
+3                  Breakpoint
+4                  INTO Detected Overflow
+5                  BOUND Range Exceeded
+6                  Invalid Opcode
+7                  Coprocessor Not Available
+8                  Double Exception
+9                  Coprocessor Segment Overrun
+10                 Invalid Task State Segment
+11                 Segment Not Present
+12                 Stack Fault
+13                 General Protection
+14                 Page Fault
+15                 (reserved)
+16                 Coprocessor Error
+17-32              (reserved)
+
+EFLAGS System flags:
+--------------------
+
+      31              23               15                7           0
+     +---------------+----------------+----------------+--------------+
+     |                           |V|R| |N|I/O |O|D|I|T|S|Z| |A| |P| |C|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0| | |0| |    | | | | | | |0| |0| |1| |
+     |                           |M|F| |T| PL |F|F|F|F|F|F| |F| |F| |F|
+     +---------------+----------------+----------------+--------------+
+                                  | |   |  |       |
+             VIRTUAL 8086 MODE----+ |   |  |       |
+                   RESUME FLAG------+   |  |       |
+              NESTED TASK FLAG----------+  |       |
+           I/O PRIVILEGE LEVEL-------------+       |
+              INTERRUPT ENABLE---------------------+
+
+IF (Interrupt-Enable Flag): Enable/Disable external (maskable) interrupts.
+NT (Nested Task): Control chaining of interrupted and called tasks.
+RF (Resume Flag): Temporarily disable debug exceptions.
+TF (Trap Flag): Put processor in single-step mode, producing an exception after
+                each instruction allowing a program to be inspected as it
+		executes.
+VM (Virtual 8086 mode): When set, it indicates that the task is executing an
+   	    	  	8086 program (backward compability).
+
+
+Memory Management Registers:
+----------------------------
+Four registers of the 80386 locate the data structures that control segmented
+memory management:
+
+GDTR: Global Descriptor Table Register
+LDTR: Local Descriptor Table Register
+- Registers point to segment descriptor tables
+
+IDTR: Interrupt Descriptor Table Register
+- Register point to table entry point of interrupt handlers
+
+TR: Task Register
+- Register point to the information needed by the processor to define the 
+  current task (80386 multitasking feature).
+
+********************************************************************************
+Memory Management:
+******************
+
+Logical Address:
+
+ 15          3 2 1 0    31                                   0
++-------------------+  +--------------------------------------+
+|             |T|   |  |                                      |
+|    INDEX    | |RPL|  |                OFFSET                |
+|             |I|   |  |                                      |
++-------------------+  +--------------------------------------+
+
+Linear address:
+
+      31                 22 21                 12 11                 0
+     +----------------------------------------------------------------+
+     |                     |                     |                    |
+     |         DIR         |        PAGE         |       OFFSET       |
+     |                     |                     |                    |
+     +----------------------------------------------------------------+
+
+Physical Address:
+
+		
+General Overview:
+-----------------
+
+            15           0      31                           0
+    LOGICAL +---------------+   +------------------------------+
+    ADDRESS |    SELECTOR   |   |            OFFSET            |
+            +---------------+   +------------------------------+
+                                    v
+                     +------------------------------+
+                     |     SEGMENT TRANSLATION      |
+                     +------------------------------+
+                                 +----+       PAGING ENABLED
+                                 |PG ?|--------------------+
+                                 +----+                    |
+                   31        PAGING v DISABLED       0     |
+          LINEAR  +-----------------------------------+    |
+          ADDRESS |    DIR    |   PAGE    |  OFFSET   |    |
+                  +-----------------------------------+    |
+                                    v                      |
+                     +------------------------------+      |
+                     |       PAGE TRANSLATION       |      |
+                     +------------------------------+      |
+                                    |<---------------------+
+                      31            v              0
+            PHYSICAL +------------------------------+
+            ADDRESS  |                              |
+                     +------------------------------+
+
+Segment Translation:
+--------------------
+
+           15              0    31                                   0
+  LOGICAL +----------------+   +-------------------------------------+
+  ADDRESS |    SELECTOR    |   |                OFFSET               |
+          +----------------+   +-------------------------------------+
+       +------+         v                          |
+       | DESCRIPTOR TABLE                          |
+       |  +------------+                           |
+       |  |            |                           |
+       |  |            |                           |
+       |  |            |                           |
+       |  |            |                           |
+       |  |------------|                           |
+       |  |  SEGMENT   | BASE          +---+       |
+       +->| DESCRIPTOR |-------------->| + |<------+
+          |------------| ADDRESS       +---+
+          |            |                 |
+          +------------+                 |
+                                         v
+              LINEAR  +---------------------------------------+
+              ADDRESS |    DIR     |   PAGE    |    OFFSET    |
+                      +---------------------------------------+
+
+a - Descriptors:
+----------------
+
+provides the processor with the data it needs to map a logical address to a
+linear address.
+
+Two general descriptor formats:
+
+        DESCRIPTORS USED FOR APPLICATIONS CODE AND DATA SEGMENTS
+
+  31                23   21 20        15     12 11  9 8 7               0
+ +-----------------+-----------------+-----------------+-----------------+
+ |                 | | | |A|         | |     | |     | |                 |
+ |   BASE 31..24   |G|X|O|V| LIMIT   |P| DPL |1| TYPE|A|  BASE 23..16    | 4
+ |                 | | | |L| 19..16  | |     | |     | |                 |
+ |-----------------------------------+-----------------------------------|
+ |                                   |                                   |
+ |        SEGMENT BASE 15..0         |       SEGMENT LIMIT 15..0         | 0
+ |                                   |                                   |
+ +-----------------+-----------------+-----------------+-----------------+
+
+                DESCRIPTORS USED FOR SPECIAL SYSTEM SEGMENTS
+
+  31                23                15                7               0
+ +-----------------+-----------------+-----------------+-----------------+
+ |                 | | | |A|         | |     | |       |                 |
+ |   BASE 31..24   |G|X|O|V| LIMIT   |P| DPL |0|  TYPE |  BASE 23..16    | 4
+ |                 | | | |L| 19..16  | |     | |       |                 |
+ |-----------------------------------+-----------------------------------|
+ |                                   |                                   |
+ |        SEGMENT BASE 15..0         |       SEGMENT LIMIT 15..0         | 0
+ |                                   |                                   |
+ +-----------------+-----------------+-----------------+-----------------+
+
+           A      - ACCESSED
+           AVL    - AVAILABLE FOR USE BY SYSTEMS PROGRAMMERS
+           DPL    - DESCRIPTOR PRIVILEGE LEVEL
+           G      - GRANULARITY
+           P      - SEGMENT PRESENT
+
+BASE: defines the location of the segment within the 4 gigabytes linear address
+      space. (Processor concatenates the three fragments).
+
+LIMIT: 20bits to define the segment size according to the Granuality bit. 
+       1- units of one byte. maximum = 2^20 bytes = 1MB
+       2- units of 4KB. maximum = 2^20 * 2^12 = 2^32 = 4GB
+
+Granuality bit: when set, limit is interpreted as a unit of 4KBs. else, as a unit
+	   	of one byte.
+
+TYPE: to distinguish between various kinds of descriptors.
+
+DPL (Descriptor Privilege Level): used by the protection mechanism
+
+Segment-Present Bit: equal to 0 is the segment isn't stored in main memory. Linux
+		     always sets this bit to 1 cause it never swaps the whole
+		     segment to disk.
+
+Accessed Bit: Processor set this bit when the segment is accessed. It can be used
+	      by the OS to monitor the segment usage.
+
+
+b - Descriptor Tables:
+----------------------
+
+Segment descriptors are stored in either two kinds of descriptor tables:
+GDT - The Global Descriptor table .. and ..
+LDT - The Local Descriptor table
+
+A descriptor table is simply a memory array of 8bytes entries. They're variable
+in length and may contain up to 2^13 descriptor. 
+
+--> Note: maximum is 2^13 bit cause they are limited of the selector (next section)
+      	  13bytes index field
+
+The first entry of GDT (index = 0) is not used by the processor and is considered
+as NULL when referenced by the selector index.
+
+
+      	  <--8bytes-->				   <--8bytes-->
+      GLOBAL DESCRIPTOR TABLE                 LOCAL DESCRIPTOR TABLE
+    +-------------------------+            +-------------------------+
+    |      |     |     |      |            |      |     |     |      |
+    |------------+------------|            |------------+------------|
+    |            |            | M          |            |            | M
+    +-------------------------+            +-------------------------+
+    |                         |            |                         |
+    |                         |            |                         |
+    +-------------------------+            +-------------------------+
+    |      |     |     |      |            |      |     |     |      |
+    |------------+------------|            |------------+------------|
+    |            |            | N + 3      |            |            | N + 3
+    |------------+------------|            |------------+------------|
+    |      |     |     |      |            |      |     |     |      |
+    |------------+------------|            |------------+------------|
+    |            |            | N + 2      |            |            | N + 2
+    |------------+------------|            |------------+------------|
+    |      |     |     |      |            |      |     |     |      |
+    |------------+------------|            |------------+------------|
+    |            |            | N + 1      |            |            | N + 1
+    |------------+------------|            |------------+------------|
+    |      |     |     |      |            |      |     |     |      |
+    |------------+------------|            |------------+------------|
+    |            |            | N          |            |            | N
+    +-------------------------+            +-------------------------+
+    |                         |            |                         |
+    |                         |            |                         |
+    +-------------------------+            +-------------------------+
+    |      |     |     |      |            |      |     |     |      |
+    |---------(UNUSED)--------|            |------------+------------|
+    |            |            |            |            |            |
+    +-------------------------+            +-------------------------+
+                              ^                                      ^
+     +---------------------+  |             +---------------------+  |
+     |         GDTR        |--+             |         LDTR        |--+
+     +---------------------+                +---------------------+	
+
+c - Selectors:
+--------------
+
+Selector portion of the logical address identifies a descriptor by specifying a
+descriptor table and indexing a descriptor within that table.
+
+     15                      3 2 1 0
+     +-------------------------------+
+     |                         |T|   |
+     |           INDEX         | |RPL|
+     |                         |I|   |
+     +-------------------------------+
+
+INDEX (13bits): index for the descriptor table. multiplied by the length of the
+      		descriptor (8bytes) and added to the base address of the
+      		descriptor table (%GDTR or %LDTR).
+
+
+TI (Table Indicator): specifies which descriptor table to use. 0 indicates GDT
+   	  	      while 1 indicates the current LDT.
+
+RPL (Requestor Privilege Level): Used by the protectoin mechanism.
+
+d - Segment Registers:
+----------------------
+
+80386 stores informations from descriptors to segment registers, avoiding
+consulting descriptor table everytime it accesses memory.
+
+           16-BIT VISIBLE
+                SELECTOR                 HIDDEN DESCRIPTOR
+           +---------------------------------------------------------+
+        CS |                |                                        |
+           |----------------+----------------------------------------|
+        SS |                |                                        |
+           |----------------+----------------------------------------|
+        DS |                |                                        |
+           |----------------+----------------------------------------|
+        ES |                |                                        |
+           |----------------+----------------------------------------|
+        FS |                |                                        |
+           |----------------+----------------------------------------|
+        GS |                |                                        |
+           +---------------------------------------------------------+
+
+Program loads the visible part of the segment register with a 16bit selector. The
+processor _automatically_ fetches the base address, limit, type and others from a
+descriptor table and loads them to the invisible part.
+
+
+********************************************************************************
+Page Translation:
+*****************
+
+Linear Address - Regular Paging:
+
+      31                 22 21                 12 11                 0
+     +----------------------------------------------------------------+
+     |                     |                     |                    |
+     |         DIR         |        PAGE         |       OFFSET       |
+     |                     |                     |                    |
+     +----------------------------------------------------------------+
+
+Linear Address - Extended Paging:
+
+      31                 22 21                 12 11                 0
+     +----------------------------------------------------------------+
+     |                     |                                          |
+     |         DIR         |                  OFFSET                  | 
+     |                     |                                          |
+     +----------------------------------------------------------------+
+
+Page translation step is optional and works only if the PG bit of CR0 (Control
+Register) is set. This bit is typically set by the operating system during system
+initializtion.
+
+A linear address (virtual address) refers indirectly to a physical address by
+specifying a page table, a page within that table, and an offset within that
+page.
+
+                                                              PAGE FRAME
+              +----------------------------------+         +---------------+
+              |    DIR    |   PAGE    |  OFFSET  |         |               |
+              +----------------------------------+         |               |
+                    |           |           |              |               |
+      +-------------+           |           +------------->|    PHYSICAL   |
+      |                         |                          |    ADDRESS    |
+      |   PAGE DIRECTORY        |      PAGE TABLE          |               |
+      |  +---------------+      |   +---------------+      |               |
+      |  |               |      |   |               |      +---------------+
+      |  |               |      |   |---------------|              ^
+      |  |               |      +-->| PG TBL ENTRY  |--------------+
+      |  |---------------|          |---------------|
+      +->|   DIR ENTRY   |--+       |               |
+         |---------------|  |       |               |
+         |               |  |       |               |
+         +---------------+  |       +---------------+
+                 ^          |               ^
++-------+        |          +---------------+
+|  CR3  |--------+
++-------+
+
+** Page Frame: 
+a fixed 4Kbyte unit of contigious addresses of physical memory.
+  --> NOTE: In pentiums, pages are also available in 4MB chunks.
+
+** Page Table: 
+An array of 32bit page specifiers. A pagetable is itself a page, so it can hold
+at max 2^10 (1KB) of page specifiers.
+Number of pages that can be represented by a single page DIR is 
+(2^10) [Page DIR] * (2^10) [Page Table] = 2^20 (2MB) pages.
+This can cover the whole task 4GB address space.
+
+** CR3:
+Also called the Page Directory Base Register (PDBR), it stores the physical
+address of the current page directory. OS can use one DIR for each task, one DIR
+for all system tasks, or a combination of the two.
+
+Format of a page table entry:
+-----------------------------
+
+				<-- 4bytes -->
+    31						    9 8 7 6 5 4 3 2 1 0
+      +----------------------------------------------------------------+
+      |                                      |       |   | | |   |U|R| |
+      |      PAGE FRAME ADDRESS 31..12       | AVAIL |0 0|D|A|0 0|/|/|P|
+      |                                      |       |   | | |   |S|W| |
+      +----------------------------------------------------------------+
+
+                P      - PRESENT
+                R/W    - READ/WRITE
+                U/S    - USER/SUPERVISOR
+                D      - DIRTY
+                AVAIL  - AVAILABLE FOR SYSTEMS PROGRAMMER USE
+
+                NOTE: 0 INDICATES INTEL RESERVED. DO NOT DEFINE.
+
+** Page Frame Address:
+Because Page Frame Address are aligned on 4KB chunks. loworder 12bits are always
+zero. so we can represent it by only 20bytes as noted in the graph.
+
+** Present Bit:
+if it's 0 in either level of page tables, then the entry is not valid for address
+translation and it can be used as a new page by the OS.
+If OS tried to use a page with p == 0 then a page fault exception is signaled. In
+supported OSs, the page-not-present exception handler can bring the required page
+into physical memory.
+
+** Accessed and Dirty bits:
+provides data on page usage. Processor sets the dirty bit in the second-level
+page table to one before a write to an address covered by that page table entry.
+The dirty bit in directory entries is undefined. 
+A virtual memory supported OS can use this bits to determine what what pages to
+eleminate from physical memory when a high demand for memory exists.
+
+** User/Supervisor bits:
+If User flag is set (1), page can be addressed by any CPL,
+if it's a superuser (0), page can be addressed iff CPL < 3 (Kernel mode). 
+
+** Read/Write bit:
+If Read/Write flag is 0 for a Page Directory or a Page Table entry, Corresponding
+page or page table can only be read. Otherwise it can be read and written.
+
+
+** Other bits found in post 80386 models (pentiums and pentium pros)
+PCD and PWT flags - Control the way page or page tables handled by hardware cache
+Page Size Flag - For Page Directory Entries only, for Extended Paging
+Global Flag - For Pentium Pro models only
+
+
+Page Translation Cache (TLB - Translation Lookaside Buffers):
+------------------------------------------
+For efficiency in address translation, processor stores the most recently used
+page tables in an on-chip cache. OS programmers must flush the cache whenever the
+page tables are changed. One of the ways is to reload the CR3 register with a MOV
+instruction as: 
+MOV CR3, EAX
+
+Segment and page translation - The Big picture:
+-----------------------------------------------
+
+      16                0 32                                  0
+    +----------------------------------------------------------+ LOGICAL
+    |      SELECTOR      |                 OFFSET              | ADDRESS
+    +----------------------------------------------------------+
+ +-------+          v                         |
+ |   DESCRIPTOR TABLE                         |
+ |  +---------------+                         |
+ |  |               |                         |
+ |  |               |                         |
+ |  |               |                         |
+ |  |               |                         |
+ |  |---------------|                         |
+ |  |   SEGMENT     |         +---+           |
+ +->|  DESCRIPTOR   |-------->| + |<----------+
+    |---------------|         +---+
+    |               |           |
+    +---------------+           |
+              +-----------------+----------------+
+              v                 v                v             PAGE FRAME
+      LINEAR  +----------------------------------+         +---------------+
+      ADDRESS |    DIR    |   PAGE    |  OFFSET  |         |               |
+              +----------------------------------+         |               |
+                    |           |           |              |               |
+      +-------------+           |           +------------->|    PHYSICAL   |
+      |                         |                          |    ADDRESS    |
+      |   PAGE DIRECTORY        |      PAGE TABLE          |               |
+      |  +---------------+      |   +---------------+      |               |
+      |  |               |      |   |               |      |               |
+      |  |               |      |   |               |      +---------------+
+      |  |               |      |   |---------------|              ^
+      |  |               |      +-->| PG TBL ENTRY  |--------------+
+      |  |---------------|          |---------------|
+      +->|   DIR ENTRY   |--+       |               |
+         |---------------|  |       |               |
+         |               |  |       |               |
+         +---------------+  |       +---------------+
+                 ^          |               ^
++-------+        |          +---------------+
+|  CR3  |--------+
++-------+
+
+
+********************************************************************************
+Multitasking:
+***********
+
+* All the information a processor needs to manage a task is stored in a special
+  type of segments, a task state segment (TSS). 
+
+  
+    31              23              15              7             0
+     +---------------+---------------+---------------+---------------+
+     |          I/O MAP BASE         | 0 0 0 0 0 0 0   0 0 0 0 0 0 |T|64
+     |---------------+---------------+---------------+---------------|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0|              LDT              |60
+     |---------------+---------------+---------------+---------------|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0|              GS               |5C
+     |---------------+---------------+---------------+---------------|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0|              FS               |58
+     |---------------+---------------+---------------+---------------|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0|              DS               |54
+     |---------------+---------------+---------------+---------------|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0|              SS               |50
+     |---------------+---------------+---------------+---------------|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0|              CS               |4C
+     |---------------+---------------+---------------+---------------|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0|              ES               |48
+     |---------------+---------------+---------------+---------------|
+     |                              EDI                              |44
+     |---------------+---------------+---------------+---------------|
+     |                              ESI                              |40
+     |---------------+---------------+---------------+---------------|
+     |                              EBP                              |3C
+     |---------------+---------------+---------------+---------------|
+     |                              ESP                              |38
+     |---------------+---------------+---------------+---------------|
+     |                              EBX                              |34
+     |---------------+---------------+---------------+---------------|
+     |                              EDX                              |30
+     |---------------+---------------+---------------+---------------|
+     |                              ECX                              |2C
+     |---------------+---------------+---------------+---------------|
+     |                              EAX                              |28
+     |---------------+---------------+---------------+---------------|
+     |                            EFLAGS                             |24
+     |---------------+---------------+---------------+---------------|
+     |                    INSTRUCTION POINTER (EIP)                  |20
+     |---------------+---------------+---------------+---------------|
+     |                          CR3  (PDPR)                          |1C
+     |---------------+---------------+---------------+---------------|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0|              SS2              |18
+     |---------------+---------------+---------------+---------------|
+     |                             ESP2                              |14
+     |---------------+---------------+---------------+---------------|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0|              SS1              |10
+     |---------------+---------------+---------------+---------------|
+     |                             ESP1                              |0C
+     |---------------+---------------+---------------+---------------|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0|              SS0              |8
+     |---------------+---------------+---------------+---------------|
+     |                             ESP0                              |4
+     |---------------+---------------+---------------+---------------|
+     |0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0|   BACK LINK TO PREVIOUS TSS   |0
+     +---------------+---------------+---------------+---------------+
+
+* Task state descriptor:
+
+   31                23                15                7               0
+ +-----------------+-----------------+-----------------+-----------------+
+ |                 | | | |A| LIMIT   | |     |S| Type  |                 |
+ |   BASE 31..24   |G|0|0|V|         |P| DPL | |       |   BASE 23..16   | 4
+ |                 | | | |L|  19..16 | |     |0|1|0|B|1|                 |
+ |-----------------------------------+-----------------------------------|
+ |                                   |                                   |
+ |             BASE 15..0            |             LIMIT 15..0           | 0
+ |                                   |                                   |
+ +-----------------+-----------------+-----------------+-----------------+
+
+ In most systems DPL is set to 0 so only privileged code has the right to
+ performk task switching.
+
+ * The Task Register (TR) identifies the current executing task by pointing to to
+   the TSS. It has a visible portion pointing to the TSS descriptor in the GDT
+   and an a nonprogrammable invisible one for the process.
+
+                          +-------------------------+
+                          |                         |
+                          |                         |
+                          |       TASK STATE        |
+                          |        SEGMENT          |<---------+
+                          |                         |          |
+                          |                         |          |
+                          +-------------------------+          |
+           16-BIT VISIBLE             ^                        |
+              REGISTER                |   HIDDEN REGISTER      |
+       +--------------------------------------------------------------+
+    TR |      SELECTOR      |      (BASE)        |       (LIMT)       |
+       +--------------------------------------------------------------+
+                 |                    ^                     ^
+                 |                    +-----------------+   |
+                 |          GLOBAL DESCRIPTOR TABLE     |   |
+                 |        +-------------------------+   |   |
+                 |        |     TSS DESCRIPTOR      |   |   |
+                 |        +-------------------------+   |   |
+                 |        |      |     |     |      |---+   |
+                 |        |------------+------------|       |
+                 +------->|            |            |-------+
+                          +-------------------------+
+                          |                         |
+                          +-------------------------+
+ 
+* Task switching hardware steps:
+  1- cpu checks if the current task is allowed to switch to the designated task
+  2- cpu checks that TSS descriptor of the new task is marked present and has a
+     valid limit.
+  3- Saving the state of the current task. cpu copies the registers (EAX, EBX,
+     ECX, EDX, ESP, EBP, ESI, EDI, ..), the EFLAGS register and the instruction
+     following the one that caused the switch in the TSS EIP field.
+  4- Loading the task register (TR) with the selector of the incoming TSS
+     descriptor. 
+  5- Loading the incoming task state from its TSS and resuming execution.
+
+
+********************************************************************************
+Interrrupts and Exceptions:
+***************************
+
+* Difference between interrupts and exceptions is that interrupts are used to
+  handle asynchrounus events while exceptions handle conditoins detected by the
+  process itself.
+
+* Two sources of interrupts and exceptions exist:
+  1- Interrupts:
+    a- Maskable Interrupts, signalled via INTR pin.
+    b- Non Maskable Interrupts, signalled via NMI pin.
+
+  2- Exceptions:
+    a- Processor detected, further classified as faults, traps and aborts.
+    b- programmed using instructions INTO, INT, INT 3 and BOUND. They're often
+       called ``software interrupts''. Processor handles them as exceptions.
+
+  Table 9-1. Interrupt and Exception ID Assignments
+
+  Identifier   Description
+
+  0            Divide error
+  1            Debug exceptions
+  2            Nonmaskable interrupt
+  3            Breakpoint (one-byte INT 3 instruction)
+  4            Overflow (INTO instruction)
+  5            Bounds check (BOUND instruction)
+  6            Invalid opcode
+  7            Coprocessor not available
+  8            Double fault
+  9            (reserved)
+  10           Invalid TSS
+  11           Segment not present
+  12           Stack exception
+  13           General protection
+  14           Page fault
+  15           (reserved)
+  16           Coprecessor error
+  17-31        (reserved)
+  32-255       Available for external interrupts via INTR pin
+
+* Exceptions are classified as :
+
+  faults: Exceptions reported before the instructoin causing the exception or
+  	  during its execution.
+
+  Traps: Exception reported at instruction boundary immediately after instruction
+  	 in which the exception was detected.
+
+  Aborts: Used to report severe errors. does not need to know the faulty
+  	  instruction (we're already in a mess anyway)
+
+* While NMI handler is executing, process ignores further interrupt signals.
+
+* IF (Interrupt enable Flag) controls acceptance of extenral interrupts signalled
+  via INTR pin. Interrupts are enabled if IF == 1. 
+  CLI and STI (Clear/Set Interrupt Enable flag) maybe used iff CPL <= IOPL.
+
+* If more than one interrupt or exception is pending at an instruction bounday,
+  processor services one of them at a time. The processor first services a
+  pending interrupt or exception from the class that has the highest priority.
+
+
+  Table 9-2. Priority Among Simultaneous Interrupts and Exceptions
+
+  Priority   Class of Interrupt or Exception
+
+  HIGHEST    Faults except debug faults
+             Trap instructions INTO, INT n, INT 3
+             Debug traps for this instruction
+             Debug faults for next instruction
+             NMI interrupt
+  LOWEST     INTR interrupt
+
+* IDT (Interrupt Descriptor Table) associates each interrupt or exception with a
+  descriptor for instructions that service the event. It's an array of 8byte
+  descriptors, the first entry may contain a descriptor. IDT need no more than
+  256 entries (max interrupt IDs), though it may contain only the used ones.
+
+                                              INTERRUPT DESCRIPTOR TABLE
+                                              +-------------------------+
+                                        +---->|      |     |     |      |
+                                        |     |- GATE FOR INTERRUPT #N -|
+                                        |     |      |     |     |      |
+                                        |     +-------------------------+
+                                        |     .                         .
+                                        |     .                         .
+                                        |     .                         .
+                                        |     +-------------------------+
+                                        |     |      |     |     |      |
+                                        |     |- GATE FOR INTERRUPT #2 -|
+                                        |     |      |     |     |      |
+                                        |     |-------------------------|
+            IDT REGISTER                |     |      |     |     |      |
+                                        |     |- GATE FOR INTERRUPT #1 -|
+                    15            0     |     |      |     |     |      |
+                   +---------------+    |     |-------------------------|
+                   |   IDT LIMIT   |----+     |      |     |     |      |
+  +--------------------------------|          |- GATE FOR INTERRUPT #0 -|
+  |            IDT BASE            |--------->|      |     |     |      |
+  +--------------------------------+          +-------------------------+
+   31                             0
+
+
+  Operand for SIDT, LIDT (Load/Store the IDT register) is a 6byte area like:
+
+  31                23                15                7               0
+ +-----------------+-----------------+-----------------+-----------------+
+ |                                 BASE                                  |2
+ +-----------------+-----------------------------------+-----------------|
+                                     |               LIMIT               |0
+                                     +-----------------+-----------------+
+
+
+* IDT descriptros contain three kinds of gates:
+ 
+
+ 31                23               15                7             0
+  +-----------------+----------------+-----------------+-----------------+
+  |                                  | |     |         |                 |
+  |            (NOT USED)            |P| DPL |0 0 1 0 1|   (NOT USED)    | 4
+  |                                  | |     |         |                 |
+  |----------------------------------+-----------------------------------|
+  |                                  |                                   |
+  |              SELECTOR            |            (NOT USED)             | 0
+  |                                  |                                   |
+  +-----------------+----------------+-----------------+-----------------+
+
+
+  Task Gates:
+
+                             80386 TASK GATE (type 5)
+   31                23                15                7                0
+  +-----------------+-----------------+-----------------+-----------------+
+  |             (NOT USED)            | P |DPL|0 0 1 0 1|   (NOT USED)    |4
+  |-----------------------------------+-----------------------------------|
+  |             SELECTOR              |             (NOT USED)            |0
+  +-----------------+-----------------+-----------------+-----------------+
+
+  
+  Interrupt Gates:
+
+                                80386 INTERRUPT GATE (type E)
+   31                23                15                7                0
+  +-----------------+-----------------+-----------------+-----+-----------+
+  |           OFFSET 31..16           | P |DPL|0 1 1 1 0|0 0 0|(NOT USED) |4
+  |-----------------------------------+-----------------------------------|
+  |             SELECTOR              |           OFFSET 15..0            |0
+  +-----------------+-----------------+-----------------+-----------------+
+
+
+  Trap Gates:
+
+                               80386 TRAP GATE (Type F)
+   31                23                15                7                0
+  +-----------------+-----------------+-----------------+-----+-----------+
+  |          OFFSET 31..16            | P |DPL|0 1 1 1 1|0 0 0|(NOT USED) |4
+  |-----------------------------------+-----------------------------------|
+  |             SELECTOR              |           OFFSET 15..0            |0
+  +-----------------+-----------------+-----------------+-----------------+
+
+
+* Interrupt victoring (Finding the right interrupt handler) is done by this way:
+
+                IDT                                    EXECUTABLE SEGMENT
+           +---------------+                             +---------------+
+           |               |                       OFFSET|               |
+           |---------------|  +------------------------->| ENTRY POINT   |
+           |               |  |      LDT OR GDT          |               |
+           |---------------|  |   +---------------+      |               |
+           |               |  |   |               |      |               |
+INTERRUPT  |---------------|  |   |---------------|      |               |
+   ID----->| TRAP GATE OR  |--+   |               |      |               |
+           |INTERRUPT GATE |--+   |---------------|      |               |
+           |---------------|  |   |               |      |               |
+           |               |  |   |---------------|      |               |
+           |---------------|  +-->|   SEGMENT     |-+    |               |
+           |               |      |  DESCRIPTOR   | |    |               |
+           |---------------|      |---------------| |    |               |
+           |               |      |               | |    |               |
+           |---------------|      |---------------| |    |               |
+           |               |      |               | |BASE|               |
+           +---------------+      |---------------| +--->+---------------+
+                                  |               |
+                                  |               |
+                                  |               |
+                                  +---------------+
+
+* Stack Layout after an exception or interrupt:
+
+  The Flags register is saved in the stack, the current eflags is changed as the
+  handler wishes. After handler finishes, the FLAGS register is restored (using 
+  IRET instruction [discussed following point]).  
+
+                           WITHOUT PRIVILEGE TRANSITION
+
+      D  O      31          0                     31          0
+      I  F    |---------------|                 |---------------|
+      R       |       |       |    OLD          |       |       |    OLD
+      E  E    |-------+-------|   SS:ESP        |-------+-------|   SS:ESP
+      C  X    |       |       |     |           |       |       |     |
+      T  P    |---------------|<----+           |---------------|<----+
+      I  A    |  OLD EFLAGS   |                 |  OLD EFLAGS   |
+      O  N    |---------------|                 |---------------|
+      N  S    |       |OLD CS |    NEW          |       |OLD CS |
+         I    |---------------|   SS:ESP        |---------------|
+       | O    |    OLD EIP    |     |           |    OLD EIP    |    NEW
+       | N    |---------------|<----+           |---------------|   SS:ESP
+       |      |               |                 |  ERROR CODE   |     |
+       v      .               .                 |---------------|<----+
+              .               .                 |               |
+              .               .
+              WITHOUT ERROR CODE                 WITH ERROR CODE
+
+                             WITH PRIVILEGE TRANSITION
+
+      D  O     31            0                     31          0
+      I  F    +---------------+<----+           +---------------+<----+
+      R       |       |OLD SS |     |           |       |OLD SS |     |
+      E  E    |---------------|   SS:ESP        |---------------|   SS:ESP
+      C  X    |    OLD ESP    |  FROM TSS       |    OLD ESP    |  FROM TSS
+      T  P    |---------------|                 |---------------|
+      I  A    |  OLD EFLAGS   |                 |  OLD EFLAGS   |
+      O  N    |---------------|                 |---------------|
+      N  S    |       |OLD CS |    NEW          |       |OLD CS |
+         I    |---------------|   SS:EIP        |---------------|
+       | O    |    OLD EIP    |     |           |    OLD EIP    |    NEW
+       | N    |---------------|<----+           |---------------|   SS:ESP
+       |      |               |                 |  ERROR CODE   |     |
+       v      .               .                 |---------------|<----+
+              .               .                 |               |
+              .               .
+              WITHOUT ERROR CODE                 WITH ERROR CODE
+
+
+* The IRET instruction is used to exit from an interrupt procedure. IRET is
+  similar to RET except that IRET increments EIP by an extra four bytes (because
+  of the flags on the stack) and moves the saved flags into the EFLAGS
+  register. The IOPL field of EFLAGS is changed only if the CPL is zero. The IF
+  flag is changed only if CPL <= IOPL.
+
+* The difference between an interrupt gate and a trap gate is in the effect
+  on IF (the interrupt-enable flag). An interrupt that vectors through an
+  interrupt gate resets IF, thereby preventing other interrupts from
+  interfering with the current interrupt handler. A subsequent IRET
+  instruction restores IF to the value in the EFLAGS image on the stack. An
+  interrupt through a trap gate does not change IF.
+
+* 

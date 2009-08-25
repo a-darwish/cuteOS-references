@@ -1,0 +1,279 @@
+<pre>
+<title>         PART II  SYSTEMS PROGRAMMING                       </title><body>
+<H1><font color=red>         PART II  SYSTEMS PROGRAMMING                       </font></H1>
+<pre>
+<title>Chapter 4    Systems Architecture</title><body>
+<H1><font color=red>Chapter 4 </font>   Systems Architecture</H1>
+<pre>
+
+
+
+
+   Chapter 4  Systems Architecture
+
+----------------------------------------------------------------------------
+
+Many of the architectural features of the 80386 are used only by systems
+programmers. This chapter presents an overview of these aspects of the
+architecture.
+
+The systems-level features of the 80386 architecture include:
+
+  Memory Management
+  Protection
+  Multitasking
+  Input/Output
+  Exceptions and Interrupts
+  Initialization
+  Coprocessing and Multiprocessing
+  Debugging
+
+These features are implemented by registers and instructions, all of which
+are introduced in the following sections. The purpose of this chapter is not
+to explain each feature in detail, but rather to place the remaining
+chapters of Part II in perspective. Each mention in this chapter of a
+register or instruction is either accompanied by an explanation or a
+reference to a following chapter where detailed information can be obtained.
+
+
+<HR>
+<A Name="4.1"><H2>4.1  Systems Registers</H2>
+
+4.1  Systems Registers
+
+The registers designed for use by systems programmers fall into these
+classes:
+
+  EFLAGS
+  Memory-Management Registers
+  Control Registers
+  Debug Registers
+  Test Registers
+
+<HR>
+<A Name="4.1.1"><H2>4.1.1  Systems Flags</H2>
+
+4.1.1  Systems Flags
+
+The systems flags of the EFLAGS register control I/O, maskable interrupts,
+debugging, task switching, and enabling of virtual 8086 execution in a
+protected, multitasking environment. These flags are highlighted in Figure
+4-1.
+
+IF (Interrupt-Enable Flag, bit 9)
+
+   Setting IF allows the CPU to recognize external (maskable) interrupt
+   requests. Clearing IF disables these interrupts. IF has no effect on
+   either exceptions or nonmaskable external interrupts. Refer to Chapter
+   9 for more details about interrupts.
+
+NT (Nested Task, bit 14)
+
+   The processor uses the nested task flag to control chaining of
+   interrupted and called tasks. NT influences the operation of the IRET
+   instruction. Refer to Chapter 7 and Chapter 9 for more information on
+   nested tasks.
+
+RF (Resume Flag, bit 16)
+
+   The RF flag temporarily disables debug exceptions so that an instruction
+   can be restarted after a debug exception without immediately causing
+   another debug exception. Refer to Chapter 12 for details.
+
+TF (Trap Flag, bit 8)
+
+   Setting TF puts the processor into single-step mode for debugging. In
+   this mode, the CPU automatically generates an exception after each
+   instruction, allowing a program to be inspected as it executes each
+   instruction. Single-stepping is just one of several debugging features of
+   the 80386. Refer to Chapter 12 for additional information.
+
+VM (Virtual 8086 Mode, bit 17)
+
+   When set, the VM flag indicates that the task is executing an 8086
+   program. Refer to Chapter 14 for a detailed discussion of how the 80386
+   executes 8086 tasks in a protected, multitasking environment.
+
+See Also: <A HREF="Figs/Fig.4.html#Fig.4-1">Fig.4-1</A> 
+
+<HR>
+<A Name="4.1.2"><H2>4.1.2  Memory-Management Registers</H2>
+
+4.1.2  Memory-Management Registers
+
+Four registers of the 80386 locate the data structures that control
+segmented memory management:
+
+GDTR    Global Descriptor Table Register
+LDTR    Local Descriptor Table Register
+
+   These registers point to the segment descriptor tables GDT and LDT.
+   Refer to Chapter 5 for an explanation of addressing via descriptor
+   tables.
+
+IDTR    Interrupt Descriptor Table Register
+
+   This register points to a table of entry points for interrupt handlers
+   (the IDT). Refer to Chapter 9 for details of the interrupt mechanism.
+
+TR      Task Register
+
+   This register points to the information needed by the processor to define
+   the current task. Refer to Chapter 7 for a description of the
+   multitasking features of the 80386.
+
+<HR>
+<A Name="4.1.3"><H2>4.1.3  Control Registers</H2>
+
+4.1.3  Control Registers
+
+Figure 4-2 shows the format of the 80386 control registers CR0, CR2, and
+CR3. These registers are accessible to systems programmers only via variants
+of the MOV instruction, which allow them to be loaded from or stored in
+general registers; for example:
+
+MOV EAX, CR0
+MOV CR3, EBX
+
+CR0 contains system control flags, which control or indicate conditions
+that apply to the system as a whole, not to an individual task.
+
+EM (Emulation, bit 2)
+
+   EM indicates whether coprocessor functions are to be emulated. Refer to
+   Chapter 11 for details.
+
+ET (Extension Type, bit 4)
+
+   ET indicates the type of coprocessor present in the system (80287 or
+   80387). Refer to Chapter 11 and Chapter 10 for details.
+
+MP (Math Present, bit 1)
+
+   MP controls the function of the WAIT instruction, which is used to
+   coordinate a coprocessor. Refer to Chapter 11 for details.
+
+PE (Protection Enable, bit 0)
+
+   Setting PE causes the processor to begin executing in protected mode.
+   Resetting PE returns to real-address mode. Refer to Chapter 14 and
+   Chapter 10 for more information on changing processor modes.
+
+PG (Paging, bit 31)
+
+   PG indicates whether the processor uses page tables to translate linear
+   addresses into physical addresses. Refer to Chapter 5 for a description
+   of page translation; refer to Chapter 10 for a discussion of how to set
+   PG.
+
+TS (Task Switched, bit 3)
+
+   The processor sets TS with every task switch and tests TS when
+   interpreting coprocessor instructions. Refer to Chapter 11 for details.
+
+CR2 is used for handling page faults when PG is set. The processor stores
+in CR2 the linear address that triggers the fault. Refer to Chapter 9 for a
+description of page-fault handling.
+
+CR3 is used when PG is set. CR3 enables the processor to locate the page
+table directory for the current task. Refer to Chapter 5 for a description
+of page tables and page translation.
+
+See Also: <A HREF="Figs/Fig.4.html#Fig.4-2">Fig.4-2</A> 
+
+<HR>
+<A Name="4.1.4"><H2>4.1.4  Debug Register</H2>
+
+4.1.4  Debug Register
+
+The debug registers bring advanced debugging abilities to the 80386,
+including data breakpoints and the ability to set instruction breakpoints
+without modifying code segments. Refer to Chapter 12 for a complete
+description of formats and usage.
+
+<HR>
+<A Name="4.1.5"><H2>4.1.5  Test Registers</H2>
+
+
+4.1.5  Test Registers
+
+The test registers are not a standard part of the 80386 architecture. They
+are provided solely to enable confidence testing of the translation
+lookaside buffer (TLB), the cache used for storing information from page
+tables. Chapter 12 explains how to use these registers.
+
+<HR>
+<A Name="4.2"><H2>4.2  Systems Instructions</H2>
+
+4.2  Systems Instructions
+
+Systems instructions deal with such functions as:
+
+  1.  Verification of pointer parameters (refer to Chapter 6):
+
+    ARPL             -- Adjust RPL
+    LAR              -- Load Access Rights
+    LSL              -- Load Segment Limit
+    VERR             -- Verify for Reading
+    VERW             -- Verify for Writing
+
+  2.  Addressing descriptor tables (refer to Chaper 5):
+
+    LLDT             -- Load LDT Register
+    SLDT             -- Store LDT Register
+    LGDT             -- Load GDT Register
+    SGDT             -- Store GDT Register
+
+  3.  Multitasking (refer to Chapter 7):
+
+    LTR              -- Load Task Register
+    STR              -- Store Task Register
+
+  4. Coprocessing and Multiprocessing (refer to Chapter 11):
+
+    CLTS             -- Clear Task-Switched Flag
+    ESC              -- Escape instructions
+    WAIT             -- Wait until Coprocessor not Busy
+    LOCK             -- Assert Bus-Lock Signal
+
+  5.  Input and Output (refer to Chapter 8):
+
+    IN               -- Input
+    OUT              -- Output
+    INS              -- Input String
+    OUTS             -- Output String
+
+  6.  Interrupt control (refer to Chapter 9):
+
+    CLI              -- Clear Interrupt-Enable Flag
+    STI              -- Set Interrupt-Enable Flag
+    LIDT             -- Load IDT Register
+    SIDT             -- Store IDT Register
+
+  7.  Debugging (refer to Chapter 12):
+
+    MOV              -- Move to and from debug registers
+
+  8.  TLB testing (refer to Chapter 10):
+
+    MOV              -- Move to and from test registers
+
+  9.  System Control:
+
+    SMSW             -- Set MSW
+    LMSW             -- Load MSW
+    HLT              -- Halt Processor
+    MOV              -- Move to and from control registers
+
+The instructions SMSW and LMSW are provided for compatibility with the
+80286 processor.  80386 programs access the MSW in CR0 via variants of the
+MOV instruction.  HLT stops the processor until receipt of an INTR or RESET
+signal.
+
+In addition to the chapters cited above, detailed information about each of
+these instructions can be found in the instruction reference chapter,
+Chapter 17.
+
+
+
+

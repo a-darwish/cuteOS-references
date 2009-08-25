@@ -1,0 +1,54 @@
+<title>Instruction Set XCHG</title><pre>
+<A Name="XCHG"><H2>XCHG 			   -- Exchange Register/Memory with Register</H2>
+
+XCHG -- Exchange Register/Memory with Register
+
+
+Opcode    Instruction      Clocks     Description
+
+90 + r    XCHG AX,r16      3          Exchange word register with AX
+90 + r    XCHG r16,AX      3          Exchange word register with AX
+90 + r    XCHG EAX,r32     3          Exchange dword register with EAX
+90 + r    XCHG r32,EAX     3          Exchange dword register with EAX
+86  /r    XCHG r/m8,r8     3          Exchange byte register with EA byte
+86  /r    XCHG r8,r/m8     3/5        Exchange byte register with EA byte
+87  /r    XCHG r/m16,r16   3          Exchange word register with EA word
+87  /r    XCHG r16,r/m16   3/5        Exchange word register with EA word
+87  /r    XCHG r/m32,r32   3          Exchange dword register with EA dword
+87  /r    XCHG r32,r/m32   3/5        Exchange dword register with EA dword
+
+
+Operation
+
+temp = DEST
+DEST = SRC
+SRC = temp
+
+Description
+
+XCHG exchanges two operands. The operands can be in either order. If a
+memory operand is involved, BUS LOCK is asserted for the duration of the
+exchange, regardless of the presence or absence of the LOCK prefix or of the
+value of the IOPL.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#GP(0) if either operand is in a nonwritable segment; #GP(0) for an
+illegal memory operand effective address in the CS, DS, ES, FS, or GS
+segments; #SS(0) for an illegal address in the SS segment; #PF(fault-code)
+for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode; #PF(fault-code) for a page
+fault
+

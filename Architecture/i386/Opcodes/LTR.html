@@ -1,0 +1,45 @@
+<title>Instruction Set LTR</title><pre>
+<A Name="LTR"><H2>LTR 			   -- Load Task Register</H2>
+
+LTR -- Load Task Register
+
+
+Opcode       Instruction    Clocks    Description
+
+0F  00 /3    LTR r/m16      pm=23/27  Load EA word into task register
+
+
+Description
+
+LTR loads the task register from the source register or memory location
+specified by the operand. The loaded task state segment is marked busy.
+A task switch does not occur.
+
+LTR is used only in operating system software; it is not used in
+application programs.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#GP(0) for an illegal memory operand effective address in the CS, DS,
+ES, FS, or GS segments; #SS(0) for an illegal address in the SS segment;
+#GP(0) if the current privilege level is not 0; #GP(selector) if the object
+named by the source selector is not a TSS or is already busy;
+#NP(selector) if the TSS is marked "not present"; #PF(fault-code) for
+a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 6; LTR is not recognized in Real Address Mode
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode
+
+Notes
+
+The operand-size attribute has no effect on this instruction.
+

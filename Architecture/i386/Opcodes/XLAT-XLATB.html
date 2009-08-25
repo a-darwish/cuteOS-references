@@ -1,0 +1,53 @@
+<title>Instruction Set XLAT-XLATB</title><pre>
+<A Name="XLAT/XLATB"><H2>XLAT/XLATB 		   -- Table Look-up Translation</H2>
+
+XLAT/XLATB -- Table Look-up Translation
+
+
+D7    XLAT m8    5     Set AL to memory byte DS:[(E)BX + unsigned AL]
+D7    XLATB      5     Set AL to memory byte DS:[(E)BX + unsigned AL]
+
+
+Operation
+
+IF AddressSize = 16
+THEN
+   AL = (BX + ZeroExtend(AL))
+ELSE (* AddressSize = 32 *)
+   AL = (EBX + ZeroExtend(AL));
+FI;
+
+Description
+
+XLAT changes the AL register from the table index to the table entry. AL
+should be the unsigned index into a table addressed by DS:BX (for an
+address-size attribute of 16 bits) or DS:EBX (for an address-size attribute
+of 32 bits).
+
+The operand to XLAT allows for the possibility of a segment override. XLAT
+uses the contents of BX even if they differ from the offset of the operand.
+The offset of the operand should have been moved intoBX/EBX with a previous
+instruction.
+
+The no-operand form, XLATB, can be used if the BX/EBX table will always
+reside in the DS segment.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#GP(0) for an illegal memory operand effective address in the CS, DS, ES,
+FS, or GS segments; #SS(0) for an illegal address in the SS segment;
+#PF(fault-code) for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode; #PF(fault-code) for a page fault
+

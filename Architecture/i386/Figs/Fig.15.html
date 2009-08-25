@@ -1,0 +1,75 @@
+<title>Figures Fig.15</title><pre>
+<A Name="Fig.15-1"><H2>Fig.15-1    V86 Mode Address Formation</H2>
+
+Figure 15-1.  V86 Mode Address Formation
+
+                      19                                3       0
+                     +---------------------------------+---------+
+         BASE        |     16-BIT SEGMENT SELECTOR     | 0 0 0 0 |
+                     +---------------------------------+---------+
+
+         +
+                      19        15                              0
+                     +---------+---------------------------------+
+         OFFSET      | 0 0 0 0 |    16-BIT EFFECTIVE ADDRESS     |
+                     +---------+---------------------------------+
+
+         =
+                    20                                          0
+         LINEAR    +---------------------------------------------+
+         ADDRESS   | X X X X X X X X X X X X X X X X X X X X X X |
+                   +---------------------------------------------+
+<A Name="Fig.15-2"><H2>Fig.15-2    Entering and Leaving an 8086 Program</H2>
+
+Figure 15-2.  Entering and Leaving the 8086 Program
+
+                            MODE TRANSITION DIAGRAM
+
+                                 +-----------+
+                  TASK SWITCH    |  INITIAL  |
+                +----------------|   ENTRY   |
+                |   OR IRET      +-----------+
+                |
+                v
+        +--------------+    INTERRUPT, EXCEPTION      +-------------+
+        | 8086 PROGRAM |----------------------------->| V86 MONITOR |
+        |  (V86 MODE)  |<-----------------------------| (PROTECTED  |
+        +--------------+            IRET              |    MODE)    |
+              ^ |                                     +-------------+
+              | |                                           |  ^
+              | |                                           |  |
+              | |                                           |  |
+              | |TASK SWITCH +-------------------+ TASK SWITCH |
+              | +----------->| OTHER 80386 TASKS |<---------+  |
+              +--------------| (PROTECTED MODE)  |-------------+
+                 TASK SWITCH +-------------------+ TASK SWITCH
+<A Name="Fig.15-3"><H2>Fig.15-3    PL 0 Stack after Interrupt in V86 Task</H2>
+
+Figure 15-3. PL 0 Stack after Interrupt in V86 Task
+
+
+                WITHOUT ERROR CODE            WITH ERROR CODE
+                 31            0               31            0
+                +--------------+<----+        +--------------+<----+
+                |      |OLD GS |     |        |      |OLD GS |     |
+                |------+-------|   SS:ESP     |------+-------|   SS:ESP
+      D  O      |      |OLD FS |  FROM TSS    |      |OLD FS |  FROM TSS
+      I  F      |------+-------|              |------+-------|
+      R         |      |OLD DS |              |      |OLD DS |
+      E  E      |------+-------|              |------+-------|
+      C  X      |      |OLD ES |              |      |OLD ES |
+      T  P      |------+-------|              |------+-------|
+      I  A      |      |OLD SS |              |      |OLD SS |
+      O  N      |--------------|              |--------------|
+      N  S      |    OLD ESP   |              |    OLD ESP   |
+         I      |--------------|              |--------------|
+       | O      |  OLD EFLAGS  |              |  OLD EFLAGS  |
+       | N      |--------------|              |--------------|
+       |        |      |OLD CS |   NEW        |      |OLD CS |
+       v        |--------------|  SS:EIP      |--------------|
+                |    OLD EIP   |    |         |    OLD EIP   |   NEW
+                |--------------|<---+         |--------------|  SS:EIP
+                |              |              |  ERROR CODE  |    |
+                .              .              |--------------|<---+
+                .              .              |              |
+                .              .              .              .

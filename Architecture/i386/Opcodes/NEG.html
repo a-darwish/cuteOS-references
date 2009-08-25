@@ -1,0 +1,48 @@
+<title>Instruction Set NEG</title><pre>
+<A Name="NEG"><H2>NEG 			   -- Two's Complement Negation</H2>
+
+NEG -- Two's Complement Negation
+
+
+Opcode  Instruction   Clocks    Description
+
+F6  /3  NEG r/m8      2/6       Two's complement negate r/m byte
+F7  /3  NEG r/m16     2/6       Two's complement negate r/m word
+F7  /3  NEG r/m32     2/6       Two's complement negate r/m dword
+
+
+Operation
+
+IF r/m = 0 THEN CF = 0 ELSE CF = 1; FI;
+r/m = - r/m;
+
+Description
+
+NEG replaces the value of a register or memory operand with its two's
+complement. The operand is subtracted from zero, and the result is placed
+in the operand.
+
+The carry flag is set to 1, unless the operand is zero, in which case the
+carry flag is cleared to 0.
+
+Flags Affected
+
+CF as described above; OF, SF, ZF, and PF as described in Appendix C
+
+Protected Mode Exceptions
+
+#GP(0) if the result is in a nonwritable segment; #GP(0) for an illegal
+memory operand effective address in the CS, DS, ES, FS, or GS
+segments; #SS(0) for an illegal address in the SS segment; #PF(fault-code)
+for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in real-address mode; #PF(fault-code) for a page
+fault
+

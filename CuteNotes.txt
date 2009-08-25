@@ -1,0 +1,106 @@
+On Intel Documents:
+-------------------
+
+* Although the newer intel documents are much more sexy and detailed, the
+  original i386 one describes the concepts in a much more bottom-up,
+  undergraduate-book like, no forward-references way.
+
+* Somehow the new intel documents beginning from the 1997 i686 document
+  assumes some x86 familarity that wasn't obviously assumed in the original
+  document.
+
+* For an example, the 'alignment' topic is throughly explained in
+  the i386 manual, what is it and why is it important to performance,
+  and how the processor act if given a misaligned address, *before* ever
+  using the words '16bit-aligned' and '32bit-aligned'.
+
+  The new intel documents assume you know subtle topics as above and
+  talks about critical issues related to their understandings freely
+  *before* they become throughly discussed. Only at i686 chapter 5
+  alignment is throughly described although several critical alignment
+  related topics have already been discussed.
+
+* Another example is when the i686 document describes the translation of
+  logical address to linear address (page 3-6) where it talks about loading
+  a segment selector in segment registers before even trhoughly describing
+  what a segment register is. This ain't the case in the 386 document.
+  This is a recurring pattern.
+
+* What's IA-32e in new Intel documents?
+  Intel has really messed up the namings of their 64bit processors. The
+  most logical choice I think was IA-64, but unfortunately that was taken
+  by the big flop in processor's history: the Itanium. When Intel waked
+  up and created their first amd64 compatible processor, they named it EMT64.
+  
+  Now intel in its new official documents call the x86_64 architecture
+  "intel 64" and call those processor's 64bit mode IA-32e.
+
+
+On Data Alignment:
+------------------
+
+* Note: In x86 speak, word = 2bytes/16bits, double word = 4bytes/32bits
+
+* Each byte within a word has its own address, and the smaller of the
+  addresses represent the address of the whole word.
+
+* Each byte within the double word has its own address. The smallest of the byte
+  addresses is the address of the double word.
+
+* ``Note that words need not be aligned at even-numbered addresses and
+  doublewords need not be aligned at addresses evenly divisible by four.
+  This allows maximum flexibility in data structures (e.g., records containing
+  mixed byte, word, and doubleword items) and efficiency in memory
+  utilization.
+
+  ## When used in a configuration with a 32-bit bus, actual transfers of
+    data between processor and memory take place in units of doublewords (4bytes)
+  beginning at addresses evenly divisible by four ##
+
+  However, the processor converts requests for misaligned words or doublewords
+  into the appropriate sequences of requests acceptable to the memory interface.
+  ## Such misaligned data transfers reduce performance by requiring extra memory
+  cycles. For maximum performance, data structures (including stacks) should
+  be designed in such a way that, whenever possible, word operands are aligned
+  at even addresses and doubleword operands are aligned at addresses evenly
+  divisible by four. ##
+
+  Due to instruction prefetching and queuing within the CPU, there is no
+  requirement for instructions to be aligned on word or doubleword boundaries.
+  However, a slight increase in speed results if the target addresses of control
+  transfers are evenly divisible by four.''
+  	    	       		    	   -- Intel 386 Reference Manual
+
+* ``The reason for this is that the processor requires two memory accesses to
+  make an unaligned memory access; whereas, aligned accesses require only one
+  memory access. A word or doubleword operand that crosses a 4-byte boundary
+  or a quadword operand that crosses an 8-byte boundary is considered unaligned
+  and requires two separate memory bus cycles to access it; a word that starts
+  on an odd address but does not cross a word boundary is considered aligned
+  and can still be accessed in one bus cycle.''
+      	  	   	       	       	   -- Intel 686 Reference Manual
+
+* x86 4KB page aligned addresses:
+
+  Decimal:
+  10 ^ 0 = 1
+  10 ^ 1 = 10
+  10 ^ 2 = 100
+  10 ^ 3 = 1000
+  ...
+
+  Binary:
+  2  ^ 0 = 1
+  2  ^ 1 = 10
+  2  ^ 2 = 100
+  ...
+  2  ^ 10 = 10000000000 = 1024 = 1KB
+  2  ^ 12 = 1000000000000 = 2^2 * 1KB = 4KB (x86 Page size/aligned-address)
+  ...
+  
+
+Protected Flat Memory Model:
+----------------------------
+
+* Check all the critical details from the 686 ``3.2.1 Basic Flat Model''
+  and beyond.

@@ -1,0 +1,42 @@
+<title>Instruction Set NOT</title><pre>
+<A Name="NOT"><H2>NOT 			   -- One's Complement Negation</H2>
+
+NOT -- One's Complement Negation
+
+
+Opcode    Instruction   Clocks    Description
+
+F6   /2   NOT r/m8       2/6      Reverse each bit of r/m byte
+F7   /2   NOT r/m16      2/6      Reverse each bit of r/m word
+F7   /2   NOT r/m32      2/6      Reverse each bit of r/m dword
+
+
+Operation
+
+r/m = NOT r/m;
+
+Description
+
+NOT inverts the operand; every 1 becomes a 0, and vice versa.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#GP(0) if the result is in a nonwritable segment; #GP(0) for an illegal
+memory operand effective address in the CS, DS, ES, FS, or GS
+segments; #SS(0) for an illegal address in the SS segment; #PF(fault-code)
+for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in real-address mode; #PF(fault-code) for a page
+fault
+

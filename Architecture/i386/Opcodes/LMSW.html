@@ -1,0 +1,52 @@
+<title>Instruction Set LMSW</title><pre>
+<A Name="LMSW"><H2>LMSW 			   -- Load Machine Status Word</H2>
+
+LMSW -- Load Machine Status Word
+
+
+Opcode      Instruction      Clocks   Description
+
+0F  01 /6   LMSW r/m16       10/13    Load r/m16 in machine status word
+
+
+Operation
+
+MSW = r/m16; (* 16 bits is stored in the machine status word *)
+
+Description
+
+LMSW loads the machine status word (part of CR0) from the source
+operand. This instruction can be used to switch to Protected Mode; if so,
+it must be followed by an intrasegment jump to flush the instruction
+queue. LMSW will not switch back to Real Address Mode.
+
+LMSW is used only in operating system software. It is not used in
+application programs.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#GP(0) if the current privilege level is not 0; #GP(0) for an illegal
+memory operand effective address in the CS, DS, ES, FS, or GS
+segments; #SS(0) for an illegal address in the SS segment; #PF(fault-code)
+for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 13 if any part of the operand would lie outside of the effective
+address space from 0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode; #PF(fault-code) for a page
+fault
+
+Notes
+
+The operand-size attribute has no effect on this instruction. This
+instruction is provided for compatibility with the 80286; 80386 programs
+should use MOV CR0, ... instead.
+

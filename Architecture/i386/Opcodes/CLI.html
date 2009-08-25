@@ -1,0 +1,40 @@
+<title>Instruction Set CLI</title><pre>
+<A Name="CLI"><H2>CLI 			   -- Clear Interrupt Flag</H2>
+
+CLI -- Clear Interrupt Flag
+
+
+Opcode    Instruction    Clocks   Description
+
+FA        CLI            3        Clear interrupt flag; interrupts disabled
+
+
+Operation
+
+IF = 0;
+
+Description
+
+CLI clears the interrupt flag if the current privilege level is at least as
+privileged as IOPL. No other flags are affected. External interrupts are not
+recognized at the end of the CLI instruction or from that point on until the
+interrupt flag is set.
+
+Flags Affected
+
+IF = 0
+
+Protected Mode Exceptions
+
+#GP(0) if the current privilege level is greater (has less privilege) than
+the IOPL in the flags register. IOPL specifies the least privileged level at
+which I/O can be performed.
+
+Real Address Mode Exceptions
+
+None
+
+Virtual 8086 Mode Exceptions
+
+#GP(0) as for Protected Mode
+

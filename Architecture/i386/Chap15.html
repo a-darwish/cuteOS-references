@@ -1,0 +1,669 @@
+<pre>
+<title>Chapter 15    Virtual 8088 Mode</title><body>
+<H1><font color=red>Chapter 15  </font>  Virtual 8088 Mode</H1>
+<pre>
+
+
+Chapter 15  Virtual 8086 Mode
+
+----------------------------------------------------------------------------
+
+The 80386 supports execution of one or more 8086, 8088, 80186, or 80188
+programs in an 80386 protected-mode environment. An 8086 program runs in
+this environment as part of a V86 (virtual 8086) task. V86 tasks take
+advantage of the hardware support of multitasking offered by the protected
+mode. Not only can there be multiple V86 tasks, each one executing an 8086
+program, but V86 tasks can be multiprogrammed with other 80386 tasks.
+
+The purpose of a V86 task is to form a "virtual machine" with which to
+execute an 8086 program. A complete virtual machine consists not only of
+80386 hardware but also of systems software. Thus, the emulation of an 8086
+is the result of cooperation between hardware and software:
+
+  *  The hardware provides a virtual set of registers (via the TSS), a
+     virtual memory space (the first megabyte of the linear address space of
+     the task), and directly executes all instructions that deal with these
+     registers and with this address space.
+
+  *  The software controls the external interfaces of the virtual machine
+     (I/O, interrupts, and exceptions) in a manner consistent with the
+     larger environment in which it executes. In the case of I/O, software
+     can choose either to emulate I/O instructions or to let the hardware
+     execute them directly without software intervention.
+
+Software that helps implement virtual 8086 machines is called a V86
+monitor.
+
+<HR>
+<A Name="15.1"><H2>15.1  Executing 8086 Code</H2>
+
+15.1  Executing 8086 Code
+
+The processor executes in V86 mode when the VM (virtual machine) bit in the
+EFLAGS register is set. The processor tests this flag under two general
+conditions:
+
+  1.  When loading segment registers to know whether to use 8086-style
+      address formation.
+
+  2.  When decoding instructions to determine which instructions are
+      sensitive to IOPL.
+
+Except for these two modifications to its normal operations, the 80386 in
+V86 mode operated much as in protected mode.
+
+<HR>
+<A Name="15.1.1"><H2>15.1.1  Registers and Instructions</H2>
+
+15.1.1  Registers and Instructions
+
+The register set available in V86 mode includes all the registers defined
+for the 8086 plus the new registers introduced by the 80386: FS, GS, debug
+registers, control registers, and test registers. New instructions that
+explicitly operate on the segment registers FS and GS are available, and the
+new segment-override prefixes can be used to cause instructions to utilize
+FS and GS for address calculations. Instructions can utilize 32-bit
+operands through the use of the operand size prefix.
+
+8086 programs running as V86 tasks are able to take advantage of the new
+applications-oriented instructions added to the architecture by the
+introduction of the 80186/80188, 80286 and 80386:
+
+  *  New instructions introduced by 80186/80188 and 80286.
+     -- PUSH immediate data
+     -- Push all and pop all (PUSHA and POPA)
+     -- Multiply immediate data
+     -- Shift and rotate by immediate count
+     -- String I/O
+     -- ENTER and LEAVE
+     -- BOUND
+
+  *  New instructions introduced by 80386.
+     -- LSS, LFS, LGS instructions
+     -- Long-displacement conditional jumps
+     -- Single-bit instructions
+     -- Bit scan
+     -- Double-shift instructions
+     -- Byte set on condition
+     -- Move with sign/zero extension
+     -- Generalized multiply
+
+<HR>
+<A Name="15.1.2"><H2>15.1.2  Linear Address Formation</H2>
+
+15.1.2  Linear Address Formation
+
+In V86 mode, the 80386 processor does not interpret 8086 selectors by
+referring to descriptors; instead, it forms linear addresses as an 8086
+would. It shifts the selector left by four bits to form a 20-bit base
+address. The effective address is extended with four high-order zeros and
+added to the base address to create a linear address as Figure 15-1
+illustrates.
+
+Because of the possibility of a carry, the resulting linear address may
+contain up to 21 significant bits. An 8086 program may generate linear
+addresses anywhere in the range 0 to 10FFEFH (one megabyte plus
+approximately 64 Kbytes) of the task's linear address space.
+
+V86 tasks generate 32-bit linear addresses. While an 8086 program can only
+utilize the low-order 21 bits of a linear address, the linear address can be
+mapped via page tables to any 32-bit physical address.
+
+Unlike the 8086 and 80286, 32-bit effective addresses can be generated (via
+the address-size prefix); however, the value of a 32-bit address may not
+exceed 65,535 without causing an exception. For full compatibility with
+80286 real-address mode, pseudo-protection faults (interrupt 12 or 13 with
+no error code) occur if an address is generated outside the range 0 through
+65,535.
+
+See Also: <A HREF="Figs/Fig.15.html#Fig.15-1">Fig.15-1</A> 
+
+<HR>
+<A Name="15.2"><H2>15.2  Structure of a V86 Task</H2>
+
+15.2  Structure of a V86 Task
+
+A V86 task consists partly of the 8086 program to be executed and partly of
+80386 "native mode" code that serves as the virtual-machine monitor. The
+task must be represented by an 80386 TSS (not an 80286 TSS). The processor
+enters V86 mode to execute the 8086 program and returns to protected mode to
+execute the monitor or other 80386 tasks.
+
+To run successfully in V86 mode, an existing 8086 program needs the
+following:
+
+  *  A V86 monitor.
+  *  Operating-system services.
+
+The V86 monitor is 80386 protected-mode code that executes at
+privilege-level zero. The monitor consists primarily of initialization and
+exception-handling procedures. As for any other 80386 program,
+executable-segment descriptors for the monitor must exist in the GDT or in
+the task's LDT. The linear addresses above 10FFEFH are available for the
+V86 monitor, the operating system, and other systems software. The monitor
+may also need data-segment descriptors so that it can examine the interrupt
+vector table or other parts of the 8086 program in the first megabyte of the
+address space.
+
+In general, there are two options for implementing the 8086 operating
+system:
+
+  1.  The 8086 operating system may run as part of the 8086 code. This
+      approach is desirable for any of the following reasons:
+
+      *  The 8086 applications code modifies the operating system.
+
+      *  There is not sufficient development time to reimplement the 8086
+         operating system as 80386 code.
+
+  2.  The 8086 operating system may be implemented or emulated in the V86
+      monitor. This approach is desirable for any of the following reasons:
+
+      *  Operating system functions can be more easily coordinated among
+         several V86 tasks.
+
+      *  The functions of the 8086 operating system can be easily emulated
+         by calls to the 80386 operating system.
+
+Note that, regardless of the approach chosen for implementing the 8086
+operating system, different V86 tasks may use different 8086 operating
+systems.
+
+<HR>
+<A Name="15.2.1"><H2>15.2.1  Using Paging for V86 Tasks</H2>
+
+15.2.1  Using Paging for V86 Tasks
+
+Paging is not necessary for a single V86 task, but paging is useful or
+necessary for any of the following reasons:
+
+  *  To create multiple V86 tasks. Each task must map the lower megabyte of
+     linear addresses to different physical locations.
+
+  *  To emulate the megabyte wrap. On members of the 8086 family, it is
+     possible to specify addresses larger than one megabyte. For example,
+     with a selector value of 0FFFFH and an offset of 0FFFFH, the effective
+     address would be 10FFEFH (one megabyte + 65519). The 8086, which can
+     form addresses only up to 20 bits long, truncates the high-order bit,
+     thereby "wrapping" this address to 0FFEFH. The 80386, however, which
+     can form addresses up to 32 bits long does not truncate such an
+     address. If any 8086 programs depend on this addressing anomaly, the
+     same effect can be achieved in a V86 task by mapping linear addresses
+     between 100000H and 110000H and linear addresses between 0 and 10000H
+     to the same physical addresses.
+
+  *  To create a virtual address space larger than the physical address
+     space.
+
+  *  To share 8086 OS code or ROM code that is common to several 8086
+     programs that are executing simultaneously.
+
+  *  To redirect or trap references to memory-mapped I/O devices.
+
+<HR>
+<A Name="15.2.2"><H2>15.2.2  Protection within a V86 Task</H2>
+
+15.2.2  Protection within a V86 Task
+
+Because it does not refer to descriptors while executing 8086 programs, the
+processor also does not utilize the protection mechanisms offered by
+descriptors. To protect the systems software that runs in a V86 task from
+the 8086 program, software designers may follow either of these approaches:
+
+  *  Reserve the first megabyte (plus 64 kilobytes) of each task's linear
+     address space for the 8086 program. An 8086 task cannot generate
+     addresses outside this range.
+
+  *  Use the U/S bit of page-table entries to protect the virtual-machine
+     monitor and other systems software in each virtual 8086 task's space.
+     When the processor is in V86 mode, CPL is 3. Therefore, an 8086 program
+     has only user privileges. If the pages of the virtual-machine monitor
+     have supervisor privilege, they cannot be accessed by the 8086 program.
+
+<HR>
+<A Name="15.3"><H2>15.3  Entering and Leaving V86 Mode</H2>
+
+15.3  Entering and Leaving V86 Mode
+
+Figure 15-2 summarizes the ways that the processor can enter and leave an
+8086 program. The processor can enter V86 by either of two means:
+
+  1.  A task switch to an 80386 task loads the image of EFLAGS from the new
+      TSS. The TSS of the new task must be an 80386 TSS, not an 80286 TSS,
+      because the 80286 TSS does not store the high-order word of EFLAGS,
+      which contains the VM flag. A value of one in the VM bit of the new
+      EFLAGS indicates that the new task is executing 8086 instructions;
+      therefore, while loading the segment registers from the TSS, the
+      processor forms base addresses as the 8086 would.
+
+  2.  An IRET from a procedure of an 80386 task loads the image of EFLAGS
+      from the stack. A value of one in VM in this case indicates that the
+      procedure to which control is being returned is an 8086 procedure. The
+      CPL at the time the IRET is executed must be zero, else the processor
+      does not change VM.
+
+The processor leaves V86 mode when an interrupt or exception occurs. There
+are two cases:
+
+  1.  The interrupt or exception causes a task switch. A task switch from a
+      V86 task to any other task loads EFLAGS from the TSS of the new task.
+      If the new TSS is an 80386 TSS and the VM bit in the EFLAGS image is
+      zero or if the new TSS is an 80286 TSS, then the processor clears the
+      VM bit of EFLAGS, loads the segment registers from the new TSS using
+      80386-style address formation, and begins executing the instructions
+      of the new task according to 80386 protected-mode semantics.
+
+  2.  The interrupt or exception vectors to a privilege-level zero
+      procedure. The processor stores the current setting of EFLAGS on the
+      stack, then clears the VM bit. The interrupt or exception handler,
+      therefore, executes as "native" 80386 protected-mode code. If an
+      interrupt or exception vectors to a conforming segment or to a
+      privilege level other than three, the processor causes a
+      general-protection exception; the error code is the selector of the
+      executable segment to which transfer was attempted.
+
+Systems software does not manipulate the VM flag directly, but rather
+manipulates the image of the EFLAGS register that is stored on the stack or
+in the TSS. The V86 monitor sets the VM flag in the EFLAGS image on the
+stack or in the TSS when first creating a V86 task. Exception and interrupt
+handlers can examine the VM flag on the stack. If the interrupted procedure
+was executing in V86 mode, the handler may need to invoke the V86 monitor.
+
+See Also: <A HREF="Figs/Fig.15.html#Fig.15-2">Fig.15-2</A> 
+
+<HR>
+<A Name="15.3.1"><H2>15.3.1  Transitions Through Task Switches</H2>
+
+15.3.1  Transitions Through Task Switches
+
+A task switch to or from a V86 task may be due to any of three causes:
+
+  1.  An interrupt that vectors to a task gate.
+  2.  An action of the scheduler of the 80386 operating system.
+  3.  An IRET when the NT flag is set.
+
+In any of these cases, the processor changes the VM bit in EFLAGS according
+to the image of EFLAGS in the new TSS. If the new TSS is an 80286 TSS, the
+high-order word of EFLAGS is not in the TSS; the processor clears VM in this
+case. The processor updates VM prior to loading the segment registers from
+the images in the new TSS. The new setting of VM determines whether the
+processor interprets the new segment-register images as 8086 selectors or
+80386/80286 selectors.
+
+<HR>
+<A Name="15.3.2"><H2>15.3.2  Transitions Through Trap Gates and Interrupt Gates</H2>
+
+15.3.2  Transitions Through Trap Gates and Interrupt Gates
+
+The processor leaves V86 mode as the result of an exception or interrupt
+that vectors via a trap or interrupt gate to a privilege-level zero
+procedure. The exception or interrupt handler returns to the 8086 code by
+executing an IRET.
+
+Because it was designed for execution by an 8086 processor, an 8086 program
+in a V86 task will have an 8086-style interrupt table starting at linear
+address zero. However, the 80386 does not use this table directly. For all
+exceptions and interrupts that occur in V86 mode, the processor vectors
+through the IDT. The IDT entry for an interrupt or exception that occurs in
+a V86 task must contain either:
+
+  *  A task gate.
+
+  *  An 80386 trap gate (type 14) or an 80386 interrupt gate (type 15),
+     which must point to a nonconforming, privilege-level zero, code
+     segment.
+
+Interrupts and exceptions that have 80386 trap or interrupt gates in the
+IDT vector to the appropriate handler procedure at privilege-level zero. The
+contents of all the 8086 segment registers are stored on the PL 0 stack.
+Figure 15-3 shows the format of the PL 0 stack after an exception or
+interrupt that occurs while a V86 task is executing an 8086 program.
+
+After the processor stores all the 8086 segment registers on the PL 0
+stack, it loads all the segment registers with zeros before starting to
+execute the handler procedure. This permits the interrupt handler to safely
+save and restore the DS, ES, FS, and GS registers as 80386 selectors.
+Interrupt handlers that may be invoked in the context of either a regular
+task or a V86 task, can use the same prolog and epilog code for register
+saving regardless of the kind of task. Restoring zeros to these registers
+before execution of the IRET does not cause a trap in the interrupt handler.
+Interrupt procedures that expect values in the segment registers or that
+return values via segment registers have to use the register images stored
+on the PL 0 stack. Interrupt handlers that need to know whether the
+interrupt occurred in V86 mode can examine the VM bit in the stored EFLAGS
+image.
+
+An interrupt handler passes control to the V86 monitor if the VM bit is set
+in the EFLAGS image stored on the stack and the interrupt or exception is
+one that the monitor needs to handle. The V86 monitor may either:
+
+  *  Handle the interrupt completely within the V86 monitor.
+  *  Invoke the 8086 program's interrupt handler.
+
+Reflecting an interrupt or exception back to the 8086 code involves the
+following steps:
+
+  1.  Refer to the 8086 interrupt vector to locate the appropriate handler
+      procedure.
+
+  2.  Store the state of the 8086 program on the privilege-level three
+      stack.
+
+  3.  Change the return link on the privilege-level zero stack to point to
+      the privilege-level three handler procedure.
+
+  4.  Execute an IRET so as to pass control to the handler.
+
+  5.  When the IRET by the privilege-level three handler again traps to the
+      V86 monitor, restore the return link on the privilege-level zero stack
+      to point to the originally interrupted, privilege-level three
+      procedure.
+
+  6.  Execute an IRET so as to pass control back to the interrupted
+      procedure.
+
+See Also: <A HREF="Figs/Fig.15.html#Fig.15-3">Fig.15-3</A> 
+
+<HR>
+<A Name="15.4"><H2>15.4  Additional Sensitive Instructions</H2>
+
+15.4  Additional Sensitive Instructions
+
+When the 80386 is executing in V86 mode, the instructions PUSHF, POPF,
+INT n, and IRET are sensitive to IOPL. The instructions IN, INS, OUT, and
+OUTS, which are ordinarily sensitive in protected mode, are not sensitive
+in V86 mode. Following is a complete list of instructions that are sensitive
+in V86 mode:
+
+   CLI     -- Clear Interrupt-Enable Flag
+   STI     -- Set Interrupt-Enable Flag
+   LOCK    -- Assert Bus-Lock Signal
+   PUSHF   -- Push Flags
+   POPF    -- Pop Flags
+   INT n   -- Software Interrupt
+   RET     -- Interrupt Return
+
+CPL is always three in V86 mode; therefore, if IOPL < 3, these instructions
+will trigger a general-protection exceptions. These instructions are made
+sensitive so that their functions can be simulated by the V86 monitor.
+
+<HR>
+<A Name="15.4.1"><H2>15.4.1  Emulating 8086 Operating System Calls</H2>
+
+15.4.1  Emulating 8086 Operating System Calls
+
+INT n is sensitive so that the V86 monitor can intercept calls to the
+8086 OS. Many 8086 operating systems are called by pushing parameters onto
+the stack, then executing an INT n instruction. If IOPL < 3, INT n
+instructions will be intercepted by the V86 monitor. The V86 monitor can
+then emulate the function of the 8086 operating system or reflect the
+interrupt back to the 8086 operating system in V86 mode.
+
+<HR>
+<A Name="15.4.2"><H2>15.4.2  Virtualizing the Interrupt-Enable Flag</H2>
+
+15.4.2  Virtualizing the Interrupt-Enable Flag
+
+When the processor is executing 8086 code in a V86 task, the instructions
+PUSHF, POPF, and IRET are sensitive to IOPL so that the V86 monitor can
+control changes to the interrupt-enable flag (IF). Other instructions that
+affect IF (STI and CLI) are IOPL sensitive both in 8086 code and in
+80386/80386 code.
+
+Many 8086 programs that were designed to execute on single-task systems set
+and clear IF to control interrupts. However, when these same programs are
+executed in a multitasking environment, such control of IF can be
+disruptive. If IOPL is less than three, all instructions that change or
+interrogate IF will trap to the V86 monitor. The V86 monitor can then
+control IF in a manner that both suits the needs of the larger environment
+and is transparent to the 8086 program.
+
+<HR>
+<A Name="15.5"><H2>15.5  Virtual I/O</H2>
+
+15.5  Virtual I/O
+
+Many 8086 programs that were designed to execute on single-task systems use
+I/O devices directly. However, when these same programs are executed in a
+multitasking environment, such use of devices can be disruptive. The 80386
+provides sufficient flexibility to control I/O in a manner that both suits
+the needs of the new environment and is transparent to the 8086 program.
+Designers may take any of several possible approaches to controlling I/O:
+
+  *  Implement or emulate the 8086 operating system as an 80386 program and
+     require the 8086 application to do I/O via software interrupts to the
+     operating system, trapping all attempts to do I/O directly.
+
+  *  Let the 8086 program take complete control of all I/O.
+
+  *  Selectively trap and emulate references that a task makes to specific
+     I/O ports.
+
+  *  Trap or redirect references to memory-mapped I/O addresses.
+
+The method of controlling I/O depends upon whether I/O ports are I/O mapped
+or memory mapped.
+
+<HR>
+<A Name="15.5.1"><H2>15.5.1  I/O-Mapped I/O</H2>
+
+15.5.1  I/O-Mapped I/O
+
+I/O-mapped I/O in V86 mode differs from protected mode only in that the
+protection mechanism does not consult IOPL when executing the I/O
+instructions IN, INS, OUT, OUTS. Only the I/O permission bit map controls
+the right for V86 tasks to execute these I/O instructions.
+
+The I/O permission map traps I/O instructions selectively depending on the
+I/O addresses to which they refer. The I/O permission bit map of each V86
+task determines which I/O addresses are trapped for that task. Because each
+task may have a different I/O permission bit map, the addresses trapped for
+one task may be different from those trapped for others. Refer to Chapter 8
+for more information about the I/O permission map.
+
+<HR>
+<A Name="15.5.2"><H2>15.5.2  Memory-Mapped I/O</H2>
+
+15.5.2  Memory-Mapped I/O
+
+In hardware designs that utilize memory-mapped I/O, the paging facilities
+of the 80386 can be used to trap or redirect I/O operations. Each task that
+executes memory-mapped I/O must have a page (or pages) for the memory-mapped
+address space. The V86 monitor may control memory-mapped I/O by any of
+these means:
+
+  *  Assign the memory-mapped page to appropriate physical addresses.
+     Different tasks may have different physical addresses, thereby
+     preventing the tasks from interfering with each other.
+
+  *  Cause a trap to the monitor by forcing a page fault on the
+     memory-mapped page. Read-only pages trap writes. Not-present pages trap
+     both reads and writes.
+
+Intervention for every I/O might be excessive for some kinds of I/O
+devices. A page fault can still be used in this case to cause intervention
+on the first I/O operation. The monitor can then at least make sure that the
+task has exclusive access to the device. Then the monitor can change the
+page status to present and read/write, allowing subsequent I/O to proceed at
+full speed.
+
+<HR>
+<A Name="15.5.3"><H2>15.5.3  Special I/O Buffers</H2>
+
+15.5.3  Special I/O Buffers
+
+Buffers of intelligent controllers (for example, a bit-mapped graphics
+buffer) can also be virtualized via page mapping. The linear space for the
+buffer can be mapped to a different physical space for each virtual 8086
+task. The V86 monitor can then assume responsibility for spooling the data
+or assigning the virtual buffer to the real buffer at appropriate times.
+
+<HR>
+<A Name="15.6"><H2>15.6  Differences from 8086</H2>
+
+15.6  Differences From 8086
+
+In general, V86 mode will correctly execute software designed for the 8086,
+8088, 80186, and 80188. Following is a list of the minor differences between
+8086 execution on the 80386 and on an 8086.
+
+  1.  Instruction clock counts.
+
+      The 80386 takes fewer clocks for most instructions than the 
+      8086/8088. The areas most likely to be affected are:
+
+      *  Delays required by I/O devices between I/O operations.
+
+      *  Assumed delays with 8086/8088 operating in parallel with an 8087.
+
+  2.  Divide exceptions point to the DIV instruction.
+
+      Divide exceptions on the 80386 always leave the saved CS:IP value
+      pointing to the instruction that failed. On the 8086/8088, the CS:IP
+      value points to the next instruction.
+
+  3.  Undefined 8086/8088 opcodes.
+
+      Opcodes that were not defined for the 8086/8088 will cause exception
+      6 or will execute one of the new instructions defined for the 80386.
+
+  4.  Value written by PUSH SP.
+
+      The 80386 pushes a different value on the stack for PUSH SP than the
+      8086/8088. The 80386 pushes the value of SP before SP is incremented
+      as part of the push operation; the 8086/8088 pushes the value of SP
+      after it is incremented. If the value pushed is important, replace
+      PUSH SP instructions with the following three instructions:
+
+      PUSH  BP
+      MOV   BP, SP
+      XCHG  BP, [BP]
+
+      This code functions as the 8086/8088 PUSH SP instruction on the 
+      80386.
+
+  5.  Shift or rotate by more than 31 bits.
+
+      The 80386 masks all shift and rotate counts to the low-order five
+      bits. This MOD 32 operation limits the count to a maximum of 31 bits,
+      thereby limiting the time that interrupt response is delayed while
+      the instruction is executing.
+
+  6.  Redundant prefixes.
+
+      The 80386 sets a limit of 15 bytes on instruction length. The only
+      way to violate this limit is by putting redundant prefixes before an
+      instruction. Exception 13 occurs if the limit on instruction length
+      is violated. The 8086/8088 has no instruction length limit.
+
+  7.  Operand crossing offset 0 or 65,535.
+
+      On the 8086, an attempt to access a memory operand that crosses
+      offset 65,535 (e.g., MOV a word to offset 65,535) or offset 0 (e.g.,
+      PUSH a word when SP = 1) causes the offset to wrap around modulo
+      65,536. The 80386 raises an exception in these cases--exception 13 if
+      the segment is a data segment (i.e., if CS, DS, ES, FS, or GS is
+      being used to address the segment), exception 12 if the segment is a
+      stack segment (i.e., if SS is being used).
+
+  8.  Sequential execution across offset 65,535.
+
+      On the 8086, if sequential execution of instructions proceeds past
+      offset 65,535, the processor fetches the next instruction byte from
+      offset 0 of the same segment. On the 80386, the processor raises
+      exception 13 in such a case.
+
+  9.  LOCK is restricted to certain instructions.
+
+      The LOCK prefix and its corresponding output signal should only be
+      used to prevent other bus masters from interrupting a data movement
+      operation. The 80386 always asserts the LOCK signal during an XCHG
+      instruction with memory (even if the LOCK prefix is not used). LOCK
+      may only be used with the following 80386 instructions when they
+      update memory: BTS, BTR, BTC, XCHG, ADD, ADC, SUB, SBB, INC, DEC,
+      AND, OR, XOR, NOT, and NEG. An undefined-opcode exception (interrupt
+      6) results from using LOCK before any other instruction.
+
+ 10.  Single-stepping external interrupt handlers.
+
+      The priority of the 80386 single-step exception is different from
+      that of the 8086/8088. The change prevents an external interrupt
+      handler from being single-stepped if the interrupt occurs while a
+      program is being single-stepped. The 80386 single-step exception has
+      higher priority that any external interrupt. The 80386 will still
+      single-step through an interrupt handler invoked by the INT
+      instructions or by an exception.
+
+  11.  IDIV exceptions for quotients of 80H or 8000H.
+
+      The 80386 can generate the largest negative number as a quotient for
+      the IDIV instruction. The 8086/8088 causes exception zero instead.
+
+ 12.  Flags in stack.
+
+      The setting of the flags stored by PUSHF, by interrupts, and by
+      exceptions is different from that stored by the 8086 in bit positions
+      12 through 15. On the 8086 these bits are stored as ones, but in V86
+      mode bit 15 is always zero, and bits 14 through 12 reflect the last
+      value loaded into them.
+
+ 13.  NMI interrupting NMI handlers.
+
+      After an NMI is recognized on the 80386, the NMI interrupt is masked
+      until an IRET instruction is executed.
+
+ 14.  Coprocessor errors vector to interrupt 16.
+
+      Any 80386 system with a coprocessor must use interrupt vector 16 for
+      the coprocessor error exception. If an 8086/8088 system uses another
+      vector for the 8087 interrupt, both vectors should point to the
+      coprocessor-error exception handler.
+
+ 15.  Numeric exception handlers should allow prefixes.
+
+      On the 80386, the value of CS:IP saved for coprocessor exceptions
+      points at any prefixes before an ESC instruction. On 8086/8088
+      systems, the saved CS:IP points to the ESC instruction itself.
+
+ 16.  Coprocessor does not use interrupt controller.
+
+      The coprocessor error signal to the 80386 does not pass through an
+      interrupt controller (an 8087 INT signal does). Some instructions in
+      a coprocessor error handler may need to be deleted if they deal with
+      the interrupt controller.
+
+<HR>
+<A Name="15.7"><H2>15.7  Differences from 80286 Real-Address Mode</H2>
+
+
+15.7  Differences From 80286 Real-Address Mode
+
+The 80286 processor implements the bus lock function differently than the
+80386. This fact may or may not be apparent to 8086 programs, depending on
+how the V86 monitor handles the LOCK prefix. LOCKed instructions are
+sensitive to IOPL; therefore, software designers can choose to emulate its
+function. If, however, 8086 programs are allowed to execute LOCK directly,
+programs that use forms of memory locking specific to the 8086 may not
+execute properly when transported to a specific application of the 80386.
+
+The LOCK prefix and its corresponding output signal should only be used to
+prevent other bus masters from interrupting a data movement operation. LOCK
+may only be used with the following 80386 instructions when they modify
+memory. An undefined-opcode exception results from using LOCK before any
+other instruction.
+
+  *  Bit test and change: BTS, BTR, BTC.
+  *  Exchange: XCHG.
+  *  One-operand arithmetic and logical: INC, DEC, NOT, and NEG.
+  *  Two-operand arithmetic and logical: ADD, ADC, SUB, SBB, AND, OR, XOR.
+
+A locked instruction is guaranteed to lock only the area of memory defined
+by the destination operand, but may lock a larger memory area. For example,
+typical 8086 and 80286 configurations lock the entire physical memory space.
+With the 80386, the defined area of memory is guaranteed to be locked
+against access by a processor executing a locked instruction on exactly the
+same memory area, i.e., an operand with identical starting address and
+identical length.
+
+
+

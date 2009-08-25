@@ -1,0 +1,39 @@
+<title>Instruction Set HLT</title><pre>
+<A Name="HLT"><H2>HLT 			   -- Halt</H2>
+
+HLT -- Halt
+
+
+Opcode      Instruction        Clocks     Description
+
+F4          HLT                5          Halt
+
+
+Operation
+
+Enter Halt state;
+
+Description
+
+HALT stops instruction execution and places the 80386 in a HALT state.
+An enabled interrupt, NMI, or a reset will resume execution. If an
+interrupt (including NMI) is used to resume execution after HLT, the saved
+CS:IP (or CS:EIP) value points to the instruction following HLT.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+HLT is a privileged instruction; #GP(0) if the current privilege level is
+not 0
+
+Real Address Mode Exceptions
+
+None
+
+Virtual 8086 Mode Exceptions
+
+#GP(0); HLT is a privileged instruction
+

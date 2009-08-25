@@ -1,0 +1,61 @@
+<title>Instruction Set SGDT-SIDT</title><pre>
+<A Name="SGDT/SIDT"><H2>SGDT/SIDT 		   -- Store Global/Interrupt Descriptor Table Register</H2>
+
+SGDT/SIDT -- Store Global/Interrupt Descriptor Table Register
+
+
+Opcode       Instruction   Clocks   Description
+
+0F  01 /0    SGDT m        9        Store GDTR to m
+0F  01 /1    SIDT m        9        Store IDTR to m
+
+
+Operation
+
+DEST = 48-bit BASE/LIMIT register contents;
+
+Description
+
+SGDT/SIDT copies the contents of the descriptor table register the six
+bytes of memory indicated by the operand. The LIMIT field of the
+register is assigned to the first word at the effective address. If the
+operand-size attribute is 32 bits, the next three bytes are assigned the
+BASE field of the register, and the fourth byte is written with zero. The
+last byte is undefined. Otherwise, if the operand-size attribute is 16
+bits, the next four bytes are assigned the 32-bit BASE field of the
+register.
+
+SGDT and SIDT are used only in operating system software; they are
+not used in application programs.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+Interrupt 6 if the destination operand is a register; #GP(0) if the
+destination is in a nonwritable segment; #GP(0) for an illegal memory
+operand effective address in the CS, DS, ES, FS, or GS segments; #SS(0) for
+an illegal address in the SS segment; #PF(fault-code) for a page fault
+
+Real Address Mode Exceptions
+
+Interrupt 6 if the destination operand is a register; Interrupt 13 if any
+part of the operand would lie outside of the effective address space from
+0 to 0FFFFH
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode; #PF(fault-code) for a page
+fault
+
+Compatability Note
+
+The 16-bit forms of the SGDT/SIDT instructions are compatible with
+the 80286, if the value in the upper eight bits is not referenced. The
+80286 stores 1's in these upper bits, whereas the 80386 stores 0's if the
+operand-size attribute is 16 bits. These bits were specified as undefined
+by the SGDT/SIDT instructions in the iAPX 286 Programmer's
+Reference Manual.
+

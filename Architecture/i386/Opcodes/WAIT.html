@@ -1,0 +1,35 @@
+<title>Instruction Set WAIT</title><pre>
+<A Name="WAIT"><H2>WAIT 			   -- Wait until BUSY# Pin is Inactive (HIGH)</H2>
+
+WAIT -- Wait until BUSY# Pin is Inactive (HIGH)
+
+
+Opcode   Instruction   Clocks     Description
+
+9B       WAIT          6 min.     Wait until BUSY pin is inactive (HIGH)
+
+
+Description
+
+WAIT suspends execution of 80386 instructions until the BUSY# pin is
+inactive (high). The BUSY# pin is driven by the 80287 numeric processor
+extension.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#NM if the task-switched flag in the machine status word (the lower 16 bits
+of register CR0) is set; #MF if the ERROR# input pin is asserted (i.e., the
+80287 has detected an unmasked numeric error)
+
+Real Address Mode Exceptions
+
+Same exceptions as in Protected Mode
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Protected Mode
+

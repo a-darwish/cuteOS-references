@@ -1,0 +1,43 @@
+<title>Instruction Set PUSHF-PUSHFD</title><pre>
+<A Name="PUSHF/PUSHFD"><H2>PUSHF/PUSHFD 		   -- Push Flags Register onto the Stack</H2>
+
+PUSHF/PUSHFD -- Push Flags Register onto the Stack
+
+
+Opcode  Instruction  Clocks   Description
+
+9C      PUSHF        4        Push FLAGS
+9C      PUSHFD       4        Push EFLAGS
+
+
+Operation
+
+IF OperandSize = 32
+THEN push(EFLAGS);
+ELSE push(FLAGS);
+FI;
+
+Description
+
+PUSHF decrements the stack pointer by 2 and copies the FLAGS
+register to the new top of stack; PUSHFD decrements the stack pointer by
+4, and the 80386 EFLAGS register is copied to the new top of stack
+which is pointed to by SS:eSP. Refer to Chapter 2 and Chapter 4 for
+information on the EFLAGS register.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#SS(0) if the new value of eSP is outside the stack segment boundaries
+
+Real Address Mode Exceptions
+
+None; the 80386 shuts down due to a lack of stack space
+
+Virtual 8086 Mode Exceptions
+
+#GP(0) fault if IOPL is less than 3, to permit emulation
+

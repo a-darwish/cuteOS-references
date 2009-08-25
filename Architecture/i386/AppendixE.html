@@ -1,0 +1,34 @@
+<pre>
+
+<title>80286 Machine Cycle Definition During 80286 BUS Access</title><body>
+<H1><font color=red>  Title: </font>80286 Machine Cycle Definition During 80286 BUS Access</H1>
+<pre>
+
+----------------------------------------------------------------------------
+    ----     --    --      --
+COD/INTA   M/IO    S1      S2          Initiated BUS Activity
+----------------------------------------------------------------------------
+
+   0(Low)   0       0       0           Interrupt Acknowledge
+   0        0       0       1           reserved
+   0        0       1       0           reserved
+   0        0       1       1           - (No Action - Bus High Imp)
+   0        1       0       0           If A1=1 then HALT; else SHUTDOWN???
+   0        1       0       1           Data Read From Memory
+   0        1       1       0           Data Write to Memory
+   0        1       1       1           -
+   1        0       0       0           reserved
+   1        0       0       1           I/O Read
+   1        0       1       0           I/O Write
+   1        0       1       1           -
+   1        1       0       0           reserved
+   1        1       0       1           Instruction Fetch
+   1        1       1       0           reserved
+   1        1       1       1           -
+
+Notes:
+
+ Bus cycle status shows initiated bus cycle (S1,S2) and together with
+M/IO & COD/INTA defines type of bus cycle.
+  S1 and S2 are active low open collector signals and are 
+driven high impedance during acknowledging bus request

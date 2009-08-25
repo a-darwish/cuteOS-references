@@ -1,0 +1,44 @@
+<title>Instruction Set STI</title><pre>
+<A Name="STI"><H2>STI 			   -- Set Interrupt Flag</H2>
+
+STI -- Set Interrupt Flag
+
+
+Opcode  Instruction   Clocks   Description
+
+F13     STI           3        Set interrupt flag; interrupts enabled at the
+                               end of the next instruction
+
+
+Operation
+
+IF = 1
+
+Description
+
+STI sets the interrupt flag to 1. The 80386 then responds to external
+interrupts after executing the next instruction if the next instruction
+allows the interrupt flag to remain enabled. If external interrupts are
+disabled and you code STI, RET (such as at the end of a subroutine),
+the RET is allowed to execute before external interrupts are recognized.
+Also, if external interrupts are disabled and you code STI, CLI, then
+external interrupts are not recognized because the CLI instruction clears
+the interrupt flag during its execution.
+
+Flags Affected
+
+IF = 1
+
+Protected Mode Exceptions
+
+#GP(0) if the current privilege level is greater (has less privilege) than
+the I/O privilege level
+
+Real Address Mode Exceptions
+
+None
+
+Virtual 8086 Mode Exceptions
+
+None
+

@@ -1,0 +1,48 @@
+<title>Instruction Set SLDT</title><pre>
+<A Name="SLDT"><H2>SLDT 			   -- Store Local Descriptor Table Register</H2>
+
+SLDT -- Store Local Descriptor Table Register
+
+
+Opcode      Instruction   Clocks      Description
+
+0F  00 /0   SLDT r/m16    pm=2/2      Store LDTR to EA word
+
+
+Operation
+
+r/m16 = LDTR;
+
+Description
+
+SLDT stores the Local Descriptor Table Register (LDTR) in the two-byte
+register or memory location indicated by the effective address operand.
+This register is a selector that points into the Global Descriptor Table.
+
+SLDT is used only in operating system software. It is not used in
+application programs.
+
+Flags Affected
+
+None
+
+Protected Mode Exceptions
+
+#GP(0) if the result is in a nonwritable segment; #GP(0) for an illegal
+memory operand effective address in the CS, DS, ES, FS, or GS segments;
+#SS(0) for an illegal address in the SS segment; #PF(fault-code) for a page
+fault
+
+Real Address Mode Exceptions
+
+Interrupt 6; SLDT is not recognized in Real Address Mode
+
+Virtual 8086 Mode Exceptions
+
+Same exceptions as in Real Address Mode; #PF(fault-code) for a page fault
+
+Notes
+
+The operand-size attribute has no effect on the operation of the
+instruction.
+
