@@ -99,8 +99,69 @@ On Data Alignment:
   ...
   
 
-Protected Flat Memory Model:
-----------------------------
+On Real Mode:
+-------------
 
-* Check all the critical details from the 686 ``3.2.1 Basic Flat Model''
-  and beyond.
+* To achieve maximum backward compatibility, x86 processors starts in the 16bit
+  8086-compatible real-mode. The 8086 had a complete 16-bit architecture - 16-bit
+  internal registers, 16-bit data bus, and a *20-bit* external address bus (1 MB
+  of physical memory).
+
+  Because the 8086 processor had 16-bit index registers and memory pointers,
+  it can effectively address *only* up to 64 KB of memory, which wasn't acceptable
+  even by that time. 
+
+* So, to address the memory beyond 64 KB (the remaining 20bit 1MB address space)
+  with 16bit registers, Intel created a `segmented' memory addressing scheme.
+
+  We want to access 20bit address space, namely 0xfffff at max. The 8086
+  processor's registers are only 16bit, namely a max value of 0xffff. To solve
+  this issue, the 8086 processor used *two* registers to address physical memory.
+  The two registers are a segment described as a base address, and an offset within
+  that segment.
+
+  The goal: addressing up to the max 20bit value; 0xfffff:
+
+  f 0 0 0 0     <-- 16bit value (segment base address) hex left shifted once to
+      	  	    address the 4 highest order bits in the goal.
+            +   <-- A simple adding operation
+
+    f f f f	<-- 16bit value, max offset we can address
+
+    -------
+
+  f f f f f	<-- The goal (max 20bit value we can address)
+  
+  So physical memory in the 8086 is accessed through a `segment:offset' scheme
+
+  where physical address = (segment * 16) + offset
+
+* Note that the above segment model is very primitive that there are really no
+  real `segments' identified by the processor. A 'segment' basically is just a
+  16bit-aligned address with an offset `limit' of 64K enforced by the processor
+  registers limit.
+
+  Example:
+
+  a000:0010 = a010:0000		/* Overlapping 'segments' */
+  f000:ffff = ffff:000f		/* Maximum address using different 'segments' */
+
+* Some calculations:
+
+  biggest segment address possible = 0xffff
+
+  biggest offset possible = 0xffff
+
+  biggest *physical* address that can act as a segment address =
+    biggest 20-bit address which is 16bit aligned = 0xffff0
+  
+* NOTE: There's a huge difference between real-mode `segments' and segments
+  provided in 386+ protected-mode processors. The 16bit value in a segmented
+  protected-mode logical address is what's called a `segment selector' which
+  is basically a pointer to a `segment descriptor' stored in either the GDT or
+  the LDT. The segment descriptor includes info like the protected-mode segment
+  base, limit, access permissions, present bit, etc.
+
+  On the other hand, the real-mode `segments' are just primitive addresses
+  that get hex left shifted in address calculations.
+
