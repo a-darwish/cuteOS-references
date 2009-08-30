@@ -137,14 +137,31 @@ On Real Mode:
   where physical address = (segment * 16) + offset
 
 * Note that the above segment model is very primitive that there are really no
-  real `segments' identified by the processor. A 'segment' basically is just a
-  16bit-aligned address with an offset `limit' of 64K enforced by the processor
-  registers limit.
+  real `segments' identified by the processor. A *physical* 'segment' is
+  basically just a 16-bit aligned physical address address with an offset
+  `limit' of 64K enforced by the processor registers limit.
 
   Example:
 
-  a000:0010 = a010:0000		/* Overlapping 'segments' */
-  f000:ffff = ffff:000f		/* Maximum address using different 'segments' */
+  a000:0010 = a010:0000         /* Overlapping 'segments' */
+  f000:ffff = ffff:000f         /* Maximum address using different 'segments' */
+  40:100    = 50:00             /* Last byte in Bios Data Area */
+
+  It's important to note that a segment register can take any value ranging
+  from 0 to 0xffff including the non-16bit-aligned addresses. It's on *physical*
+  memory where a segment base address is always 16-bit aligned due to the left
+  shift, not the segment register value itself.
+
+  Example of completely valid segment register values and their physical
+  addresses:
+
+  Segment register value    |   Segment physical address
+  -------------------------------------------------------
+          0xffff            |           0xffff0
+          0x1abc            |           0x1abc0
+          0x4242            |           0x42420
+          ...               |           ...
+          0xyyyy            |           0xyyyy0, y = /[0-f]/
 
 * Some calculations:
 
