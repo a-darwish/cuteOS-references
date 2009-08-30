@@ -182,3 +182,28 @@ On Real Mode:
   On the other hand, the real-mode `segments' are just primitive addresses
   that get hex left shifted in address calculations.
 
+On accessing fixed disk drivers (hard-disks):
+---------------------------------------------
+
+* There's the usual heads, tracks, sectors, and cylinders. 
+
+  Track: when the head is positioned over a point on the fixed disk, ready
+  to read or write, the disk platter surface spins underneath it, tracing a
+  full circle. This circle is a track. A disk surface contains may tracks.
+
+  Sectors: Fixed disk systems divides each track into short arcs called
+  sectors, each sector usually holds 512 bytes. This is the smallest unit
+  of storage, as tracks would mean wasting a lot of space for small files.
+
+  Cylinder: all the heads move in and out together, so each head is always
+  physically located at the same track number; we can't have one head at
+  track 0, and another at 250. Because of this, often the track location of
+  the heads is not referred to as a track number but rather as a cylinder
+  number.
+
+* BIOS fixed disk services are provided through the INT 13h service
+  routine. It programs the hard-disk controller; it never writes directly
+  from the processor to the hard-disk drive. The hard-disk controller
+  communicates directly between the hard-disk, the processor, and system
+  memory.
+
