@@ -182,6 +182,23 @@ On Real Mode:
   On the other hand, the real-mode `segments' are just primitive addresses
   that get hex left shifted in address calculations.
 
+* Note that using this scheme, code segments are limited to a size of 64KB.
+  To reach more code, we had to jump to what's called 'far pointers', which
+  not only contains an offset relative to current code segment, but also a
+  new address for the code segment.
+
+  AT&T syntax for far jumps: `ljmp  $SEGMENT, $OFFSET' where 'segment' and
+  'offset' are naturally 16bit values.
+
+  Usage example: after loading the kernel to ram at its chosen segment which
+  is usually far away from the mbr code segment, we 'far jump' to this segment
+  with offset 0 to execute the loaded kernel code and go beyond the mbr's 512
+  bytes size limit. This is the same technique used by GRUB to loads its stages.
+
+* The above terminology is also the root of 386+ protected mode 'far pointer'
+  which is a 'logical address' containing a segment selector (16 bit) and an
+  offset (32 bit) relative to the segment pointed by the selector.
+
 On accessing fixed disk drivers (hard-disks):
 ---------------------------------------------
 
@@ -201,9 +218,21 @@ On accessing fixed disk drivers (hard-disks):
   the heads is not referred to as a track number but rather as a cylinder
   number.
 
+  Disk size = bytes per sector * sectors per track * number of cylinders *
+              number of heads
+
 * BIOS fixed disk services are provided through the INT 13h service
   routine. It programs the hard-disk controller; it never writes directly
   from the processor to the hard-disk drive. The hard-disk controller
   communicates directly between the hard-disk, the processor, and system
   memory.
 
+* To support disks beyoned the 8GB limit enforced by original IBM bios
+  design (max of 1024 cylinder, 256 heads, and 63 sectors), new INT13
+  bios services were added to bios which offers simple sector addressing
+  using a logical zero based sector number (0, 1, 2, ..)
+
+  This addressing scheme is easier than the Cylinder-Head-Sector model
+  and is supported in all bios chips post-1995, so we use it exclusively.
+
+  Check the boot sector code for more details.
