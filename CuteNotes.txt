@@ -20,10 +20,35 @@ On Intel Documents:
   alignment is throughly described although several critical alignment
   related topics have already been discussed.
 
-* Another example is when the i686 document describes the translation of
-  logical address to linear address (page 3-6) where it talks about loading
-  a segment selector in segment registers before even trhoughly describing
-  what a segment register is. This ain't the case in the 386 document.
+* Case 2: on why we should disable interrupts while switching to protected
+  mode?
+
+  New Intel document: Software must guarantee that no exceptions or interrupts
+  are generated during the mode switching operation.
+
+  Original 386 document: ``The IDTR may be loaded in either real-address or
+  protected mode. However, the format of the interrupt table for protected mode
+  is different than that for real-address mode. It is not possible to change to
+  protected mode and change interrupt table formats at the same time; therefore,
+  it is inevitable that, if IDTR selects an interrupt table, it will have the
+  wrong format at some time. An interrupt or exception that occurs at this time
+  will have unpredictable results. To avoid this unpredictability, interrupts
+  should remain disabled until interrupt handlers are in place and a valid IDT
+  has been created in protected mode.''
+
+* Case 3: on why should we long jump after switching to protected mode?
+
+  New intel document: ``The JMP or CALL instruction immediately after the MOV
+  CR0 instruction changes the flow of execution and serializes the processor.''
+
+  Original 386 document: ``Immediately after setting the PE flag, the
+  initialization code must flush the processor's instruction prefetch queue by
+  executing a JMP instruction. The 80386 fetches and decodes instructions and
+  addresses before they are used; however, after a change into protected mode,
+  the prefetched instruction information (which pertains to real-address mode)
+  is no longer valid. A JMP forces the processor to discard the invalid
+  information.''
+
   This is a recurring pattern.
 
 * What's IA-32e in new Intel documents?
@@ -98,6 +123,15 @@ On Data Alignment:
   2  ^ 12 = 1000000000000 = 2^2 * 1KB = 4KB (x86 Page size/aligned-address)
   ...
   
+* Useful numbers:
+
+  0x100   = 256 bytes
+  0x200   = 512 bytes  (bootsector size)
+  0x400   = 1KB
+  0x1000  = 4KB        (x86 normal page size)
+  0x8000  = 32KB
+  0xffff  = 64KB -1    (max offset for a real-mode segment)
+  0x10000 = 64KB
 
 On Real Mode:
 -------------
