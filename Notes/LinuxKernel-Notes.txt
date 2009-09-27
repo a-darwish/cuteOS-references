@@ -403,6 +403,16 @@ In Hardware:
   contents of the cr3 register changes. Since all the TLB stored entries become
   invalid.
 
+* We use multi-level paging for several reasons:
+
+  - If we're going to use a single level page table, this means we'll need 2^20
+    entries to cover the 4GB/2^32 virtual space. At 4bytes/entry, we'll need
+    4MB for each process page table. By the nature of a single table, we'll
+    have to maintain it even if the process is not using the entire space
+
+  - Also because it's a single table, it has to be put on contiguous space. Using
+    contiguous 4MB for each process Page Table is not simply acceptable.
+
 In Linux:
 ---------
 
