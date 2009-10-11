@@ -293,3 +293,111 @@ On accessing fixed disk drivers (hard-disks):
   and is supported in all bios chips post-1995, so we use it exclusively.
 
   Check the boot sector code for more details.
+
+The 8259A Programmable Interrupt Controller:
+--------------------------------------------
+
+* For superb information, check "The undocumented PC", chapter 17,
+  "Interrupt control and NMI", and the Intel 8259A PIC sheet. In subsequent
+  text, IRR = "Interrupt Request Register", ISR="In-Service Register", IMR =
+  "Interrupt Mask Register".
+
+* As described by Brendan Trotter (bcos) on #osdev, and the sheet:
+
+  An interrupt request is executed by raising an IR input (low to high) and
+  holding it high until it is acknowledged (Edge Triggered Mode). Where
+  "acknowledged" means doing so by the PIC chip, not by the CPU/OS . Also, in
+  this case "acknowledges" just means that it recognises it and sets the
+  corresponding flag in the IRR
+
+  Basically, when an interrupt is received the PIC sets the corresponding flag in
+  the IRR. When the PIC sends the IRQ to the CPU it clears the flag in the IRR
+  and sets the flag in the ISR. And when the CPU sends EOI the PIC clears the
+  flag in the ISR. The processor sends an EOI through the the INTA pin.
+
+  If the PIC sends a high priority IRQ to the CPU and is waiting for EOI when a
+  low priority IRQ occurs, then the PIC must remember that the low priority IRQ
+  occured (so that it can tell the CPU about it when the CPU is finished with the
+  high priority IRQ), by setting its IRR bit.
+
+  The 8259 cannot be used with level interrupts. This is because when
+  an interrupt line goes true, it is latched internally in the IRR.
+
+* Spuruious interrupts:
+
+  As said by the sheet: "If no interrupt request is present at step 4 of either
+  sequence (i.e., the request was too short in duration), the 8259A will issue an
+  interrupt level 7. Both the vectoring bytes and the CAS lines will look like an
+  interrupt number 7 was requested."
+
+  And as said in undoc pc: "Although a noise glitch should never occur, a poor
+  bus design or badly glitch will trigger an invalid interrupt. If the glitch
+  occurs on IRQ 0 to IRQ7, interrupt F (which is mapped to IRQ 7) will be
+  called. The service handler for interrupt Fh and 77H (assuming the PIC wasn't
+  re-mapped to more sane vector-numbers) should read the in-service register to
+  confirm that a real interrupt occurred. An invalid interrupt has In-Service bit
+  7 cleared, and a valid interrupt has valid bit 7 set.
+
+* So why should the PIC bother sending the CPU a spurious 7 IRQ? it could've just
+  ignored the noise glitch source. The problem is that it might have told the CPU
+  it's about to get an interrupt, and if it did (step 1, 2, and 3), it can not
+  now decode the interrupt info since the line has been deasserted. Either the
+  assert period was too short that the IRQ number was not latched internally, or
+  the PIC just recognized it was a noise glitch due to the very short assertion
+  period. So it gives the programmed IRQ 7 vector number to the CPU. This avoids
+  unccessary communication with the real devices attached to IRQ7.
+
+* Take care that, as said by linux kernel comments, the two spurious IRQs 7 and
+  15 usually resulting from the 8259A-1|2 PICs do occur even if all the IRQs are
+  masked (IMR = 0xff).
+
+* An example of an interrupt (refs: undoc pc + intel sheet):
+
+  1- The adapter card requests service, by driving the hardware IRQ line 5 from
+     low to high
+
+  2- The IRQ 5 line is connected to the PIC. The edge-triggered request is
+     recorded in the controllers Interrupt-Request Register (IRR). In this case,
+     the IRR bit 5 is set.
+
+  3- The PIC first checks if the Interrupt Mask Register (IMR) to see if IRQ5 is
+     allowed (not masked, IMR bit 5 = 0). Assuming that bit clear, the PIC moves
+     to the next step.
+
+  4- Using its priority resolver uint, the conntroller checks if any higher
+     priority interrupts are active or in progress. If so, no further action is
+     done till all higher priority irqs are serviced.
+
+  5- Once all higher irqs are serviced, the controller flags the CPU over the
+     dedicated INT hardware line leading to the CPU.
+
+  6- If the CPU has hardware interrupts enabled, the CPU returns an interrupt
+     acknowledgment to the PIC using the INTA pin.
+
+  7- Directly after receiving a pulse from the INTA pin, the relevant In-Service
+     register bit (bit 5) is set, and the corresponding IRR bit is reset.
+
+  8- The processor sends another INTA pulse. During this pulse, the PIC sends
+     a programmed 8-bit pointer back to the CPU, according the raised IRQ. In
+     the default bios programmed PIC case, the pic will return the interrupt
+     value 0x0D for IRQ5. 
+
+  9- In an instruction boundary, the cpu interrupts the current process and
+     jumps to the code address specified in the IDT entry 0xD. For x86-64 cpus,
+     entry 0xD = IDT base (specified through lidt) + 0xD * 16.
+
+ 10- One of the key aspects of the interrupt handler specified in the IDT entry
+     must make is to remove the interrupt request made by the adapter. The line
+     maybe shared, and several ISRs got executed, where they determine first if
+     they are servicing the right device using the "interrupt pending" register
+     found in PCI devices, etc.
+
+ 11- At the end of the interrupt handler, the handler sends the value 0x20 to
+     the PIC command port to indicate an End-of-Interrupt (EOI). The EOI command
+     clears the IRQ5 bit in the In-Service Regisger.(*) The case is different in
+     case of Automatic EOI (AEOI) mode, and is described later.
+
+ 12- By clearing the IRQ5 bit in the ISR, the chip is now ready to accept another
+     interrupt from IRQ5 or any lower priority interrupt. This completes the
+     interrupt cycle.
+
