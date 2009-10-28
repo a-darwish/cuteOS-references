@@ -1,0 +1,463 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+
+	
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="keywords" content="PS/2 Mouse/Keyboard Protocol,PS/2 Keyboard Interface,PS/2 Mouse Interface">
+<link rel="shortcut icon" href="http://www.computer-engineering.org/favicon.ico">
+		<title>PS/2 Mouse/Keyboard Protocol - Computer-Engineering</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "ps2-keyboard-protocol_files/main.css?7"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="ps2-keyboard-protocol_files/commonPrint.css">
+		<!--[if lt IE 5.5000]><style type="text/css">@import "/skins/monobook/IE50Fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "/skins/monobook/IE55Fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "/skins/monobook/IE60Fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "/skins/monobook/IE70Fixes.css?1";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="/skins/common/IEFixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		<script type="text/javascript">var skin = 'monobook';var stylepath = '/skins';</script>
+		<script type="text/javascript" src="ps2-keyboard-protocol_files/wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="ps2-keyboard-protocol_files/index.php"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "/index.php?title=MediaWiki:Common.css&action=raw&ctype=text/css&smaxage=18000";
+@import "/index.php?title=MediaWiki:Monobook.css&action=raw&ctype=text/css&smaxage=18000";
+@import "/index.php?title=-&action=raw&gen=css&maxage=18000";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head><body class="ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">PS/2 Mouse/Keyboard Protocol</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From Computer-Engineering</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<ul><li>Source: <a href="http://www.computer-engineering.org/" class="external free" title="http://www.Computer-Engineering.org" rel="nofollow">http://www.Computer-Engineering.org</a>
+</li><li>Author: Adam Chapweske
+</li></ul>
+<p><br>
+</p>
+<table id="toc" class="toc" summary="Contents"><tbody><tr><td><div id="toctitle"><h2>Contents</h2> <span class="toctoggle">[<a href="javascript:toggleToc()" class="internal" id="togglelink">hide</a>]</span></div>
+<ul>
+<li class="toclevel-1"><a href="#Legal_Information"><span class="tocnumber">1</span> <span class="toctext">Legal Information</span></a></li>
+<li class="toclevel-1"><a href="#Abstract"><span class="tocnumber">2</span> <span class="toctext">Abstract</span></a></li>
+<li class="toclevel-1"><a href="#The_Physical_Interface"><span class="tocnumber">3</span> <span class="toctext">The Physical Interface</span></a></li>
+<li class="toclevel-1"><a href="#The_Electrical_Interface"><span class="tocnumber">4</span> <span class="toctext">The Electrical Interface</span></a></li>
+<li class="toclevel-1"><a href="#Communication:_General_Description"><span class="tocnumber">5</span> <span class="toctext">Communication: General Description</span></a></li>
+<li class="toclevel-1"><a href="#Communication:_Device-to-Host"><span class="tocnumber">6</span> <span class="toctext">Communication: Device-to-Host</span></a></li>
+<li class="toclevel-1"><a href="#Communication:_Host-to-Device"><span class="tocnumber">7</span> <span class="toctext">Communication: Host-to-Device</span></a></li>
+</ul>
+</td></tr></tbody></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Legal_Information"></a><h2> Legal Information </h2>
+<p>All information within this article is provided "as is" and without
+any express or implied warranties, including, without limitation, the
+implied warranties of merchantibility and fitness for a particular
+purpose. </p><p>This article is protected under copyright law. This document
+may be copied only if the source, author, date, and legal information
+is included.
+</p>
+<a name="Abstract"></a><h2> Abstract </h2>
+<p>This document describes the interface used by the PS/2 mouse, PS/2
+keyboard, and AT keyboard. I'll cover the physical and electrical
+interface, as well as the protocol. If you need higher-level
+information, such as commands, data packet formats, or other
+information specific to the keyboard or mouse, I have written separate
+documents for the two devices: </p>
+<ul><li><a href="http://www.computer-engineering.org/index.php?title=PS/2_Keyboard_Interface" title="PS/2 Keyboard Interface">PS/2 Keyboard Interface</a>
+</li><li><a href="http://www.computer-engineering.org/index.php?title=PS/2_Mouse_Interface" title="PS/2 Mouse Interface">PS/2 Mouse Interface</a>
+</li></ul>
+<p><br>
+</p>
+<a name="The_Physical_Interface"></a><h2> The Physical Interface </h2>
+<p>The physical PS/2 port is one of two styles of connectors: The 5-pin
+DIN or the 6-pin mini-DIN. Both connectors are completely
+(electrically) similar; the only practical difference between the two
+is the arrangement of pins. This means the two types of connectors can
+easily be changed with simple hard-wired adaptors. These cost about $6
+each or you can make your own by matching the pins on any two
+connectors. The DIN standard was created by the German Standardization
+Organization (Deutsches Institut fuer Norm) . Their <a href="http://www.din.de/" class="external text" title="http://www.din.de" rel="nofollow">website</a> is at (this site is in German, but most of their pages are also available in English.) 
+</p><p>PC keyboards use either a 6-pin mini-DIN or a 5-pin DIN
+connector. If your keyboard has a 6-pin mini-DIN and your computer has
+a 5-pin DIN (or visa versa), the two can be made compatible with the
+adaptors described above. Keyboards with the 6-pin mini-DIN are often
+referred to as "PS/2" keyboards, while those with the 5-pin DIN are
+called "AT" devices ("XT" keyboards also used the 5-pin DIN, but they
+are quite old and haven't been made for many years.) All modern
+keyboards built for the PC are either PS/2, AT, USB, or Bluetooth. This
+document does not apply to USB or Bluetooth devices, which use
+completely different interfaces. </p><p>Mice come in a number of shapes and sizes (and interfaces.)
+The most popular type is probably the PS/2 mouse, with USB mice gaining
+popularity. Just a few years ago, serial mice were also quite popular,
+but the computer industry is abandoning them in support of USB and PS/2
+devices. This document applies only to PS/2 mice. If you want to
+interface a serial or USB mouse, there's plenty of information
+available elsewhere on the web.
+</p><p>The cable connecting the keyboard/mouse to the computer is
+usually about six feet long and consists of four to six 26 AWG wires
+surrounded by a thin layer of mylar foil sheilding. If you need a
+longer cable, you can buy PS/2 extenstion cables from most consumer
+electronics stores. You should not connect multiple extension cables
+together. If you need a 30-foot keyboard cable, buy a 30-foot keyboard
+cable. Do not simply connect five 6-foot cables together. Doing so
+could result in poor communication between the keyboard/mouse and the
+host.
+</p><p>As a side note, there is one other type of connector you may
+run into on keyboards. While most keyboard cables are hard-wired to the
+keyboard, there are some whose cable is not permanently attached and
+come as a separate component. These cables have a DIN connector on one
+end (the end that connects to the computer) and a Shielded Data Link
+(SDL) connector on the keyboard end. SDL was created by a company
+called "AMP." This connector is somewhat similar to a telephone
+connector in that it has wires and springs rather than pins, and a clip
+holds it in place. If you need more information on this connector, you
+might be able to find it on AMP's <a href="http://www.amp.com/" class="external text" title="http://www.amp.com" rel="nofollow">website</a>.
+Don't confuse the SDL connector with the USB connector--they probably
+both look similar in my diagram below, but they are actually very
+different. Keep in mind that the SDL connector has springs and moving
+parts, while the USB connector does not. </p><p>The pinouts for each connector are shown below: 
+</p>
+<table cellpadding="5">
+<tbody><tr>
+<th> Male </th><th> Female </th><th> 5-pin DIN (AT/XT)
+</th></tr>
+<tr>
+<td> <a href="http://www.computer-engineering.org/index.php?title=Image:Fpdinm.jpg" class="image" title="Image:Fpdinm.jpg"><img src="ps2-keyboard-protocol_files/Fpdinm.jpg" alt="Image:Fpdinm.jpg" longdesc="/index.php?title=Image:Fpdinm.jpg" height="68" width="80"></a>
+<div class="center">(Plug)</div>
+</td><td> <a href="http://www.computer-engineering.org/index.php?title=Image:Fpdinf.jpg" class="image" title="Image:Fpdinf.jpg"><img src="ps2-keyboard-protocol_files/Fpdinf.jpg" alt="Image:Fpdinf.jpg" longdesc="/index.php?title=Image:Fpdinf.jpg" height="68" width="80"></a>
+<div class="center">(Socket)</div>
+</td><td>
+<p>1 - Clock           <br>
+2 - Data            <br>
+3 - Not Implemented <br>
+4 - Ground          <br>
+5 - Vcc (+5V)       <br>
+</p>
+</td></tr></tbody></table>
+<table cellpadding="5">
+<tbody><tr>
+<th> Male </th><th> Female </th><th> 6-pin Mini-DIN (PS/2)
+</th></tr>
+<tr>
+<td> <a href="http://www.computer-engineering.org/index.php?title=Image:Spdinm.jpg" class="image" title="Image:spdinm.jpg"><img src="ps2-keyboard-protocol_files/Spdinm.jpg" alt="Image:spdinm.jpg" longdesc="/index.php?title=Image:Spdinm.jpg" height="68" width="80"></a>
+<div class="center">(Plug)</div>
+</td><td> <a href="http://www.computer-engineering.org/index.php?title=Image:Spdinf.jpg" class="image" title="Image:spdinf.jpg"><img src="ps2-keyboard-protocol_files/Spdinf.jpg" alt="Image:spdinf.jpg" longdesc="/index.php?title=Image:Spdinf.jpg" height="68" width="80"></a>
+<div class="center">(Socket)</div>
+</td><td>
+<p>1 - Data            <br>
+2 - Not Implemented <br>
+3 - Ground          <br>
+4 - Vcc (+5V)       <br>
+5 - Clock           <br>
+6 - Not Implemented <br>
+</p>
+</td></tr></tbody></table>
+<table cellpadding="5">
+<tbody><tr>
+<th> Male </th><th> Female </th><th> 6-pin SDL
+</th></tr>
+<tr>
+<td> <a href="http://www.computer-engineering.org/index.php?title=Image:Spsdlm.jpg" class="image" title="Image:spsdlm.jpg"><img src="ps2-keyboard-protocol_files/Spsdlm.jpg" alt="Image:spsdlm.jpg" longdesc="/index.php?title=Image:Spsdlm.jpg" height="49" width="114"></a>
+<div class="center">(Plug)</div>
+</td><td> <a href="http://www.computer-engineering.org/index.php?title=Image:Spsdlf.jpg" class="image" title="Image:spsdlf.jpg"><img src="ps2-keyboard-protocol_files/Spsdlf.jpg" alt="Image:spsdlf.jpg" longdesc="/index.php?title=Image:Spsdlf.jpg" height="49" width="114"></a>
+<div class="center">(Socket)</div>
+</td><td>
+<p>A - Not Implemented <br>
+B - Data            <br>
+C - Ground          <br>
+D - Clock           <br>
+E - Vcc (+5V)       <br>
+F - Not Implemented <br>
+</p>
+</td></tr></tbody></table>
+<a name="The_Electrical_Interface"></a><h2> The Electrical Interface </h2>
+<p>Note: Throughout this document, I will use the more general term
+"host" to refer to the computer--or whatever the keyboard/mouse is
+connected to-- and the term "device" will refer to the keyboard/mouse. </p><p>Vcc/Ground provide power to the keyboard/mouse. The keyboard
+or mouse should not draw more than 275 mA from the host and care must
+be taken to avoid transient surges. Such surges can be caused by
+"hot-plugging" a keyboard/mouse (ie, connect/disconnect the device
+while the computer's power is on.) Older motherboards had a
+surface-mounted fuse protecting the keyboard and mouse ports. When this
+fuse blew, the motherboard was useless to the consumer, and non-fixable
+to the average technician. Most newer motherboards use auto-reset
+"Poly" fuses that go a long way to remedy this problem. However, this
+is not a standard and there's still plenty of older motherboards in
+use. Therefore, I recommend against hot-plugging a PS/2 mouse or
+keyboard.
+</p>
+<table border="1" cellpadding="4">
+<caption>Absolute Maximum Ratings
+</caption>
+<tbody><tr>
+<th> Symbol </th><th> Parameter </th><th> Min </th><th> Typ </th><th> Max </th><th> Units
+</th></tr>
+<tr>
+<td> Vcc </td><td> Supply Voltage </td><td> +4.5 </td><td> +5.0 </td><td> +5.5 </td><td> V
+</td></tr>
+<tr>
+<td> Imax </td><td> Supply Current </td><td> -- </td><td> -- </td><td> 275 </td><td> mA
+</td></tr></tbody></table>
+<p>The Data and Clock lines are both open-collector with pullup
+resistors to Vcc. An "open-collector" interface has two possible state:
+low, or high impedance. In the "low" state, a transistor pulls the line
+to ground level. In the "high impedance" state, the interface acts as
+an open circuit and doesn't drive the line low or high. Furthermore, a
+"pullup" resistor is connected between the bus and Vcc so the bus is
+pulled high if none of the devices on the bus are actively pulling it
+low. The exact value of this resistor isn't too important (1~10 kOhms);
+larger resistances result in less power consumption and smaller
+resistances result in a faster rise time. A general open-collector
+interface is shown below:
+</p><p>Figure 1: General open-collector interface. Data and Clock are
+read on the microcontroller's pins A and B, respectively. Both lines
+are normally held at +5V, but can be pulled to ground by asserting
+logic "1" on C and D. As a result, Data equals D, inverted, and Clock
+equals C, inverted.
+</p><p><br>
+<a href="http://www.computer-engineering.org/index.php?title=Image:OpenCollector.jpg" class="image" title="Open-collector interface"><img src="ps2-keyboard-protocol_files/OpenCollector.jpg" alt="Open-collector interface" longdesc="/index.php?title=Image:OpenCollector.jpg" height="330" width="352"></a>
+</p><p><br>Note: When looking through examples on this website, you'll
+notice I use a few tricks when implementing an open-collector interface
+with PIC microcontrollers. I use the same pin for both input and
+output, and I enable the PIC's internal pullup resistors rather than
+using external resistors. A line is pulled to ground by setting the
+corresponding pin to output, and writing a "zero" to that port. The
+line is set to the "high impedance" state by setting the pin to input.
+</p>
+<a name="Communication:_General_Description"></a><h2> Communication: General Description </h2>
+<p>The PS/2 mouse and keyboard implement a bidirectional synchronous
+serial protocol. The bus is "idle" when both lines are high
+(open-collector). This is the only state where the keyboard/mouse is
+allowed begin transmitting data. The host has ultimate control over the
+bus and may inhibit communication at any time by pulling the Clock line
+low. </p><p>The device always generates the clock signal. If the host
+wants to send data, it must first inhibit communication from the device
+by pulling Clock low. The host then pulls Data low and releases Clock.
+This is the "request-to-Send" state and signals the device to start
+generating clock pulses.
+</p>
+<table border="1" cellpadding="4">
+<caption>Summary: Bus states
+</caption>
+<tbody><tr>
+<th> data </th><th> clock </th><th> state
+</th></tr>
+<tr>
+<td> low </td><td> low </td><td> Communication inhibited
+</td></tr>
+<tr>
+<td> low </td><td> high </td><td> Host request-to-send
+</td></tr>
+<tr>
+<td> high </td><td> low </td><td> Communication inhibited
+</td></tr>
+<tr>
+<td> high </td><td> high </td><td> idle
+</td></tr></tbody></table>
+<p><br>
+All data is transmitted one byte at a time and each byte is sent in a frame consisting of 11-12 bits.  These bits are: 
+</p>
+<ul><li>1 start bit.  This is always 0. 
+</li><li>8 data bits, least significant bit first. 
+</li><li>1 parity bit (odd parity). 
+</li><li>1 stop bit.  This is always 1. 
+</li><li>1 acknowledge bit (host-to-device communication only) 
+</li></ul>
+<p>The parity bit is set (1) if there is an even number of 1's in the
+data bits and reset (0) if there is an odd number of 1's in the data
+bits. The number of 1's in the data bits plus the parity bit always add
+up to an odd number (odd parity). This is used for error detection. The
+keyboard/mouse must check this bit and if incorrect it should respond
+as if it had received an invalid command.
+</p><p>Data sent from the device to the host is read on the falling
+edge of the clock signal; data sent from the host to the device is read
+on the rising edge. The clock frequency must be in the range 10 - 16.7
+kHz. This means clock must be high for 30 - 50 microseconds and low for
+30 - 50 microseconds.. If you're designing a keyboard, mouse, or host
+emulator, you should modify/sample the Data line in the middle of each
+cell. I.e. 15 - 25 microseconds after the appropriate clock transition.
+Again, the keyboard/mouse always generates the clock signal, but the
+host always has ultimate control over communication. </p><p>Timing is absolutely crucial.  Every time quantity I give in this article must be followed exactly.
+</p>
+<a name="Communication:_Device-to-Host"></a><h2> Communication: Device-to-Host </h2>
+<p>The Data and Clock lines are both open collector. A resistor is
+connected between each line and +5V, so the idle state of the bus is
+high. When the keyboard or mouse wants to send information, it first
+checks the Clock line to make sure it's at a high logic level. If it's
+not, the host is inhibiting communication and the device must buffer
+any to-be-sent data until the host releases Clock. The Clock line must
+be continuously high for at least 50 microseconds before the device can
+begin to transmit its data. </p><p>As I mentioned in the previous section, the keyboard and mouse use a serial protocol with 11-bit frames.  These bits are: 
+</p>
+<ul><li>1 start bit.  This is always 0. 
+</li><li>8 data bits, least significant bit first. 
+</li><li>1 parity bit (odd parity). 
+</li><li>1 stop bit.  This is always 1. 
+</li></ul>
+<p>The keyboard/mouse writes a bit on the Data line when Clock is high,
+and it is read by the host when Clock is low. Figures 2 and 3
+illustrate this.
+</p><p>Figure 2: Device-to-host Communication. The Data line changes
+state when Clock is high and that data is valid when Clock is low. </p><p><a href="http://www.computer-engineering.org/index.php?title=Image:Waveform1.jpg" class="image" title="Device-to-host Communication"><img src="ps2-keyboard-protocol_files/Waveform1.jpg" alt="Device-to-host Communication" longdesc="/index.php?title=Image:Waveform1.jpg" height="139" width="432"></a> 
+</p><p>Figure 3: Scan code for the "Q" key (15h) being sent from a
+keyboard to the computer. Channel A is the Clock signal; channel B is
+the Data signal. </p><p><a href="http://www.computer-engineering.org/index.php?title=Image:Waveform2.jpg" class="image" title="Device-to-host Example"><img src="ps2-keyboard-protocol_files/Waveform2.jpg" alt="Device-to-host Example" longdesc="/index.php?title=Image:Waveform2.jpg" height="255" width="386"></a>
+</p><p><br>
+The clock frequency is 10-16.7 kHz. The time from the rising edge of a
+clock pulse to a Data transition must be at least 5 microseconds. The
+time from a data transition to the falling edge of a clock pulse must
+be at least 5 microseconds and no greater than 25 microseconds. </p><p>The host may inhibit communication at any time by pulling the
+Clock line low for at least 100 microseconds. If a transmission is
+inhibited before the 11th clock pulse, the device must abort the
+current transmission and prepare to retransmit the current "chunk" of
+data when host releases Clock. A "chunk" of data could be a make code,
+break code, device ID, mouse movement packet, etc. For example, if a
+keyboard is interrupted while sending the second byte of a two-byte
+break code, it will need to retransmit both bytes of that break code,
+not just the one that was interrupted.
+</p><p>If the host pulls clock low before the first high-to-low clock
+transition, or after the falling edge of the last clock pulse, the
+keyboard/mouse does not need to retransmit any data. However, if new
+data is created that needs to be transmitted, it will have to be
+buffered until the host releases Clock. Keyboards have a 16-byte buffer
+for this purpose. If more than 16 bytes worth of keystrokes occur,
+further keystrokes will be ignored until there's room in the buffer.
+Mice only store the most current movement packet for transmission.
+</p>
+<a name="Communication:_Host-to-Device"></a><h2> Communication: Host-to-Device </h2>
+<p>The packet is sent a little differently in host-to-device communication... 
+</p><p>First of all, the PS/2 device always generates the clock signal.
+If the host wants to send data, it must first put the Clock and Data
+lines in a "Request-to-send" state as follows: </p>
+<ul><li>Inhibit communication by pulling Clock low for at least 100 microseconds. 
+</li><li>Apply "Request-to-send" by pulling Data low, then release Clock. 
+</li></ul>
+<p>The device should check for this state at intervals not to exceed 10
+milliseconds. When the device detects this state, it will begin
+generating Clock signals and clock in eight data bits and one stop bit.
+The host changes the Data line only when the Clock line is low, and
+data is read by the device when Clock is high. This is opposite of what
+occours in device-to-host communication. </p><p>After the stop bit is received, the device will acknowledge
+the received byte by bringing the Data line low and generating one last
+clock pulse. If the host does not release the Data line after the 11th
+clock pulse, the device will continue to generate clock pulses until
+the the Data line is released (the device will then generate an error.)
+</p><p>The host may abort transmission at time before the 11th clock
+pulse (acknowledge bit) by holding Clock low for at least 100
+microseconds. </p><p>To make this process a little easier to understand, here's the steps the host must follow to send data to a PS/2 device: 
+</p>
+<ol><li> Bring the Clock line low for at least 100 microseconds. 
+</li><li> Bring the Data line low. 
+</li><li> Release the Clock line. 
+</li><li> Wait for the device to bring the Clock line low. 
+</li><li> Set/reset the Data line to send the first data bit 
+</li><li> Wait for the device to bring Clock high. 
+</li><li> Wait for the device to bring Clock low. 
+</li><li> Repeat steps 5-7 for the other seven data bits and the parity bit 
+</li><li> Release the Data line. 
+</li><li> Wait for the device to bring Data low. 
+</li><li> Wait for the device to bring Clock  low. 
+</li><li> Wait for the device to release Data and Clock
+</li></ol>
+<p>Figure 3 shows this graphically and Figure 4 separates the timing to
+show which signals are generated by the host, and which are generated
+by the PS/2 device. Notice the change in timing for the "ack" bit--the
+data transition occours when the Clock line is high (rather than when
+it is low as is the case for the other 11 bits.) </p><p>Figure 3:  Host-to-Device Communication. 
+</p><p><a href="http://www.computer-engineering.org/index.php?title=Image:Waveform3.jpg" class="image" title="Host-to-Device Communication"><img src="ps2-keyboard-protocol_files/Waveform3.jpg" alt="Host-to-Device Communication" longdesc="/index.php?title=Image:Waveform3.jpg" height="131" width="504"></a>
+</p><p>Figure 4:  Detailed host-to-device communication. 
+</p><p><a href="http://www.computer-engineering.org/index.php?title=Image:Waveform4.jpg" class="image" title="Host-to-Device Details"><img src="ps2-keyboard-protocol_files/Waveform4.jpg" alt="Host-to-Device Details" longdesc="/index.php?title=Image:Waveform4.jpg" height="247" width="552"></a>
+</p><p>Referring to Figure 4, there's two time quantities the host
+looks for. (a) is the time it takes the device to begin generating
+clock pulses after the host initially takes the Clock line low, which
+must be no greater than 15 ms. (b) is the time it takes for the packet
+to be sent, which must be no greater than 2ms. If either of these time
+limits is not met, the host should generate an error. Immediately after
+the "ack" is received, the host may bring the Clock line low to inhibit
+communication while it processes data. If the command sent by the host
+requires a response, that response must be received no later than 20 ms
+after the host releases the Clock line. If this does not happen, the
+host generates an error.
+</p>
+<!-- Saved in parser cache with key adam_cewiki:pcache:idhash:1371-0!1!0!0!!en!2!edit=0 and timestamp 20091027155913 -->
+<div class="printfooter">
+Retrieved from "<a href="http://www.computer-engineering.org/index.php?title=PS/2_Mouse/Keyboard_Protocol">http://www.computer-engineering.org/index.php?title=PS/2_Mouse/Keyboard_Protocol</a>"</div>
+						<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	<div id="p-cactions" class="portlet">
+		<h5>Views</h5>
+		<ul>
+				 <li id="ca-nstab-main" class="selected"><a title="View the content page [alt-c]" accesskey="c" href="http://www.computer-engineering.org/index.php?title=PS/2_Mouse/Keyboard_Protocol">Article</a></li>
+				 <li id="ca-talk" class="new"><a title="Discussion about the content page [alt-t]" accesskey="t" href="http://www.computer-engineering.org/index.php?title=Talk:PS/2_Mouse/Keyboard_Protocol&amp;action=edit">Discussion</a></li>
+				 <li id="ca-viewsource"><a title="This page is protected. You can view its source. [alt-e]" accesskey="e" href="http://www.computer-engineering.org/index.php?title=PS/2_Mouse/Keyboard_Protocol&amp;action=edit">View source</a></li>
+				 <li id="ca-history"><a title="Past versions of this page. [alt-h]" accesskey="h" href="http://www.computer-engineering.org/index.php?title=PS/2_Mouse/Keyboard_Protocol&amp;action=history">History</a></li>
+		</ul>
+	</div>
+	<div class="portlet" id="p-personal">
+		<h5>Personal tools</h5>
+		<div class="pBody">
+			<ul>
+				<li id="pt-login"><a title="You are encouraged to log in, it is not mandatory however. [alt-o]" accesskey="o" href="http://www.computer-engineering.org/index.php?title=Special:Userlogin&amp;returnto=PS/2_Mouse/Keyboard_Protocol">Log in / create account</a></li>
+			</ul>
+		</div>
+	</div>
+	<div title="Main Page" class="portlet" id="p-logo">
+		<a style="background-image: url(/skins/common/images/);" href="http://www.computer-engineering.org/index.php?title=Main_Page" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class="portlet" id="p-navigation">
+		<h5>Navigation</h5>
+		<div class="pBody">
+			<ul>
+				<li id="n-mainpage"><a title="Visit the Main Page [alt-z]" accesskey="z" href="http://www.computer-engineering.org/index.php?title=Main_Page">Main Page</a></li>
+				<li title="About the project, what you can do, where to find things" id="n-portal"><a href="http://www.computer-engineering.org/index.php?title=Computer-Engineering:Community_Portal">Community portal</a></li>
+				<li title="Find background information on current events" id="n-currentevents"><a href="http://www.computer-engineering.org/index.php?title=Current_events">Current events</a></li>
+				<li id="n-recentchanges"><a title="The list of recent changes in the wiki. [alt-r]" accesskey="r" href="http://www.computer-engineering.org/index.php?title=Special:Recentchanges">Recent changes</a></li>
+				<li id="n-randompage"><a title="Load a random page [alt-x]" accesskey="x" href="http://www.computer-engineering.org/index.php?title=Special:Random">Random page</a></li>
+				<li title="The place to find out." id="n-help"><a href="http://www.computer-engineering.org/index.php?title=Help:Contents">Help</a></li>
+				<li title="Support us" id="n-sitesupport"><a href="http://www.computer-engineering.org/index.php?title=Computer-Engineering:Site_support">Donations</a></li>
+			</ul>
+		</div>
+	</div>
+		<div id="p-search" class="portlet">
+		<h5><label for="searchInput">Search</label></h5>
+		<div id="searchBody" class="pBody">
+			<form action="/index.php?title=Special:Search" id="searchform"><div>
+				<input id="searchInput" name="search" accesskey="f" value="" type="text">
+				<input name="go" class="searchButton" id="searchGoButton" value="Go" type="submit">&nbsp;
+				<input name="fulltext" class="searchButton" value="Search" type="submit">
+			</div></form>
+		</div>
+	</div>
+	<div class="portlet" id="p-tb">
+		<h5>Toolbox</h5>
+		<div class="pBody">
+			<ul>
+				<li id="t-whatlinkshere"><a title="List of all wiki pages that link here [alt-j]" accesskey="j" href="http://www.computer-engineering.org/index.php?title=Special:Whatlinkshere/PS/2_Mouse/Keyboard_Protocol">What links here</a></li>
+				<li id="t-recentchangeslinked"><a title="Recent changes in pages linked from this page [alt-k]" accesskey="k" href="http://www.computer-engineering.org/index.php?title=Special:Recentchangeslinked/PS/2_Mouse/Keyboard_Protocol">Related changes</a></li>
+<li id="t-upload"><a title="Upload images or media files [alt-u]" accesskey="u" href="http://www.computer-engineering.org/index.php?title=Special:Upload">Upload file</a></li>
+<li id="t-specialpages"><a title="List of all special pages [alt-q]" accesskey="q" href="http://www.computer-engineering.org/index.php?title=Special:Specialpages">Special pages</a></li>
+				<li id="t-print"><a href="http://www.computer-engineering.org/index.php?title=PS/2_Mouse/Keyboard_Protocol&amp;printable=yes">Printable version</a></li>				<li id="t-permalink"><a href="http://www.computer-engineering.org/index.php?title=PS/2_Mouse/Keyboard_Protocol&amp;oldid=1372">Permanent link</a></li>			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-poweredbyico"><a href="http://www.mediawiki.org/"><img src="ps2-keyboard-protocol_files/poweredby_mediawiki_88x31.png" alt="MediaWiki"></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 21:54, 6 October 2006.</li>
+				<li id="viewcount">This page has been accessed 39,078 times.</li>
+				<li id="privacy"><a href="http://www.computer-engineering.org/index.php?title=Computer-Engineering:Privacy_policy" title="Computer-Engineering:Privacy policy">Privacy policy</a></li>
+				<li id="about"><a href="http://www.computer-engineering.org/index.php?title=Computer-Engineering:About" title="Computer-Engineering:About">About Computer-Engineering</a></li>
+				<li id="disclaimer"><a href="http://www.computer-engineering.org/index.php?title=Computer-Engineering:General_disclaimer" title="Computer-Engineering:General disclaimer">Disclaimers</a></li>
+			</ul>
+		</div>
+	<script type="text/javascript"> if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+<!-- Served by dukes.webserversystems.com in 0.13 secs. -->
+</body></html>

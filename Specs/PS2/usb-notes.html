@@ -1,0 +1,1420 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+
+	
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="keywords" content="USB Notes,USB Keyboard-Mouse Composite Device">
+<link rel="shortcut icon" href="http://www.computer-engineering.org/favicon.ico">
+		<title>USB Notes - Computer-Engineering</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "usb-notes_files/main.css?7"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="usb-notes_files/commonPrint.css">
+		<!--[if lt IE 5.5000]><style type="text/css">@import "/skins/monobook/IE50Fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "/skins/monobook/IE55Fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "/skins/monobook/IE60Fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "/skins/monobook/IE70Fixes.css?1";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="/skins/common/IEFixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		<script type="text/javascript">var skin = 'monobook';var stylepath = '/skins';</script>
+		<script type="text/javascript" src="usb-notes_files/wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="usb-notes_files/index.php"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "/index.php?title=MediaWiki:Common.css&action=raw&ctype=text/css&smaxage=18000";
+@import "/index.php?title=MediaWiki:Monobook.css&action=raw&ctype=text/css&smaxage=18000";
+@import "/index.php?title=-&action=raw&gen=css&maxage=18000";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head><body class="ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">USB Notes</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From Computer-Engineering</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<ul><li>Source: <a href="http://www.computer-engineering.org/" class="external free" title="http://www.Computer-Engineering.org" rel="nofollow">http://www.Computer-Engineering.org</a>
+</li><li>Author: Adam Chapweske
+</li></ul>
+<p><br>
+</p>
+<table id="toc" class="toc" summary="Contents"><tbody><tr><td><div id="toctitle"><h2>Contents</h2> <span class="toctoggle">[<a href="javascript:toggleToc()" class="internal" id="togglelink">hide</a>]</span></div>
+<ul>
+<li class="toclevel-1"><a href="#Legal_Information"><span class="tocnumber">1</span> <span class="toctext">Legal Information</span></a></li>
+<li class="toclevel-1"><a href="#Abstract"><span class="tocnumber">2</span> <span class="toctext">Abstract</span></a></li>
+<li class="toclevel-1"><a href="#Electrical_Interface"><span class="tocnumber">3</span> <span class="toctext">Electrical Interface</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Bus_States"><span class="tocnumber">3.1</span> <span class="toctext">Bus States</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Device_States"><span class="tocnumber">4</span> <span class="toctext">Device States</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Attached"><span class="tocnumber">4.1</span> <span class="toctext">Attached</span></a></li>
+<li class="toclevel-2"><a href="#Powered"><span class="tocnumber">4.2</span> <span class="toctext">Powered</span></a></li>
+<li class="toclevel-2"><a href="#Default"><span class="tocnumber">4.3</span> <span class="toctext">Default</span></a></li>
+<li class="toclevel-2"><a href="#Address"><span class="tocnumber">4.4</span> <span class="toctext">Address</span></a></li>
+<li class="toclevel-2"><a href="#Configured"><span class="tocnumber">4.5</span> <span class="toctext">Configured</span></a></li>
+<li class="toclevel-2"><a href="#Suspended"><span class="tocnumber">4.6</span> <span class="toctext">Suspended</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Requests"><span class="tocnumber">5</span> <span class="toctext">Requests</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Common_Request_Format"><span class="tocnumber">5.1</span> <span class="toctext">Common Request Format</span></a>
+<ul>
+<li class="toclevel-3"><a href="#bmRequestType"><span class="tocnumber">5.1.1</span> <span class="toctext">bmRequestType</span></a></li>
+<li class="toclevel-3"><a href="#bRequest"><span class="tocnumber">5.1.2</span> <span class="toctext">bRequest</span></a></li>
+<li class="toclevel-3"><a href="#wValue"><span class="tocnumber">5.1.3</span> <span class="toctext">wValue</span></a></li>
+<li class="toclevel-3"><a href="#wIndex"><span class="tocnumber">5.1.4</span> <span class="toctext">wIndex</span></a></li>
+<li class="toclevel-3"><a href="#wLength"><span class="tocnumber">5.1.5</span> <span class="toctext">wLength</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2"><a href="#Clear_Feature"><span class="tocnumber">5.2</span> <span class="toctext">Clear Feature</span></a></li>
+<li class="toclevel-2"><a href="#Get_Configuration"><span class="tocnumber">5.3</span> <span class="toctext">Get Configuration</span></a></li>
+<li class="toclevel-2"><a href="#Get_Descriptor"><span class="tocnumber">5.4</span> <span class="toctext">Get Descriptor</span></a></li>
+<li class="toclevel-2"><a href="#Get_Interface"><span class="tocnumber">5.5</span> <span class="toctext">Get Interface</span></a></li>
+<li class="toclevel-2"><a href="#Get_Status"><span class="tocnumber">5.6</span> <span class="toctext">Get Status</span></a></li>
+<li class="toclevel-2"><a href="#Set_Address"><span class="tocnumber">5.7</span> <span class="toctext">Set Address</span></a></li>
+<li class="toclevel-2"><a href="#Set_Configuration"><span class="tocnumber">5.8</span> <span class="toctext">Set Configuration</span></a></li>
+<li class="toclevel-2"><a href="#Set_Descriptor"><span class="tocnumber">5.9</span> <span class="toctext">Set Descriptor</span></a></li>
+<li class="toclevel-2"><a href="#Set_Feature"><span class="tocnumber">5.10</span> <span class="toctext">Set Feature</span></a></li>
+<li class="toclevel-2"><a href="#Set_Interface"><span class="tocnumber">5.11</span> <span class="toctext">Set Interface</span></a></li>
+<li class="toclevel-2"><a href="#Synch_Frame"><span class="tocnumber">5.12</span> <span class="toctext">Synch Frame</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Descriptors"><span class="tocnumber">6</span> <span class="toctext">Descriptors</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Common_Fields"><span class="tocnumber">6.1</span> <span class="toctext">Common Fields</span></a>
+<ul>
+<li class="toclevel-3"><a href="#bLength"><span class="tocnumber">6.1.1</span> <span class="toctext">bLength</span></a></li>
+<li class="toclevel-3"><a href="#bDescriptorType"><span class="tocnumber">6.1.2</span> <span class="toctext">bDescriptorType</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2"><a href="#Device_Descriptor"><span class="tocnumber">6.2</span> <span class="toctext">Device Descriptor</span></a>
+<ul>
+<li class="toclevel-3"><a href="#bLength_2"><span class="tocnumber">6.2.1</span> <span class="toctext">bLength</span></a></li>
+<li class="toclevel-3"><a href="#bDescriptorType_2"><span class="tocnumber">6.2.2</span> <span class="toctext">bDescriptorType</span></a></li>
+<li class="toclevel-3"><a href="#bcdUSB"><span class="tocnumber">6.2.3</span> <span class="toctext">bcdUSB</span></a></li>
+<li class="toclevel-3"><a href="#bDeviceClass"><span class="tocnumber">6.2.4</span> <span class="toctext">bDeviceClass</span></a></li>
+<li class="toclevel-3"><a href="#bDeviceSubClass"><span class="tocnumber">6.2.5</span> <span class="toctext">bDeviceSubClass</span></a></li>
+<li class="toclevel-3"><a href="#bDeviceProtocol"><span class="tocnumber">6.2.6</span> <span class="toctext">bDeviceProtocol</span></a></li>
+<li class="toclevel-3"><a href="#bMaxPacketSize0"><span class="tocnumber">6.2.7</span> <span class="toctext">bMaxPacketSize0</span></a></li>
+<li class="toclevel-3"><a href="#idVendor"><span class="tocnumber">6.2.8</span> <span class="toctext">idVendor</span></a></li>
+<li class="toclevel-3"><a href="#idProduct"><span class="tocnumber">6.2.9</span> <span class="toctext">idProduct</span></a></li>
+<li class="toclevel-3"><a href="#bcdDevice"><span class="tocnumber">6.2.10</span> <span class="toctext">bcdDevice</span></a></li>
+<li class="toclevel-3"><a href="#iManufacturer"><span class="tocnumber">6.2.11</span> <span class="toctext">iManufacturer</span></a></li>
+<li class="toclevel-3"><a href="#iSerialNumber"><span class="tocnumber">6.2.12</span> <span class="toctext">iSerialNumber</span></a></li>
+<li class="toclevel-3"><a href="#bNumConfigurations"><span class="tocnumber">6.2.13</span> <span class="toctext">bNumConfigurations</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2"><a href="#Configuration_Descriptor"><span class="tocnumber">6.3</span> <span class="toctext">Configuration Descriptor</span></a>
+<ul>
+<li class="toclevel-3"><a href="#bLength_3"><span class="tocnumber">6.3.1</span> <span class="toctext">bLength</span></a></li>
+<li class="toclevel-3"><a href="#bDescriptorType_3"><span class="tocnumber">6.3.2</span> <span class="toctext">bDescriptorType</span></a></li>
+<li class="toclevel-3"><a href="#wTotalLength"><span class="tocnumber">6.3.3</span> <span class="toctext">wTotalLength</span></a></li>
+<li class="toclevel-3"><a href="#bNumInterfaces"><span class="tocnumber">6.3.4</span> <span class="toctext">bNumInterfaces</span></a></li>
+<li class="toclevel-3"><a href="#bConfigurationValue"><span class="tocnumber">6.3.5</span> <span class="toctext">bConfigurationValue</span></a></li>
+<li class="toclevel-3"><a href="#iConfiguration"><span class="tocnumber">6.3.6</span> <span class="toctext">iConfiguration</span></a></li>
+<li class="toclevel-3"><a href="#bmAttributes"><span class="tocnumber">6.3.7</span> <span class="toctext">bmAttributes</span></a></li>
+<li class="toclevel-3"><a href="#bMaxPower"><span class="tocnumber">6.3.8</span> <span class="toctext">bMaxPower</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2"><a href="#Interface_Descriptor"><span class="tocnumber">6.4</span> <span class="toctext">Interface Descriptor</span></a>
+<ul>
+<li class="toclevel-3"><a href="#bLength_4"><span class="tocnumber">6.4.1</span> <span class="toctext">bLength</span></a></li>
+<li class="toclevel-3"><a href="#bDescriptorType_4"><span class="tocnumber">6.4.2</span> <span class="toctext">bDescriptorType</span></a></li>
+<li class="toclevel-3"><a href="#bInterfaceNumber"><span class="tocnumber">6.4.3</span> <span class="toctext">bInterfaceNumber</span></a></li>
+<li class="toclevel-3"><a href="#bAlternateSetting"><span class="tocnumber">6.4.4</span> <span class="toctext">bAlternateSetting</span></a></li>
+<li class="toclevel-3"><a href="#bNumEndpoints"><span class="tocnumber">6.4.5</span> <span class="toctext">bNumEndpoints</span></a></li>
+<li class="toclevel-3"><a href="#bInterfaceClass"><span class="tocnumber">6.4.6</span> <span class="toctext">bInterfaceClass</span></a></li>
+<li class="toclevel-3"><a href="#bInterfaceSubclass"><span class="tocnumber">6.4.7</span> <span class="toctext">bInterfaceSubclass</span></a></li>
+<li class="toclevel-3"><a href="#bInterfaceProtocol"><span class="tocnumber">6.4.8</span> <span class="toctext">bInterfaceProtocol</span></a></li>
+<li class="toclevel-3"><a href="#iInterface"><span class="tocnumber">6.4.9</span> <span class="toctext">iInterface</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2"><a href="#Endpoint_Descriptor"><span class="tocnumber">6.5</span> <span class="toctext">Endpoint Descriptor</span></a>
+<ul>
+<li class="toclevel-3"><a href="#bLength_5"><span class="tocnumber">6.5.1</span> <span class="toctext">bLength</span></a></li>
+<li class="toclevel-3"><a href="#bDescriptorType_5"><span class="tocnumber">6.5.2</span> <span class="toctext">bDescriptorType</span></a></li>
+<li class="toclevel-3"><a href="#bEndpointAddress"><span class="tocnumber">6.5.3</span> <span class="toctext">bEndpointAddress</span></a></li>
+<li class="toclevel-3"><a href="#bmAttributes_2"><span class="tocnumber">6.5.4</span> <span class="toctext">bmAttributes</span></a></li>
+<li class="toclevel-3"><a href="#wMaxPacketSize"><span class="tocnumber">6.5.5</span> <span class="toctext">wMaxPacketSize</span></a></li>
+<li class="toclevel-3"><a href="#bInterval"><span class="tocnumber">6.5.6</span> <span class="toctext">bInterval</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2"><a href="#String_Descriptor"><span class="tocnumber">6.6</span> <span class="toctext">String Descriptor</span></a>
+<ul>
+<li class="toclevel-3"><a href="#bLength_6"><span class="tocnumber">6.6.1</span> <span class="toctext">bLength</span></a></li>
+<li class="toclevel-3"><a href="#bDescriptorType_6"><span class="tocnumber">6.6.2</span> <span class="toctext">bDescriptorType</span></a></li>
+<li class="toclevel-3"><a href="#wLANGID"><span class="tocnumber">6.6.3</span> <span class="toctext">wLANGID</span></a></li>
+<li class="toclevel-3"><a href="#bString"><span class="tocnumber">6.6.4</span> <span class="toctext">bString</span></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Features"><span class="tocnumber">7</span> <span class="toctext">Features</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Endpoint_Halt"><span class="tocnumber">7.1</span> <span class="toctext">Endpoint Halt</span></a></li>
+<li class="toclevel-2"><a href="#Device_Remote_Wakeup"><span class="tocnumber">7.2</span> <span class="toctext">Device Remote Wakeup</span></a></li>
+<li class="toclevel-2"><a href="#Test_Mode"><span class="tocnumber">7.3</span> <span class="toctext">Test Mode</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Composite_Devices"><span class="tocnumber">8</span> <span class="toctext">Composite Devices</span></a></li>
+<li class="toclevel-1"><a href="#Serial_Numbers"><span class="tocnumber">9</span> <span class="toctext">Serial Numbers</span></a></li>
+<li class="toclevel-1"><a href="#Examples"><span class="tocnumber">10</span> <span class="toctext">Examples</span></a></li>
+</ul>
+</td></tr></tbody></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Legal_Information"></a><h2> Legal Information </h2>
+<p>All information within this article is provided "as is" and without
+any express or implied warranties, including, without limitation, the
+implied warranties of merchantibility and fitness for a particular
+purpose. </p><p>This article is protected under copyright law. This document
+may be copied only if the source, author, date, and legal information
+is included.
+</p>
+<a name="Abstract"></a><h2> Abstract </h2>
+<p>This is a collection of technical notes on the Universal Serial Bus (USB). 
+</p><p>For a more general introduction, see the <a href="http://en.wikipedia.org/wiki/Usb" class="external text" title="http://en.wikipedia.org/wiki/Usb" rel="nofollow">Wikipedia entry for Universal Serial Bus</a>.
+</p>
+<a name="Electrical_Interface"></a><h2> Electrical Interface </h2>
+<a name="Bus_States"></a><h3> Bus States </h3>
+<table border="1" cellpadding="4" cellspacing="0">
+<caption> General Summary
+</caption>
+<tbody><tr>
+<th> Bus State</th><th> D+ </th><th> D-
+</th></tr>
+<tr>
+<td> Differential "1" </td><td> high </td><td> low
+</td></tr>
+<tr>
+<td> Differential "0" </td><td> low </td><td> high
+</td></tr>
+<tr>
+<td> Single-Ended 0 (SE0) </td><td> low </td><td> low
+</td></tr>
+<tr>
+<td> Single-Ended 1 (SE1) </td><td> high </td><td> high
+</td></tr></tbody></table>
+<p><br>
+<b> Differential "1" </b>
+</p><p>For low-/full-speed devices, a Differential "1" is asserted as follows:
+</p>
+<pre> D+ &gt; VOH (min) and D- &lt; VOL (max)
+</pre>
+<p>where VOH (min) = 2.8 V and VOL (max) = 0.3 V
+</p><p>When the bus is not actively driven and a full-/high-speed
+device is attached, a pull-up resistor on D+ puts the bus in the
+Differential "1" state.
+</p><p><b> Differential "0" </b>
+</p><p>For low-/full-speed devices, a Differential "0" is asserted as follows:
+</p>
+<pre> D- &gt; VOH (min) and D+ &lt; VOL (max)
+</pre>
+<p>where VOH (min) = 2.8 V and VOL (max) = 0.3 V
+</p><p>When the bus is not actively driven and a low-speed device is
+attached, a pull-up resistor on D- puts the bus in the Differential "0"
+state.
+</p><p><b> Single-Ended 0 (SE0) </b>
+</p><p>For low-/full-speed devices, a Single-Ended 0 (SE0) is asserted as follows:
+</p>
+<pre> D+ and D- &lt; VOL (max)
+</pre>
+<p>where VOL (max) = 0.3 V
+</p><p>When the bus is not actively driven and no device is attached, pull-down resistors on D-/D+ put the bus in the SE0 state.
+</p><p><b> Single-Ended 1 (SE1) </b>
+</p><p>For low-/full-speed devices, a Single-Ended 1 (SE1) is asserted as follows:
+</p>
+<pre> D+ and D- &gt; VOSE1 (min)
+</pre>
+<p>where VOSE1 (min) = 0.8 V
+</p><p><b> Data J </b>
+</p><p>For a low-speed device, the Data J state is the differential "0".
+</p><p>For a full-speed device, the Data J state is the differential "1".
+</p><p><b> Data K </b>
+</p><p>For a low-speed device, the Data K state is the differential "1".
+</p><p>For a full-speed device, the Data K state is the differential "0".
+</p><p><b> Idle </b>
+</p><p>When the bus is not actively driven, pull-down resistors within
+the host and a pull-up resistor within the device maintain the Data J
+state.
+</p><p>If the bus is idle for more than 3 ms, devices are requird to enter a low-power "suspended" state.
+</p><p><b> Resume </b>
+</p><p><b> Reset </b>
+</p><p>The Reset state is defined as the SE0 state persisting for at least 10 ms.
+</p>
+<a name="Device_States"></a><h2> Device States </h2>
+<a name="Attached"></a><h3> Attached </h3>
+<p>The device is attached to the bus but VBUS is not active (i.e., it is not powered).
+</p>
+<a name="Powered"></a><h3> Powered </h3>
+<p>VBUS is active but the device has not been reset.
+</p>
+<a name="Default"></a><h3> Default </h3>
+<p>The device has been reset but it has not been assigned an address.
+</p>
+<a name="Address"></a><h3> Address </h3>
+<p>The device has been assigned an address but a configuration has not been selected.
+</p>
+<a name="Configured"></a><h3> Configured </h3>
+<p>The device has been configured and is ready for operation.
+</p>
+<a name="Suspended"></a><h3> Suspended </h3>
+<p>The device enters this state whenever the bus has been idle for at least 3 ms.
+</p>
+<a name="Requests"></a><h2> Requests </h2>
+<a name="Common_Request_Format"></a><h3> Common Request Format </h3>
+<hr>
+<table border="1" cellpadding="4" cellspacing="0">
+<caption> Common Request Format Summary
+</caption>
+<tbody><tr>
+<th> Offset </th><th> Field </th><th> Size </th><th> Description
+</th></tr>
+<tr>
+<td> 0 </td><td> <a href="#bmRequestType" title="">bmRequestType</a> </td><td> 1 </td><td> Request type flags
+</td></tr>
+<tr>
+<td> 1 </td><td> <a href="#bRequest" title="">bRequest</a> </td><td> 1 </td><td> Constant identifying which request this is
+</td></tr>
+<tr>
+<td> 2 </td><td> <a href="#wValue" title="">wValue</a> </td><td> 2 </td><td> Meaning depends on the value of <a href="#bRequest" title="">bRequest</a>
+</td></tr>
+<tr>
+<td> 4 </td><td> <a href="#wIndex" title="">wIndex</a> </td><td> 2 </td><td> Meaning depends on the value of <a href="#bRequest" title="">bRequest</a>
+</td></tr>
+<tr>
+<td> 6 </td><td> <a href="#wLength" title="">wLength</a> </td><td> 2 </td><td> Number of bytes to transfer in the data stage
+</td></tr></tbody></table>
+<a name="bmRequestType"></a><h4> bmRequestType </h4>
+<p>Flags indicating the request's type, and recipient, and data transfer direction:
+</p>
+<table>
+<tbody><tr>
+<td> </td><td valign="top">
+<table>
+<tbody><tr>
+<td> Bit 7:
+</td></tr></tbody></table>
+</td><td>
+<table>
+<tbody><tr>
+<td colspan="2"> Direction
+</td></tr>
+<tr>
+<td> 0 = Host-to-device
+</td></tr>
+<tr>
+<td> 1 = Device-to-host
+</td></tr></tbody></table>
+</td></tr>
+<tr>
+<td> </td><td valign="top">
+<table>
+<tbody><tr>
+<td> Bits 6...5:
+</td></tr></tbody></table>
+</td><td>
+<table>
+<tbody><tr>
+<td colspan="2"> Type
+</td></tr>
+<tr>
+<td> 00b = Standard
+</td></tr>
+<tr>
+<td> 01b = Class
+</td></tr>
+<tr>
+<td> 10b = Vendor
+</td></tr></tbody></table>
+</td></tr>
+<tr>
+<td> </td><td valign="top">
+<table>
+<tbody><tr>
+<td> Bits 4...0: </td><td>
+</td></tr></tbody></table>
+</td><td>
+<table>
+<tbody><tr>
+<td colspan="2"> Recipient
+</td></tr>
+<tr>
+<td> 00000b = Device
+</td></tr>
+<tr>
+<td> 00001b = Interface
+</td></tr>
+<tr>
+<td> 00010b = Endpoint
+</td></tr>
+<tr>
+<td> 00011b = Other
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+<p>Bit seven indicates the direction in which data is transferred in
+the data stage. This field is ignored if wLength is zero (indicating
+there is no data stage).
+</p>
+<a name="bRequest"></a><h4> bRequest </h4>
+<p>This field identifies which specific request this is. Its meaning depends on the "Type" bits (6 and 5) in <a href="#bmRequestType" title="">bmRequestType</a>.
+If these bits are set to "Vendor" (10b), the bRequest field is defined
+by the device manufacturer. If these bits are set to "Class" (01b),
+this field is defined by a class specification. If these bits are set
+to "Standard" (00b) this field is defined as follows:
+</p>
+<table>
+<tbody><tr>
+<td> </td><td>
+<table border="0" cellpadding="4" cellspacing="0">
+<tbody><tr>
+<td> 0x00: </td><td> <a href="#Get_Status" title="">GET_STATUS</a>
+</td></tr>
+<tr>
+<td> 0x01: </td><td> <a href="#Clear_Feature" title="">CLEAR_FEATURE</a>
+</td></tr>
+<tr>
+<td> 0x03: </td><td> <a href="#Set_Feature" title="">SET_FEATURE</a>
+</td></tr>
+<tr>
+<td> 0x05: </td><td> <a href="#Set_Address" title="">SET_ADDRESS</a>
+</td></tr>
+<tr>
+<td> 0x06: </td><td> <a href="#Get_Descriptor" title="">GET_DESCRIPTOR</a>
+</td></tr>
+<tr>
+<td> 0x07: </td><td> <a href="#Set_Descriptor" title="">SET_DESCRIPTOR</a>
+</td></tr>
+<tr>
+<td> 0x08: </td><td> <a href="#Get_Configuration" title="">GET_CONFIGURATION</a>
+</td></tr>
+<tr>
+<td> 0x09: </td><td> <a href="#Set_Configuration" title="">SET_CONFIGURATION</a>
+</td></tr>
+<tr>
+<td> 0x0A: </td><td> <a href="#Get_Interface" title="">GET_INTERFACE</a>
+</td></tr>
+<tr>
+<td> 0x0B: </td><td> <a href="#Set_Interface" title="">SET_INTERFACE</a>
+</td></tr>
+<tr>
+<td> 0x0C: </td><td> <a href="#Synch_Frame" title="">SYNCH_FRAME</a>
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+<a name="wValue"></a><h4> wValue </h4>
+<p>The meaning of this field depends on the request.
+</p>
+<a name="wIndex"></a><h4> wIndex </h4>
+<p>The meaning of this field depends on the request. Its value usually represents an index or an offset.
+</p>
+<a name="wLength"></a><h4> wLength </h4>
+<p>The number of bytes to transfer during the data stage, or zero if there is no data stage.
+</p><p>If the "Direction" bit (7) of <a href="#bmRequestType" title="">bmRequestType</a>
+is set (indicating a device-to-host request), the device may send up to
+wLength bytes. If the direction bit is reset (indicating a
+host-to-device request), the host will send exactly wLength bytes.
+</p>
+<a name="Clear_Feature"></a><h3> Clear Feature </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.4.1</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0" width="750">
+<caption> "Clear Feature" Request Format
+</caption>
+<tbody><tr>
+<th> </th><th width="100"> bmRequestType </th><th> bRequest </th><th> wValue </th><th> wIndex </th><th> wLength </th><th width="75"> Data
+</th></tr>
+<tr>
+<th width="75"> Device
+</th><td align="center"> 00000000b
+</td><td rowspan="3" align="center"> CLEAR_FEATURE<br>(0x01)
+</td><td rowspan="3" align="center"> Feature Selector
+</td><td align="center"> 0x0000
+</td><td rowspan="3" align="center"> 0x0000
+</td><td rowspan="3" align="center"> N/A
+</td></tr>
+<tr>
+<th> Interface
+</th><td align="center"> 00000001b
+</td><td align="center"> Interface Number
+</td></tr>
+<tr>
+<th> Endpoint
+</th><td align="center"> 00000010b
+</td><td align="center"> Endpoint Address
+</td></tr></tbody></table>
+<p>Disable the specified <a href="#Features" title="">feature</a>.
+</p>
+<a name="Get_Configuration"></a><h3> Get Configuration </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.4.2</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0" width="750">
+<caption> "Get Configuration" Request Format
+</caption>
+<tbody><tr>
+<th> </th><th width="100"> bmRequestType </th><th> bRequest </th><th> wValue </th><th> wIndex </th><th> wLength </th><th width="75"> Data
+</th></tr>
+<tr>
+<th width="75"> Device
+</th><td align="center"> 10000000b
+</td><td align="center"> GET_CONFIGURATION<br>(0x08)
+</td><td align="center"> 0x0000
+</td><td align="center"> 0x0000
+</td><td align="center"> 0x0001
+</td><td align="center"> Configuration<br>Value
+</td></tr></tbody></table>
+<p>Get the current device configuration identifier as set by <a href="#Set_Configuration" title="">Set Configuration</a>, or zero if not configured.
+</p><p>The returned value corresponds to the <a href="#bConfigurationValue" title="">bConfigurationValue</a> field of the configuration descriptor to which the device is currently set.
+</p>
+<a name="Get_Descriptor"></a><h3> Get Descriptor </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.4.3</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0" width="750">
+<caption> "Get Descriptor" Request Format
+</caption>
+<tbody><tr>
+<th> </th><th width="100"> bmRequestType </th><th> bRequest </th><th> wValue </th><th> wIndex </th><th> wLength </th><th width="75"> Data
+</th></tr>
+<tr>
+<th width="75"> Device
+</th><td align="center"> 10000000b
+</td><td align="center"> GET_DESCRIPTOR<br>(0x06)
+</td><td align="center"> MSB = Descriptor Type<br>LSB = Descriptor Index
+</td><td align="center"> Zero or<br>Language ID
+</td><td align="center"> Descriptor<br>Length
+</td><td align="center"> Descriptor
+</td></tr></tbody></table>
+<p>This request retrieves the specified <a href="#Descriptors" title="">descriptor</a>.
+</p><p>For a standard "Get Descriptor" request, the high byte of wValue may be one of three values:
+</p>
+<table cellpadding="4">
+<tbody><tr>
+<td colspan="2"> DEVICE (0x01)
+</td></tr>
+<tr>
+<td> </td><td>
+<p>Get_Descriptor(DEVICE) returns the one and only <a href="#Device_Descriptor" title="">device descriptor</a>.  
+</p><p>The low byte of wValue is always zero.
+</p><p>wIndex is always zero.
+</p>
+</td></tr>
+<tr>
+<td colspan="2"> CONFIGURATION (0x02)
+</td></tr>
+<tr>
+<td> </td><td>
+<p>Get_Descriptor(CONFIGURATION) returns the specified <a href="#Configuration_Descriptor" title="">configuration descriptor</a> as well as all <a href="#Interface_Descriptor" title="">interface descriptors</a> and <a href="#Endpoint_Descriptor" title="">endpoint descriptors</a>
+for that configuration. These descriptors are returned in a
+hierarchical order. For example, if the configuration has two
+interfaces, where the first interface has one endpoint and the second
+interface has two, the descriptors are returned in the following order:
+</p>
+<ul><li>Configuration descriptor
+<ul><li>Interface descriptor
+<ul><li>Endpoint descriptor
+</li></ul>
+</li><li>Interface descriptor
+<ul><li>Endpoint descriptor
+</li><li>Endpoint descriptor
+</li></ul>
+</li></ul>
+</li></ul>
+<p>The low byte of wValue identifies the configuration whose
+descriptors are to be retrieved. This must be between one and the value
+of the <a href="#bNumConfigurations" title="">bNumConfigurations</a> field of the device descriptor (inclusive).  
+</p><p>wIndex is always zero.
+</p><p>If the host only wants the configuration descriptor, it should
+set the wLength field to 10 (the size of a standard configuration
+descriptor) and the device will not return the interface or endpoint
+descriptors.
+</p>
+</td></tr>
+<tr>
+<td colspan="2"> STRING (0x03)
+</td></tr>
+<tr>
+<td> </td><td>
+<p>Get_Descriptor(STRING) returns the specified <a href="#String_Descriptor" title="">string descriptor</a>.
+</p><p>The low byte of wValue contains the index of the string descriptor to be retrieved.
+</p><p>wIndex contains a <a href="#wLANGID" title="">language identifier</a> (zero if retrieving string descriptor zero). 
+</p>
+</td></tr></tbody></table>
+<p>High-speed devices additionally support the DEVICE_QUALIFIER (0x06) and OTHER_SPEED_CONFIGURATION (0x07) descriptors. 
+</p><p>The host sets the wLength field to the maximum number of bytes to return.
+</p><p>If an unsupported descriptor is requested, a request error is generated.
+</p>
+<a name="Get_Interface"></a><h3> Get Interface </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.4.4</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0" width="750">
+<caption> "Get Interface" Request Format
+</caption>
+<tbody><tr>
+<th> </th><th width="100"> bmRequestType </th><th> bRequest </th><th> wValue </th><th> wIndex </th><th> wLength </th><th width="75"> Data
+</th></tr>
+<tr>
+<th width="75"> Interface
+</th><td align="center"> 10000001b
+</td><td align="center"> GET_INTERFACE<br>(0x0A)
+</td><td align="center"> 0x0000
+</td><td align="center"> Interface Number
+</td><td align="center"> 0x0001
+</td><td align="center"> Alternate<br>Setting
+</td></tr></tbody></table>
+<p>Get the identifier of the currently-selected alternate interface as set by <a href="#Set_Interface" title="">Set Interface</a>, or zero by default.
+</p><p>The returned value corresponds to one of the <a href="#bAlternateSetting" title="">bAlternateSetting</a> fields of a previously returned <a href="#Interface_Descriptor" title="">interface descriptor</a>.
+</p>
+<a name="Get_Status"></a><h3> Get Status </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.4.5</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0" width="750">
+<caption> "Get Status" Request Format
+</caption>
+<tbody><tr>
+<th> </th><th width="100"> bmRequestType </th><th> bRequest </th><th> wValue </th><th> wIndex </th><th> wLength </th><th width="75"> Data
+</th></tr>
+<tr>
+<th width="75"> Device
+</th><td align="center"> 10000000b
+</td><td rowspan="3" align="center"> GET_STATUS<br>(0x00)
+</td><td rowspan="3" align="center"> 0x0000
+</td><td align="center"> 0x0000
+</td><td rowspan="3" align="center"> 0x0002
+</td><td rowspan="3" align="center"> Status
+</td></tr>
+<tr>
+<th> Interface
+</th><td align="center"> 10000001b
+</td><td align="center"> Interface number
+</td></tr>
+<tr>
+<th> Endpoint
+</th><td align="center"> 10000010b
+</td><td align="center"> Endpoint address
+</td></tr></tbody></table>
+<p>The definition of the Status field depends on the whether the recipient is a device, interface, or endpoint.
+</p><p><br>
+<b>Recipient = Device (bmRequestType = 10000000b):</b>
+</p>
+<table cellpadding="4">
+<tbody><tr>
+<td> D15...2 </td><td> Reserved (always zero)
+</td></tr>
+<tr>
+<td> D1 </td><td> Remote Wakeup
+</td></tr>
+<tr>
+<td> D0 </td><td> Self Powered
+</td></tr></tbody></table>
+<p>D1 is set to one if the device is currently enabled to perform
+remote wakeup. D0 is set to one if the device is currently self powered
+(D0 is reset to zero if the device is currently bus powered).
+</p><p><br>
+<b>Recipient = Interface (bmRequestType = 10000001b):</b>
+</p>
+<table cellpadding="4">
+<tbody><tr>
+<td> D15...0 </td><td> Reserved (always zero)
+</td></tr></tbody></table>
+<p>No status information is reported for an interface.
+</p><p><br>
+<b>Recipient = Endpoint (bmRequestType = 10000010b):</b>
+</p>
+<table cellpadding="4">
+<tbody><tr>
+<td> D15...1 </td><td> Reserved (always zero)
+</td></tr>
+<tr>
+<td> D0 </td><td> Halt
+</td></tr></tbody></table>D0 is set to one if the endpoint is currently halted.
+<a name="Set_Address"></a><h3> Set Address </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.4.6</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0" width="750">
+<caption> "Set Address" Request Format
+</caption>
+<tbody><tr>
+<th> </th><th width="100"> bmRequestType </th><th> bRequest </th><th> wValue </th><th> wIndex </th><th> wLength </th><th width="75"> Data
+</th></tr>
+<tr>
+<th width="75"> Device
+</th><td align="center" width="100"> 00000000b
+</td><td align="center"> SET_ADDRESS<br>(0x05)
+</td><td align="center"> Device<br>Address
+</td><td align="center"> 0x0000
+</td><td align="center"> 0x0000
+</td><td align="center"> N/A
+</td></tr></tbody></table>
+<p>This request sets the device's address.
+</p><p>When a device is reset, it responds at the default address
+(0x00). The host then issues a Set Address request to assign a new
+(non-zero) address. The device thus transitions from the "Default"
+state to the "Address" state and is ready to be configured.
+</p>
+<a name="Set_Configuration"></a><h3> Set Configuration </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.4.7</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0" width="750">
+<caption> "Set Configuration" Request Format
+</caption>
+<tbody><tr>
+<th> </th><th width="100"> bmRequestType </th><th> bRequest </th><th> wValue </th><th> wIndex </th><th> wLength </th><th width="75"> Data
+</th></tr>
+<tr>
+<th width="75"> Device
+</th><td align="center"> 00000000b
+</td><td align="center"> SET_CONFIGURATION<br>(0x09)
+</td><td align="center"> Configuration<br>Value
+</td><td align="center"> 0x0000
+</td><td align="center"> 0x0000
+</td><td align="center"> N/A
+</td></tr></tbody></table>
+<p>This request sets the device's configuration. The "Configuration Value" corresponds to the value of the <a href="#bConfigurationValue" title="">bConfigurationValue</a> field of a <a href="#Configuration_Descriptor" title="">configuration descriptor</a>.
+</p><p>After the host assigns an address to the device (see <a href="#Set_Address" title="">Set_Address</a>), its next task is to select a configuration. The host determines which configurations the device supports by reading its <a href="#Configuration_Descriptor" title="">configuration descriptors</a>.
+It can then enable the desired configuration using the
+Set_Configuration command. The device thus transitions from the
+"Address" state to the "Configured" state.
+</p>
+<a name="Set_Descriptor"></a><h3> Set Descriptor </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.4.8</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0" width="750">
+<caption> "Set Descriptor" Request Format
+</caption>
+<tbody><tr>
+<th> </th><th width="100"> bmRequestType </th><th> bRequest </th><th> wValue </th><th> wIndex </th><th> wLength </th><th width="75"> Data
+</th></tr>
+<tr>
+<th width="75"> Device
+</th><td align="center"> 00000000b
+</td><td align="center"> SET_DESCRIPTOR<br>(0x07)
+</td><td align="center"> MSB = Descriptor Type<br>LSB = Descriptor Index
+</td><td align="center"> Zero or<br>Language ID
+</td><td align="center"> Descriptor<br>Length
+</td><td align="center"> Descriptor
+</td></tr></tbody></table>
+<a name="Set_Feature"></a><h3> Set Feature </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.4.9</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0" width="750">
+<caption> "Set Feature" Request Format
+</caption>
+<tbody><tr>
+<th> </th><th width="100"> bmRequestType </th><th> bRequest </th><th> wValue </th><th> wIndex </th><th> wLength </th><th width="75"> Data
+</th></tr>
+<tr>
+<th width="75"> Device
+</th><td align="center"> 00000000b
+</td><td rowspan="3" align="center"> SET_FEATURE<br>(0x03)
+</td><td rowspan="3" align="center"> Feature Selector
+</td><td align="center"> 0x0000
+</td><td rowspan="3" align="center"> 0x0000
+</td><td rowspan="3" align="center"> N/A
+</td></tr>
+<tr>
+<th> Interface
+</th><td align="center"> 00000001b
+</td><td align="center"> Interface Number
+</td></tr>
+<tr>
+<th> Endpoint
+</th><td align="center"> 00000010b
+</td><td align="center"> Endpoint Address
+</td></tr></tbody></table>
+<p>Enable the specified <a href="#Features" title="">feature</a>.
+</p>
+<a name="Set_Interface"></a><h3> Set Interface </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.4.10</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0" width="750">
+<caption> "Set Interface" Request Format
+</caption>
+<tbody><tr>
+<th> </th><th width="100"> bmRequestType </th><th> bRequest </th><th> wValue </th><th> wIndex </th><th> wLength </th><th width="75"> Data
+</th></tr>
+<tr>
+<th width="75"> Device
+</th><td align="center" width="100"> 00000001b
+</td><td align="center"> SET_INTERFACE<br>(0x0B)
+</td><td align="center"> Alternate Setting
+</td><td align="center"> Interface Number
+</td><td align="center"> 0x0000
+</td><td align="center"> N/A
+</td></tr></tbody></table>
+<p>This request selects the settings to be used for the specified interface within the current configuration. 
+</p><p><a href="#wValue" title="">wValue</a> and <a href="#wIndex" title="">wIndex</a> are set to the values of <a href="#bAlternateSetting" title="">bAlternateSetting</a> and <a href="#bInterfaceNumber" title="">bInterfaceNumber</a> fields, respectively, of a previously returned <a href="#Interface_Descriptor" title="">interface descriptor</a>.
+</p><p>If the interface only supports one group of settings, the status
+stage of this request may return STALL. If wValue or wIndex are not
+valid, a request error is generated.
+</p><p>By default, alternate setting 0 is assumed for each interface.
+</p>
+<a name="Synch_Frame"></a><h3> Synch Frame </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.4.11</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0" width="750">
+<caption> "Synch Frame" Request Format
+</caption>
+<tbody><tr>
+<th> </th><th width="100"> bmRequestType </th><th> bRequest </th><th> wValue </th><th> wIndex </th><th> wLength </th><th width="75"> Data
+</th></tr>
+<tr>
+<th width="75"> Endpoint
+</th><td align="center" width="100"> 10000010b
+</td><td align="center"> SYNCH_FRAME<br>(0x0C)
+</td><td align="center"> 0x0000
+</td><td align="center"> Endpoint Address
+</td><td align="center"> 0x0002
+</td><td align="center"> Frame<br>Number
+</td></tr></tbody></table>
+<a name="Descriptors"></a><h2> Descriptors </h2>
+<a name="Common_Fields"></a><h3> Common Fields </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.6</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0">
+<caption> Common Descriptor Fields Summary
+</caption>
+<tbody><tr>
+<th> Offset </th><th> Field </th><th> Size </th><th> Description
+</th></tr>
+<tr>
+<td> 0 </td><td> <a href="#bLength" title="">bLength</a> </td><td> 1 </td><td> Size of this descriptor in bytes
+</td></tr>
+<tr>
+<td> 1 </td><td> <a href="#bDescriptorType" title="">bDescriptorType</a> </td><td> 1 </td><td> Descriptor type constant
+</td></tr></tbody></table>
+<a name="bLength"></a><h4> bLength </h4>
+<p>The total length of the descriptor in bytes, including this field.
+</p>
+<a name="bDescriptorType"></a><h4> bDescriptorType </h4>
+<p>This field indicates the descriptor type as follows:
+</p>
+<table>
+<tbody><tr>
+<td> </td><td>
+<table border="0" cellpadding="4" cellspacing="0">
+<tbody><tr>
+<td> 0x01: </td><td> <a href="#Device_Descriptor" title="">DEVICE</a>
+</td></tr>
+<tr>
+<td> 0x02: </td><td> <a href="#Configuration_Descriptor" title="">CONFIGURATION</a>
+</td></tr>
+<tr>
+<td> 0x03: </td><td> <a href="#String_Descriptor" title="">STRING</a>
+</td></tr>
+<tr>
+<td> 0x04: </td><td> <a href="#Interface_Descriptor" title="">INTERFACE</a>
+</td></tr>
+<tr>
+<td> 0x05: </td><td> <a href="#Endpoint_Descriptor" title="">ENDPOINT</a>
+</td></tr>
+<tr>
+<td> 0x06: </td><td> <a href="#Device_Qualifier_Descriptor" title="">DEVICE_QUALIFIER</a>
+</td></tr>
+<tr>
+<td> 0x07: </td><td> <a href="#Other_Speed_Configuration_Descriptor" title="">OTHER_SPEED_CONFIGURATION</a>
+</td></tr>
+<tr>
+<td> 0x08: </td><td> <a href="#Interface_Power_Descriptor" title="">INTERFACE_POWER</a>
+</td></tr></tbody></table>
+</td></tr></tbody></table>
+<a name="Device_Descriptor"></a><h3> Device Descriptor </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.6.1</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0">
+<caption> Device Descriptor Summary
+</caption>
+<tbody><tr>
+<th> Offset </th><th> Field </th><th> Size </th><th> Description
+</th></tr>
+<tr>
+<td> 0 </td><td> <a href="#bLength" title="">bLength</a> </td><td> 1 </td><td> Size of this descriptor in bytes (always 18)
+</td></tr>
+<tr>
+<td> 1 </td><td> <a href="#bDescriptorType" title="">bDescriptorType </a> </td><td> 1 </td><td> DEVICE constant (always 0x01)
+</td></tr>
+<tr>
+<td> 2 </td><td> <a href="#bcdUSB" title="">bcdUSB</a> </td><td> 2 </td><td> USB specification release number (usually 0x0110 or 0x0200)
+</td></tr>
+<tr>
+<td> 4 </td><td> <a href="#bDeviceClass" title="">bDeviceClass</a> </td><td> 1 </td><td> Device class code (usually 0x00)
+</td></tr>
+<tr>
+<td> 5 </td><td> <a href="#bDeviceSubClass" title="">bDeviceSubClass</a> </td><td> 1 </td><td> Device subclass code (usually 0x00)
+</td></tr>
+<tr>
+<td> 6 </td><td> <a href="#bDeviceProtocol" title="">bDeviceProtocol</a> </td><td> 1 </td><td> Device protocol code (usually 0x00)
+</td></tr>
+<tr>
+<td> 7 </td><td> <a href="#bMaxPacketSize0" title="">bMaxPacketSize0</a> </td><td> 1 </td><td> Maximum packet size for endpoint zero
+</td></tr>
+<tr>
+<td> 8 </td><td> <a href="#idVendor" title="">idVendor</a> </td><td> 2 </td><td> Vendor ID
+</td></tr>
+<tr>
+<td> 10 </td><td> <a href="#idProduct" title="">idProduct</a> </td><td> 2 </td><td> Product ID
+</td></tr>
+<tr>
+<td> 12 </td><td> <a href="#bcdDevice" title="">bcdDevice</a> </td><td> 2 </td><td> Device release number (may be 0x0000)
+</td></tr>
+<tr>
+<td> 14 </td><td> <a href="#iManufacturer" title="">iManufacturer</a> </td><td> 1 </td><td> Index of string descriptor describing manufacturer (may be 0)
+</td></tr>
+<tr>
+<td> 16 </td><td> <a href="#iSerialNumber" title="">iSerialNumber</a> </td><td> 1 </td><td> Index of string descriptor containing <a href="#Serial_Numbers" title="">serial number</a> (may be 0)
+</td></tr>
+<tr>
+<td> 17 </td><td> <a href="#bNumConfigurations" title="">bNumConfigurations</a> </td><td> 1 </td><td> Number of supported configurations (usually 1)
+</td></tr></tbody></table>
+<a name="bLength_2"></a><h4> bLength </h4>
+<p>The total length of the descriptor in bytes, including this field. For a device descriptor, this is always 18 bytes.
+</p>
+<a name="bDescriptorType_2"></a><h4> bDescriptorType </h4>
+<p>This field is set to the DEVICE constant (0x01) indicating this is a device descriptor.
+</p>
+<a name="bcdUSB"></a><h4> bcdUSB </h4>
+<p>Binary coded decimal (BCD) representation of the USB specification
+version to which this device conforms. This is encoded as 0xJJMN for
+version JJ.M.N. EG, USB 2.0 devices should set this field to 0x0200.
+</p><p>Microsoft Windows 2000 and later accepts the following as valid values for this field: 
+</p>
+<ul><li>0x0100 (USB v1.0) (not valid if the device is a hub)
+</li><li>0x0110 (USB v1.1)
+</li><li>0x0200 (USB v2.0)
+</li></ul>
+<p><a href="http://www.microsoft.com/whdc/system/bus/usb/USBFAQ_intro.mspx" class="external text" title="http://www.microsoft.com/whdc/system/bus/usb/USBFAQ_intro.mspx" rel="nofollow">USB FAQ: Introductory Level</a>
+</p>
+<a name="bDeviceClass"></a><h4> bDeviceClass </h4>
+<p>This represents the class of the device as a whole. If this device
+does not belong to a class or each interface operates independantly
+(i.e., a <a href="#Composite_Devices" title="">composite device</a>), this field is reset to zero. 
+</p><p>Class codes are assigned by USB-IF and are in the range 0x01 to
+0x0FE (inclusive). 0xFF is the code reserved for vendor-defined
+classes. Click <a href="http://www.usb.org/developers/defined_class" class="external text" title="http://www.usb.org/developers/defined_class" rel="nofollow">here</a> for the complete list.
+</p><p>This field is rarely used except by communication devices. Most functional classes are defined at the interface level (see <a href="#bInterfaceClass" title="">bInterfaceClass</a>). 
+</p><p>This field helps the host determine which driver(s) should be loaded for this device.
+</p>
+<a name="bDeviceSubClass"></a><h4> bDeviceSubClass </h4>
+<p>This represents the subclass of the device as a whole, whose meaning depends on the value of <a href="#bDeviceClass" title="">bDeviceClass</a>. If <a href="#bDeviceClass" title="">bDeviceClass</a>
+is reset to zero, bDeviceSubClass must be reset to zero. If the class
+code is 0xFF (vendor-defined), the subclass code is also
+vendor-defined. For all other class codes (those in the range 0x01 to
+0xFE, inclusive), the valid subclass codes are maintained <a href="http://www.usb.org/developers/defined_class" class="external text" title="http://www.usb.org/developers/defined_class" rel="nofollow">here</a> by USB-IF.
+</p><p>This field helps the host determine which driver should be loaded for this device.
+</p>
+<a name="bDeviceProtocol"></a><h4> bDeviceProtocol </h4>
+<p>A protocol code assigned by USB-IF whose meaning depends on the values of <a href="#bDeviceClass" title="">bDeviceClass</a> and <a href="#bDeviceSubClass" title="">bDeviceSubClass</a>. The protocol code 0xFF indicates a vendor-defined protocol.
+</p><p>This field helps the host determine which driver should be loaded for this device.
+</p>
+<a name="bMaxPacketSize0"></a><h4> bMaxPacketSize0 </h4>
+<p>Maximum packet size for endpoint zero. This must be 8, 16, 32, or 64
+for low- and full-speed devices, or 64 for high-speed devices.
+</p>
+<a name="idVendor"></a><h4> idVendor </h4>
+<p>A unique identifier of the device's manufacturer. Vendor IDs are
+assigned by USB-IF at a cost of $1500/each for non-members. Some USB
+chip manufacturers will let you use their vendor ID with their chips,
+and assign you a block of product IDs.
+</p><p>This field helps the host determine which driver should be loaded for this device.
+</p>
+<a name="idProduct"></a><h4> idProduct </h4>
+<p>A unique product identifier. Product IDs are assigned by the owner of the vendor ID being used. 
+</p><p>This field helps the host determine which driver should be loaded for this device.
+</p>
+<a name="bcdDevice"></a><h4> bcdDevice </h4>
+<p>Device release version in binary-coded decimal (BCD).
+</p><p>Though the exact format of this field isn't specified in the
+standard, the common use seems to be 0xMMNN representing version MM.NN.
+EG, version 3.51 would be encoded as 0x0351.
+</p><p>This field helps the host determine which driver should be loaded for this device.
+</p>
+<a name="iManufacturer"></a><h4> iManufacturer </h4>
+<p>Index of a string descriptor describing the manufacturer. This is optional and should be zero if not used.
+</p>
+<a name="iSerialNumber"></a><h4> iSerialNumber </h4>
+<p>Index of a string descriptor containing the device's <a href="#Serial_Numbers" title="">serial number</a>. This is optional and should be zero if not used.
+</p>
+<a name="bNumConfigurations"></a><h4> bNumConfigurations </h4>
+<p>Number of supported configurations.
+</p><p>The host uses this field to determine how many configuration descriptors to retrieve.
+</p>
+<a name="Configuration_Descriptor"></a><h3> Configuration Descriptor </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.6.3</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0">
+<caption> Configuration Descriptor Summary
+</caption>
+<tbody><tr>
+<th> Offset </th><th> Field </th><th> Size </th><th> Description
+</th></tr>
+<tr>
+<td> 0 </td><td> <a href="#bLength" title="">bLength</a> </td><td> 1 </td><td> Size of this descriptor in bytes (9)
+</td></tr>
+<tr>
+<td> 1 </td><td> <a href="#bDescriptorType" title="">bDescriptorType</a> </td><td> 1 </td><td> CONFIGURATION constant (0x02)
+</td></tr>
+<tr>
+<td> 2 </td><td> <a href="#wTotalLength" title="">wTotalLength</a> </td><td> 2 </td><td> Total size in bytes of all descriptors returned for this configuration
+</td></tr>
+<tr>
+<td> 4 </td><td> <a href="#bNumInterfaces" title="">bNumInterfaces</a> </td><td> 1 </td><td> Number of interfaces used in this configuration
+</td></tr>
+<tr>
+<td> 5 </td><td> <a href="#bConfigurationValue" title="">bConfigurationValue</a> </td><td> 1 </td><td> A one-based index identifying this configuration
+</td></tr>
+<tr>
+<td> 6 </td><td> <a href="#iConfiguration" title="">iConfiguration</a> </td><td> 1 </td><td> Index of string descriptor describing this configuration
+</td></tr>
+<tr>
+<td> 7 </td><td> <a href="#bmAttributes" title="">bmAttributes</a> </td><td> 1 </td><td> Attribute flags
+</td></tr>
+<tr>
+<td> 8 </td><td> <a href="#bMaxPower" title="">bMaxPower</a> </td><td> 1 </td><td> Max current consumed by device in this configuration (units = 2mA)
+</td></tr></tbody></table>
+<a name="bLength_3"></a><h4> bLength </h4>
+<p>The total length of the descriptor in bytes, including this field. For a configuration descriptor, this is always 9 bytes.
+</p>
+<a name="bDescriptorType_3"></a><h4> bDescriptorType </h4>
+<p>This field is set to the CONFIGURATION constant (0x02) indicating this is a configuration descriptor.
+</p>
+<a name="wTotalLength"></a><h4> wTotalLength </h4>
+<p>The total length of all descriptors returned in a
+Get_Descriptor(CONFIGURATION) request. This includes this configuration
+descriptor itself plus all its interface and endpoint descriptors. This
+may also include class- and vendor-specific descriptors.
+</p>
+<a name="bNumInterfaces"></a><h4> bNumInterfaces </h4>
+<p>Number of interfaces used in this configuration. 
+</p><p>The value of this field should match the number of interface descriptors returned in a Get_Descriptor(CONFIGURATION) request.
+</p>
+<a name="bConfigurationValue"></a><h4> bConfigurationValue </h4>
+<p>A non-zero unique identifier for this configuration.
+</p><p>Get_Configuration and Set_Configuration requests use this value to specify a configuration.
+</p>
+<a name="iConfiguration"></a><h4> iConfiguration </h4>
+<p>Index of a string descriptor describing this configuration. This is optional and should be zero if not used.
+</p>
+<a name="bmAttributes"></a><h4> bmAttributes </h4>
+<p>A bitmap defined as follows:
+</p>
+<table cellpadding="4">
+<tbody><tr>
+<td> D7 </td><td> Reserved (always one)
+</td></tr>
+<tr>
+<td> D6 </td><td> Self-powered
+</td></tr>
+<tr>
+<td> D5 </td><td> Remote Wakeup
+</td></tr>
+<tr>
+<td> D4...0 </td><td> Reserved (always zero)
+</td></tr></tbody></table>
+<p>D0-D4 are always zero and D7 is always one. D6 is set to one if the
+device is capable of powering itself in this configuration. D5 is set
+to one if the device supports remote wakeup in this configuration.
+</p>
+<a name="bMaxPower"></a><h4> bMaxPower </h4>
+<p>Specifies the maximum amount of current the device draws from the
+bus in this configuration, expressed in units of 2 mA. EG, a 100 mA
+device would specify a bMaxPower value of 50.
+</p>
+<a name="Interface_Descriptor"></a><h3> Interface Descriptor </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.6.5</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0">
+<caption> Interface Descriptor Summary
+</caption>
+<tbody><tr>
+<th> Offset </th><th> Field </th><th> Size </th><th> Description
+</th></tr>
+<tr>
+<td> 0 </td><td> <a href="#bLength" title="">bLength</a> </td><td> 1 </td><td> Size of this descriptor in bytes (9)
+</td></tr>
+<tr>
+<td> 1 </td><td> <a href="#bDescriptorType" title="">bDescriptorType</a> </td><td> 1 </td><td> INTERFACE constant (0x04)
+</td></tr>
+<tr>
+<td> 2 </td><td> <a href="#bInterfaceNumber" title="">bInterfaceNumber</a> </td><td> 1 </td><td> This interface's zero-based index
+</td></tr>
+<tr>
+<td> 3 </td><td> <a href="#bAlternateSetting" title="">bAlternateSetting</a> </td><td> 1 </td><td> Identifier for these settings for this interface
+</td></tr>
+<tr>
+<td> 4 </td><td> <a href="#bNumEndpoints" title="">bNumEndpoints</a> </td><td> 1 </td><td> Number of endpoints used by this interface
+</td></tr>
+<tr>
+<td> 5 </td><td> <a href="#bInterfaceClass" title="">bInterfaceClass</a> </td><td> 1 </td><td> Class code
+</td></tr>
+<tr>
+<td> 6 </td><td> <a href="#bInterfaceSubclass" title="">bInterfaceSubclass</a> </td><td> 1 </td><td> Subclass code
+</td></tr>
+<tr>
+<td> 7 </td><td> <a href="#bInterfaceProtocol" title="">bInterfaceProtocol</a> </td><td> 1 </td><td> Protocol code
+</td></tr>
+<tr>
+<td> 8 </td><td> <a href="#iInterface" title="">iInterface</a> </td><td> 1 </td><td> Index of string descriptor describing this interface
+</td></tr></tbody></table>
+<a name="bLength_4"></a><h4> bLength </h4>
+<p>The total length of the descriptor in bytes, including this field. For an interface descriptor, this is always 9 bytes.
+</p>
+<a name="bDescriptorType_4"></a><h4> bDescriptorType </h4>
+<p>This field is set to the INTERFACE constant (0x04) indicating this is an interface descriptor.
+</p>
+<a name="bInterfaceNumber"></a><h4> bInterfaceNumber </h4>
+<p>A unique identifier for this interface within a particular
+configuration. Interface numbers are assigned sequentially, starting at
+zero.
+</p><p>Requests directed at a particular interface will use this number to indicate the target interface.
+</p><p>Windows XP prior to SP2 requires interface numbers be assigned consecutively (i.e., no gaps).
+</p><p><a href="http://www.microsoft.com/whdc/system/bus/usb/USBFAQ_intermed.mspx" class="external text" title="http://www.microsoft.com/whdc/system/bus/usb/USBFAQ_intermed.mspx" rel="nofollow">USB FAQ - Intermediate</a><br>
+<a href="http://support.microsoft.com/default.aspx?scid=kb;%5BLN%5D;814560" class="external text" title="http://support.microsoft.com/default.aspx?scid=kb;%5BLN%5D;814560" rel="nofollow">Microsoft Knowledge Base article 814560</a><br>
+</p>
+<a name="bAlternateSetting"></a><h4> bAlternateSetting </h4>
+<p>An identifier for this particular set of parameters for this interface. 
+</p>
+<a name="bNumEndpoints"></a><h4> bNumEndpoints </h4>
+<p>Number of endpoints used by this interface, excluding endpoint zero.
+</p>
+<a name="bInterfaceClass"></a><h4> bInterfaceClass </h4>
+<p>A class code assigned by USB-IF, or zero to indicate this interface
+does not belong to a class. The class code 0xFF indicates a
+vendor-defined class.
+</p><p>Click <a href="http://www.usb.org/developers/defined_class" class="external text" title="http://www.usb.org/developers/defined_class" rel="nofollow">here</a> for the complete list of standard class codes.
+</p><p>This field helps the host determine which driver should be loaded for this interface.
+</p>
+<a name="bInterfaceSubclass"></a><h4> bInterfaceSubclass </h4>
+<p>A subclass code assigned by USB-IF whose meaning depends on the
+value of bInterfaceClass. If the class code is set to 0xFF, the
+subclass code is vendor-defined. This field is reset to zero if the
+class code is not set (zero).
+</p><p>This field helps the host determine which driver should be loaded for this interface.
+</p>
+<a name="bInterfaceProtocol"></a><h4> bInterfaceProtocol </h4>
+<p>A protocol code assigned by USB-IF whose meaning depends on the
+values of bInterfaceClass and bInterfaceSubclass. The protocol code
+0xFF indicates a vendor-defined protocol.
+</p>
+<a name="iInterface"></a><h4> iInterface </h4>
+<p>Index of a string descriptor describing this interface. This is optional and should be zero if not used.
+</p>
+<a name="Endpoint_Descriptor"></a><h3> Endpoint Descriptor </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.6.6</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0">
+<caption> Endpoint Descriptor Summary
+</caption>
+<tbody><tr>
+<th> Offset </th><th> Field </th><th> Size </th><th> Description
+</th></tr>
+<tr>
+<td> 0 </td><td> <a href="#bLength" title="">bLength</a> </td><td> 1 </td><td> Size of this descriptor in bytes (7)
+</td></tr>
+<tr>
+<td> 1 </td><td> <a href="#bDescriptorType" title="">bDescriptorType</a> </td><td> 1 </td><td> ENDPOINT constant (0x05)
+</td></tr>
+<tr>
+<td> 2 </td><td> <a href="#bEndpointAddress" title="">bEndpointAddress</a> </td><td> 1 </td><td> This endpoint's address
+</td></tr>
+<tr>
+<td> 3 </td><td> <a href="#bmAttributes_2" title="">bmAttributes</a> </td><td> 1 </td><td> Endpoint attribute flags
+</td></tr>
+<tr>
+<td> 4 </td><td> <a href="#wMaxPacketSize" title="">wMaxPacketSize</a> </td><td> 2 </td><td> Maximum packet size and related flags
+</td></tr>
+<tr>
+<td> 6 </td><td> <a href="#bInterval" title="">bInterval</a> </td><td> 1 </td><td> Polling interval
+</td></tr></tbody></table>
+<a name="bLength_5"></a><h4> bLength </h4>
+<p>The total length of the descriptor in bytes, including this field. For an endpoint descriptor, this is always 7 bytes.
+</p>
+<a name="bDescriptorType_5"></a><h4> bDescriptorType </h4>
+<p>This field is set to the ENDPOINT constant (0x05) indicating this is an endpoint descriptor.
+</p>
+<a name="bEndpointAddress"></a><h4> bEndpointAddress </h4>
+<p>This endpoint's address, which consists of an endpoint number and direction:
+</p>
+<table>
+<tbody><tr>
+<td> Bit 3...0: </td><td> Endpoint number
+</td></tr>
+<tr>
+<td> Bit 6...4: </td><td> Reserved (always zero)
+</td></tr>
+<tr>
+<td> Bit 7: </td><td> Direction
+</td></tr></tbody></table>
+<p>Bit 7 is set to one for an IN endpoint, or reset to zero for an OUT endpoint. This bit is ignored for control endpoints.
+</p><p>Endpoint zero is the default control endpoint and does not have
+a descriptor. Therefore, the endpoint number portion of this field will
+never be zero.
+</p>
+<a name="bmAttributes_2"></a><h4> bmAttributes </h4>
+<p>Endpoint attribute flags, defined as follows:
+</p>
+<table>
+<tbody><tr>
+<td> Bits 1...0: </td><td> Transfer Type
+</td></tr>
+</tbody></table><table>
+<tbody><tr>
+<td> </td><td> 00 = Control
+</td></tr>
+<tr>
+<td> </td><td> 01 = Isochronous
+</td></tr>
+<tr>
+<td> </td><td> 10 = Bulk
+</td></tr>
+<tr>
+<td> </td><td> 11 = Interrupt
+</td></tr></tbody></table>
+
+ Bits 3...2:  Synchronization Type
+
+<table>
+<tbody><tr>
+<td> </td><td> 00 = No synchronization
+</td></tr>
+<tr>
+<td> </td><td> 01 = Asynchronous
+</td></tr>
+<tr>
+<td> </td><td> 10 = Adaptive
+</td></tr>
+<tr>
+<td> </td><td> 11 = Synchronous
+</td></tr></tbody></table>
+
+ Bits 5...4:  Usage Type
+<table>
+<tbody><tr>
+<td> </td><td> 00 = Data endpoint
+</td></tr>
+<tr>
+<td> </td><td> 01 = Feedback endpoint
+</td></tr>
+<tr>
+<td> </td><td> 10 = Implicit feedback data endpoint
+</td></tr>
+<tr>
+<td> </td><td> 11 = Reserved
+</td></tr></tbody></table>
+ Bits 7...6:  Reserved (always zero)
+
+<p>If transfer type is not isonchronous, synchronization type and usage
+type should be reset to zero by the peripheral and ignored by the host.
+</p>
+<a name="wMaxPacketSize"></a><h4> wMaxPacketSize </h4>
+<p>Maximum packet size supported by this endpoint, as well as related flags:
+</p>
+<table>
+<tbody><tr>
+<td> Bits 10...0: </td><td> Maximum packet size (bytes)
+</td></tr>
+<tr>
+<td> Bits 12...11: </td><td> Additional transaction opportunities per microframe
+</td></tr>
+<tr>
+<td> Bits 15...13: </td><td> Reserved (always zero)
+</td></tr></tbody></table>
+<p>Bits 12...11 are only valid for high-speed isochronous and interrupt endpoints.
+</p>
+<a name="bInterval"></a><h4> bInterval </h4>
+<p>Polling interval in frames or microframes.
+</p>
+<a name="String_Descriptor"></a><h3> String Descriptor </h3>
+<hr>
+<p><a href="http://www.usb.org/" class="external text" title="http://www.usb.org" rel="nofollow">USB 2.0 Section 9.6.7</a>
+</p>
+<table border="1" cellpadding="4" cellspacing="0">
+<caption> String Descriptor Summary
+</caption>
+<tbody><tr>
+<th> Offset </th><th> Field </th><th> Size </th><th> Description
+</th></tr>
+<tr>
+<td> 0 </td><td> <a href="#bLength" title="">bLength</a> </td><td> 1 </td><td> Size of this descriptor in bytes (variable)
+</td></tr>
+<tr>
+<td> 1 </td><td> <a href="#bDescriptorType" title="">bDescriptorType</a> </td><td> 1 </td><td> STRING constant (0x03)
+</td></tr>
+<tr>
+<td> 2 </td><td> <a href="#wLANGID" title="">wLANGID</a> or <a href="#bString" title="">bString</a> </td><td> variable </td><td> Language ID array or unicode string
+</td></tr></tbody></table>
+<a name="bLength_6"></a><h4> bLength </h4>
+<p>The total length of the descriptor in bytes, including this field.
+</p>
+<a name="bDescriptorType_6"></a><h4> bDescriptorType </h4>
+<p>This field is set to the STRING constant (0x03) indicating this is a string descriptor.
+</p>
+<a name="wLANGID"></a><h4> wLANGID </h4>
+<p>String descriptor zero consist of an array of two-byte language code
+identifiers (LANGIDs) indicating which languages are supported by this
+device. </p><p>The host retrieves string descriptor zero to determine which
+languages the device supports, then specifies one of these LANGIDs when
+retrieving other string descriptors.
+</p><p>U.S. English is LANGID 0x0409. A complete list of LANGIDs is maintained in the <a href="http://www.usb.org/developers/docs/USB_LANGIDs.pdf" class="external text" title="http://www.usb.org/developers/docs/USB_LANGIDs.pdf" rel="nofollow">"USB Language Identifiers"</a> specification.
+</p>
+<a name="bString"></a><h4> bString </h4>
+<p>String descriptors other than string descriptor zero consist of a (non NULL terminated) <a href="http://www.unicode.org/" class="external text" title="http://www.unicode.org" rel="nofollow">UNICODE</a> string.
+</p>
+<a name="Features"></a><h2> Features </h2>
+<p>USB devices have certain features that may be enabled/disabled by the host. Enabling a feature is accomplished by issuing a <a href="#Set_Feature" title="">Set Feature</a> request containing a <i>feature selector</i> constant indicating which feature is to be enabled. Similarly a feature is disabled using the <a href="#Clear_Feature" title="">Clear Feature</a> request.
+</p><p>Three standard feature selectors are defined:
+</p>
+<table border="0" cellpadding="4" cellspacing="0">
+<tbody><tr>
+<td> </td><td> 0x00 </td><td> <a href="#Endpoint_Halt" title="">ENDPOINT_HALT</a>
+</td></tr>
+<tr>
+<td> </td><td> 0x01 </td><td> <a href="#Device_Remote_Wakeup" title="">DEVICE_REMOTE_WAKEUP</a>
+</td></tr>
+<tr>
+<td> </td><td> 0x02 </td><td> <a href="#Test_Mode" title="">TEST_MODE</a>
+</td></tr></tbody></table>
+<p>ENDPOINT_HALT applies only to endpoints, and DEVICE_REMOTE_WAKEUP and TEST_MODE apply only to devices.
+</p>
+<a name="Endpoint_Halt"></a><h3> Endpoint Halt </h3>
+<p>When a communication error occurs, the endpoint becomes halted. In
+this state it responds to all transactions with a STALL handshake,
+indicating an error has occured. This condition must be explicitly
+cleared by the host using the <a href="#Clear_Feature" title="">Clear_Feature(ENDPOINT_HALT)</a> request. The host is also allowed to put an endpoint in the halt state by issuing a <a href="#Set_Feature" title="">Set_Feature(ENDPOINT_HALT)</a> request.
+</p><p>The host may determine whether or not an endpoint is halted using the <a href="#Get_Status" title="">Get_Status</a> request.
+</p>
+<a name="Device_Remote_Wakeup"></a><h3> Device Remote Wakeup </h3>
+<p>When DEVICE_REMOTE_WAKEUP is enabled, the device is allowed to
+request a suspended host to resume operation. Neither devices nor hosts
+are required to support this feature. </p><p>A device that supports remote wakeup indicates this in the <a href="#bmAttributes" title="">bmAttributes</a> field of its <a href="#Configuration_Descriptor" title="">configuration descriptor</a>.
+By default, this feature is disabled and the device is not allowed to
+signal remote wakeup. If the host also supports this feature, it may
+enable it within the device by issuing a
+Set_Feature(DEVICE_REMOTE_WAKEUP) request.
+</p><p>The device performs remote wakeup by putting the bus in the
+resume state for 1-15 ms. This is the Data K state, which is defined as
+D+ &gt; VOH (min) and D- &lt; VOL (max) for low-speed devices, or D-
+&gt; VOH (min) and D+ &lt; VOL (max) for high-speed devices. The device
+is allowed to do this only when the DEVICE_REMOTE_WAKEUP feature is
+enabled, and the bus has been in the idle state for at least 5 ms.
+</p>
+<a name="Test_Mode"></a><h3> Test Mode </h3>
+<a name="Composite_Devices"></a><h2> Composite Devices </h2>
+<p>A USB composite device is one that has multiple independant
+interfaces. When a host enumerates a composite device, it loads a
+generic "multi-interface" driver for the device, which creates a PDO
+for each interface on the device. This way, drivers may be re-used at
+the interface-level. For example, a combination keyboard/mouse
+implemented as a composite device may be supported by stand-alone
+keyboard and mouse drivers instead of requiring an additional
+all-in-one keyboard+mouse driver.
+</p><p>The <a href="#bDeviceClass" title="">bDeviceClass</a> and <a href="#bDeviceSubClass" title="">bDeviceSubClass</a> fields in a composite device's <a href="#Device_Descriptor" title="">device descriptor</a> should be zero.
+</p><p>Certain versions of Windows 2000 hang if a composite device is removed while being reset (<a href="http://support.microsoft.com/default.aspx?scid=kb;en-us;q278489" class="external text" title="http://support.microsoft.com/default.aspx?scid=kb;en-us;q278489" rel="nofollow">Microsoft Knowledge Base Article 278489</a>);
+</p>
+<a name="Serial_Numbers"></a><h2> Serial Numbers </h2>
+<p>A USB device may be programmed with a serial number, allowing the
+host to keep track of different instances of products with the same <a href="#idVendor" title="">vendor ID</a>, <a href="#idProduct" title="">product ID</a>, and <a href="#bcdDevice" title="">device release number</a>. The serial number is stored as a <a href="#String_Descriptor" title="">string descriptor</a>, and the index of that string descriptor is stored in the <a href="#iSerialNumber" title="">iSerialNumber</a> field of the <a href="#Device_Descriptor" title="">device descriptor</a>. If a serial number is not assigned to the device, <a href="#iSerialNumber" title="">iSerialNumber</a> is zero.
+</p><p>Microsoft requires that if a serial number is set it must be
+unique, and each byte in the serial number must be in the range 0x20
+&lt;= N &lt;= 0x7F, excluding 0x2C. Windows operating systems always
+use LANGID 0x0409 to retrieve serial numbers.
+</p><p><a href="http://www.microsoft.com/whdc/system/bus/usb/USBFAQ_intermed.mspx" class="external text" title="http://www.microsoft.com/whdc/system/bus/usb/USBFAQ_intermed.mspx" rel="nofollow">USB FAQ - Intermediate</a>
+</p>
+<a name="Examples"></a><h2> Examples </h2>
+<ul><li><a href="http://www.computer-engineering.org/index.php?title=USB_Keyboard-Mouse_Composite_Device&amp;action=edit" class="new" title="USB Keyboard-Mouse Composite Device">USB Keyboard-Mouse Composite Device</a>
+</li></ul>
+
+<!-- Saved in parser cache with key adam_cewiki:pcache:idhash:1370-0!1!0!0!!en!2!edit=0 and timestamp 20091028100846 -->
+<div class="printfooter">
+Retrieved from "<a href="http://www.computer-engineering.org/index.php?title=USB_Notes">http://www.computer-engineering.org/index.php?title=USB_Notes</a>"</div>
+						<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	<div id="p-cactions" class="portlet">
+		<h5>Views</h5>
+		<ul>
+				 <li id="ca-nstab-main" class="selected"><a title="View the content page [alt-c]" accesskey="c" href="http://www.computer-engineering.org/index.php?title=USB_Notes">Article</a></li>
+				 <li id="ca-talk" class="new"><a title="Discussion about the content page [alt-t]" accesskey="t" href="http://www.computer-engineering.org/index.php?title=Talk:USB_Notes&amp;action=edit">Discussion</a></li>
+				 <li id="ca-viewsource"><a title="This page is protected. You can view its source. [alt-e]" accesskey="e" href="http://www.computer-engineering.org/index.php?title=USB_Notes&amp;action=edit">View source</a></li>
+				 <li id="ca-history"><a title="Past versions of this page. [alt-h]" accesskey="h" href="http://www.computer-engineering.org/index.php?title=USB_Notes&amp;action=history">History</a></li>
+		</ul>
+	</div>
+	<div class="portlet" id="p-personal">
+		<h5>Personal tools</h5>
+		<div class="pBody">
+			<ul>
+				<li id="pt-login"><a title="You are encouraged to log in, it is not mandatory however. [alt-o]" accesskey="o" href="http://www.computer-engineering.org/index.php?title=Special:Userlogin&amp;returnto=USB_Notes">Log in / create account</a></li>
+			</ul>
+		</div>
+	</div>
+	<div title="Main Page" class="portlet" id="p-logo">
+		<a style="background-image: url(/skins/common/images/);" href="http://www.computer-engineering.org/index.php?title=Main_Page" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class="portlet" id="p-navigation">
+		<h5>Navigation</h5>
+		<div class="pBody">
+			<ul>
+				<li id="n-mainpage"><a title="Visit the Main Page [alt-z]" accesskey="z" href="http://www.computer-engineering.org/index.php?title=Main_Page">Main Page</a></li>
+				<li title="About the project, what you can do, where to find things" id="n-portal"><a href="http://www.computer-engineering.org/index.php?title=Computer-Engineering:Community_Portal">Community portal</a></li>
+				<li title="Find background information on current events" id="n-currentevents"><a href="http://www.computer-engineering.org/index.php?title=Current_events">Current events</a></li>
+				<li id="n-recentchanges"><a title="The list of recent changes in the wiki. [alt-r]" accesskey="r" href="http://www.computer-engineering.org/index.php?title=Special:Recentchanges">Recent changes</a></li>
+				<li id="n-randompage"><a title="Load a random page [alt-x]" accesskey="x" href="http://www.computer-engineering.org/index.php?title=Special:Random">Random page</a></li>
+				<li title="The place to find out." id="n-help"><a href="http://www.computer-engineering.org/index.php?title=Help:Contents">Help</a></li>
+				<li title="Support us" id="n-sitesupport"><a href="http://www.computer-engineering.org/index.php?title=Computer-Engineering:Site_support">Donations</a></li>
+			</ul>
+		</div>
+	</div>
+		<div id="p-search" class="portlet">
+		<h5><label for="searchInput">Search</label></h5>
+		<div id="searchBody" class="pBody">
+			<form action="/index.php?title=Special:Search" id="searchform"><div>
+				<input id="searchInput" name="search" accesskey="f" value="" type="text">
+				<input name="go" class="searchButton" id="searchGoButton" value="Go" type="submit">&nbsp;
+				<input name="fulltext" class="searchButton" value="Search" type="submit">
+			</div></form>
+		</div>
+	</div>
+	<div class="portlet" id="p-tb">
+		<h5>Toolbox</h5>
+		<div class="pBody">
+			<ul>
+				<li id="t-whatlinkshere"><a title="List of all wiki pages that link here [alt-j]" accesskey="j" href="http://www.computer-engineering.org/index.php?title=Special:Whatlinkshere/USB_Notes">What links here</a></li>
+				<li id="t-recentchangeslinked"><a title="Recent changes in pages linked from this page [alt-k]" accesskey="k" href="http://www.computer-engineering.org/index.php?title=Special:Recentchangeslinked/USB_Notes">Related changes</a></li>
+<li id="t-upload"><a title="Upload images or media files [alt-u]" accesskey="u" href="http://www.computer-engineering.org/index.php?title=Special:Upload">Upload file</a></li>
+<li id="t-specialpages"><a title="List of all special pages [alt-q]" accesskey="q" href="http://www.computer-engineering.org/index.php?title=Special:Specialpages">Special pages</a></li>
+				<li id="t-print"><a href="http://www.computer-engineering.org/index.php?title=USB_Notes&amp;printable=yes">Printable version</a></li>				<li id="t-permalink"><a href="http://www.computer-engineering.org/index.php?title=USB_Notes&amp;oldid=1424">Permanent link</a></li>			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-poweredbyico"><a href="http://www.mediawiki.org/"><img src="usb-notes_files/poweredby_mediawiki_88x31.png" alt="MediaWiki"></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 13:58, 12 October 2006.</li>
+				<li id="viewcount">This page has been accessed 24,070 times.</li>
+				<li id="privacy"><a href="http://www.computer-engineering.org/index.php?title=Computer-Engineering:Privacy_policy" title="Computer-Engineering:Privacy policy">Privacy policy</a></li>
+				<li id="about"><a href="http://www.computer-engineering.org/index.php?title=Computer-Engineering:About" title="Computer-Engineering:About">About Computer-Engineering</a></li>
+				<li id="disclaimer"><a href="http://www.computer-engineering.org/index.php?title=Computer-Engineering:General_disclaimer" title="Computer-Engineering:General disclaimer">Disclaimers</a></li>
+			</ul>
+		</div>
+	<script type="text/javascript"> if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+<!-- Served by dukes.webserversystems.com in 0.13 secs. -->
+</body></html>
