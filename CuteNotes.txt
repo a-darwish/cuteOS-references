@@ -156,6 +156,119 @@ On Data Alignment:
   0x10000 = 64KB
   0x80000 = 512KB      (our initial kernel size!)
 
+On little-endian byte ordering:
+-------------------------------
+
+* From AMD64 documents:
+
+  "The x86 and AMD64 architectures address memory using little-endian
+  byte-ordering. Multibyte values are stored with their least-significant byte at
+  the lowest byte address, and they are illustrated with their least significant
+  byte at the right side. Strings are illustrated in reverse order, because the
+  addresses of their bytes increase from right to left."
+
+  Value =
+
+  BYTE-7  BYTE-6  BYTE-5  BYTE-4  BYTE-3  BYTE-2  BYTE-1  BYTE-0
+
+  Actual Mem Layout:
+
+  BYTE-0  BYTE-1  BYTE-2  BYTE-3  BYTE-4  BYTE-5  BYTE-6  BYTE-7
+  ^
+  |--- Address start here
+
+  For illustrative purposes only - not actual mem layout:
+
+  GREATEST                 DATA STRUCTURE
+  ADDRESS
+   31              23              15              7             0 <--BIT
+  +---------------+---------------+---------------+---------------+   OFFSET
+  |    BYTE 7     |    BYTE 6     |    BYTE 5     |    BYTE 4     |4
+  |---------------+---------------+---------------+---------------|  SMALLEST
+  |    BYTE 3          BYTE 2          BYTE 1          BYTE 0     |0 ADDRESS
+  +---------------+---------------+---------------+---------------+^
+                                                                   |
+                                             Address start here ---|
+
+* Classical little-endian ordering:
+
+  .long  0x00cf9200 = 00 92 CF 00
+                      ^
+                      |--- Address start
+  =
+
+  +---------------+---------------+---------------+---------------+
+  |      00       |      CF       |      92       |       00      |
+  +---------------+---------------+---------------+---------------+^
+                                                  Address start ---|
+
+* GAS concatenation:
+
+  .long  0x00cf9200, 0x0000ffff  != .quad 0x00cf92000000ffff
+
+  .long  0x00cf9200, 0x0000ffff
+  =
+  .long  0x00cf9200
+  .long  0x0000ffff
+  =
+  .quad  0x0000ffff00cf9200
+  =
+  (actual layout in memory)
+  00 92 CF 00  FF FF 00 00
+  ^
+  |--- Address start
+  =
+  (for illustrative purposes only - _NOT_ actual mem layout)
+  +---------------+---------------+---------------+---------------+
+  |      00       |      00       |      FF       |       FF      |
+  |---------------+---------------+---------------+---------------|
+  |      00       |      CF       |      92       |       00      |
+  +---------------+---------------+---------------+---------------+^
+                                                  Address start ---|
+  BUT:
+
+  .long  0x0000ffff
+  .long  0x00cf9200
+  =
+  .quad  0x00cf92000000ffff
+  =
+  (for illustrative purposes only - _NOT_ actual mem layout)
+  +---------------+---------------+---------------+---------------+
+  |      00       |      CF       |       92      |      00       |4
+  |---------------+---------------+---------------+---------------|
+  |      00       |      00       |       FF      |      FF       |
+  +---------------+---------------+---------------+---------------+^
+                                                  Address start ---|
+  =
+  (actual layout in memory)
+  FF FF 00 00  00 92 CF 00
+  ^
+  |--- Address start
+
+* So:
+
+  test.S:                           |  print.c:
+                                    |
+  .global test                      |  #include <stdint.h>
+  test:                             |  extern uint64_t test;
+        .quad 0x00cf92000000ffff    |  int main(void) { printf("test = 0x%x\n", test); }
+
+  output: test = 0x0000ffff
+  as the 64-bit value is presented as: (address-start) FF FF 00 00 00 92 ... (address-end)
+
+* The String "WXYZ" is represented in memory as:
+
+  'W' 'X' 'Y' 'Z'
+  ^
+  |--Address start
+
+  And in the usual memory diagrams:
+
+  +---------------+---------------+---------------+---------------+
+  |      'Z'      |      'Y'      |      'X'      |      'W'      |
+  +---------------+---------------+---------------+---------------+^
+                                                  Address start ---|
+
 On Real Mode:
 -------------
 
