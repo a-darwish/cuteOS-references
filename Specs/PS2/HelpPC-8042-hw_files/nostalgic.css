@@ -1,0 +1,25 @@
+
+body { color: white; background: black; margin: 0px }
+
+table.bodytable { width: 100%; border-collapse: collapse; color: #111111; background: black }
+
+table.bodytable tr.top td { background: #0000AC; color: #FFFFFF; font-weight: bold }
+
+table.bodytable tr.bottom td { background: #0000AC; color: #FFFFFF; font-weight: bold }
+
+.unimono { font-family: monospace; font-size: 12pt; letter-spacing: 0; line-height: 11.9pt; color: #dddddd }
+
+.unimono span.highlight { color: #52FFFF; font-weight: bold; text-decoration: none }
+
+.unimono a { color: #ffff52; text-decoration: none }
+
+.unimono a:hover { color: #5255FF; background: #ACAAAC }
+
+.unimono a.menuplain { color: #ffffff; text-decoration: none }
+
+.unimono a.menuplain:hover { color: #0000AC; background: #FFFFFF }
+
+.unimono a.menulink { color: #dddddd; text-decoration: none }
+
+.unimono a.menulink:hover { color: #ffffff; background: #0000AC; font-weight: bold; }
+

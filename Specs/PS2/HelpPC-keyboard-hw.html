@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html><head>
+
+
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+  <title>HelpPC 2.10 - keyboard commands</title>
+  <link type="text/css" rel="stylesheet" href="HelpPC-keyboard-hw_files/nostalgic.css" title="nostalgic">
+</head><body>
+<!-- Converted from the original text files by helppc21-convert.pl by Timo Bingmann - http://idlebox.net/ -->
+<table class="bodytable" summary="">
+  <tbody><tr class="top">
+    <td class="unimono" style="text-align: left; width: 30%;"><a class="menuplain" href="http://docs.huihoo.com/help-pc/index.html">HelpPC 2.10</a></td>
+    <td class="unimono" style="text-align: center; width: 30%;"><a class="menuplain" href="http://docs.huihoo.com/help-pc/index.html">Quick Reference Utility</a></td>
+    <td class="unimono" style="text-align: right; width: 40%;">Copyright 1991 David Jurgens</td>
+  </tr>
+  <tr>
+    <td colspan="3">
+      <table style="margin-left: auto; margin-right: auto;" summary="">
+        <tbody><tr>
+          <td class="unimono">
+            <br><span class="highlight"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Keyboard Commands &amp; Responses</span><br>
+<br>
+<span class="highlight"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Commands System Issues to Keyboard (via 8042 port 60h)</span><br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;ED &nbsp;Set/Reset Mode Indicators, keyboard responds with ACK then<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;waits for a following option byte. &nbsp;When the option byte is<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;received the keyboard again ACK's and then sets the LED's<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;accordingly. &nbsp;Scanning is resumed if scanning was enabled.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;If another command is received instead of the option byte<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(high bit set on) this command is terminated. &nbsp;Hardware<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;defaults to these indicators turned off.<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474;7-3&#9474;2&#9474;1&#9474;0&#9474; Keyboard Status Indicator Option Byte<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &nbsp;&#9474; &#9474; &#9492;&#9472;&#9472;&#9472; Scroll-Lock indicator &nbsp;(0=off, 1=on)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &nbsp;&#9474; &#9492;&#9472;&#9472;&#9472;&#9472; Num-Lock indicator &nbsp;(0=off, 1=on)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &nbsp;&#9492;&#9472;&#9472;&#9472;&#9472;&#9472; Caps-Lock indicator &nbsp;(0=off, 1=on)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; reserved (must be zero)<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;EE &nbsp;Diagnostic Echo, keyboard echoes the EE byte back to the system<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;without an acknowledgement.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;F0 &nbsp;PS/2 Select/Read Alternate Scan Code Sets, instructs keyboard<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;to use one of the three make/break scan code sets. &nbsp; Keyboard<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;responds by clearing the output buffer/typematic key and then<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;transmits an ACK. &nbsp;The system must follow up by sending an<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;option byte which will again be ACK'ed by the keyboard:<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;00 &nbsp;return byte indicating scan code set in use<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;01 &nbsp;select scan code set 1 &nbsp;(used on PC &amp; XT)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;02 &nbsp;select scan code set 2<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;03 &nbsp;select scan code set 3<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;F2 &nbsp;PS/2 Read Keyboard ID, keyboard responds with an ACK and a two<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;byte keyboard ID of 83AB.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;F3 &nbsp;Set Typematic Rate/Delay, keyboard responds with ACK and waits<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;for rate/delay byte. &nbsp; Upon receipt of the rate/delay byte the<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;keyboard responds with an ACK, then sets the new typematic<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;values and scanning continues if scanning was enabled.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474;7&#9474;6&#9474;5&#9474;4&#9474;3&#9474;2&#9474;1&#9474;0&#9474; &nbsp;Typematic Rate/Delay Option Byte<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9500;&#9472;&#9532;&#9472;&#9532;&#9472;&#9532;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472; typematic rate indicator (see <a href="http://docs.huihoo.com/help-pc/int-int_16_3.html">INT 16,3</a>)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9524;&#9472;&#9524;&#9472;&#9472;&#9472; A in period formula (see below)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9492;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; B is period formula (see below)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9492;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; typematic delay<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; always zero<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;delay = (rate+1) * 250 &nbsp; (in milliseconds)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;rate = (8+A) * (2**B) * 4.17 &nbsp;(in seconds, ± 20%)<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Defaults to 10.9 characters per second and a 500ms delay. &nbsp;If a<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;command byte (byte with high bit set) is received instead of an<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;option byte this command is cancelled.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;F4 &nbsp;Enable Keyboard, cause the keyboard to clear its output buffer<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;and last typematic key and then respond with an ACK. &nbsp;The<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;keyboard then begins scanning.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;F5 &nbsp;Default w/Disable, resets keyboard to power-on condition by<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;clearing the output buffer, resetting typematic rate/delay,<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;resetting last typematic key and setting default key types.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;The keyboard responds with an ACK and waits for the next<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;instruction.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;F6 &nbsp;Set Default, resets to power-on condition by clearing the output<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;buffer, resetting typematic rate/delay and last typematic key<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;and sets default key types. &nbsp;The keyboard responds with an ACK<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;and continues scanning.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;F7 &nbsp;PS/2 Set All Keys to Typematic, keyboard responds by sending an<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;ACK, clearing its output buffer and setting the key type to<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Typematic. &nbsp; Scanning continues if scanning was enabled. &nbsp;This<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;command may be sent while using any Scan Code Set but only has<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;effect when Scan Code Set 3 is in use.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;F8 &nbsp;PS/2 Set All Keys to Make/Break, keyboard responds by sending an<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;ACK, clearing its output buffer and setting the key type to<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Make/Break. &nbsp;Scanning continues if scanning was enabled. &nbsp;This<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;command may be sent while using any Scan Code Set but only has<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;effect when Scan Code Set 3 is in use.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;F9 &nbsp;PS/2 Set All Keys to Make, keyboard responds by sending an ACK,<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;clearing its output buffer and setting the key type to Make.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Scanning continues if scanning was enabled. &nbsp;This command may<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;be sent while using any Scan Code Set but only has effect when<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Scan Code Set 3 is in use.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;FA &nbsp;PS/2 Set All Keys to Typematic Make/Break, keyboard responds by<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;sending an ACK, clearing its output buffer and setting the key<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;type to Typematic Make/Break. &nbsp;Scanning continues if scanning<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;was enabled. &nbsp;This command may be sent while using any Scan Code<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Set but only has effect when Scan Code Set 3 is in use.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;FB &nbsp;PS/2 Set Key Type to Typematic, keyboard responds by sending an<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;ACK, clearing its output buffer and then waiting for the key ID<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(make code from Scan Code Set 3). &nbsp;The specified key type is then<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;set to typematic. &nbsp; This command may be sent while using any<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Scan Code Set but only has effect when Scan Code Set 3 is in use.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;FC &nbsp;PS/2 Set Key Type to Make/Break, keyboard responds by sending an<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;ACK, clearing its output buffer and then waiting for the key ID<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(make code from Scan Code Set 3). &nbsp;The specified key type is then<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;set to Make/Break. &nbsp; This command may be sent while using any Scan<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Code Set but only has effect when Scan Code Set 3 is in use.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;FD &nbsp;PS/2 Set Key Type to Make, keyboard responds by sending an ACK,<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;clearing its output buffer and then waiting for the key ID (make<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;code from Scan Code Set 3). &nbsp;The specified key type is then set<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;to Make. &nbsp;This command may be sent while using any Scan Code Set<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;but only has effect when Scan Code Set 3 is in use.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;FE &nbsp;Resend, should be sent when a transmission error is detected<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;from the keyboard<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;FF &nbsp;Reset, Keyboard sends ACK and waits for system to receive it<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;then begins a program reset and Basic Assurance Test (BAT).<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Keyboard returns a one byte completion code then sets default<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Scan Code Set 2.<br>
+<br>
+<br>
+<span class="highlight"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Keyboard Responses to System (via 8042 port 60h)</span><br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;00 &nbsp;Key Detection Error or Overrun Error for Scan Code Set 1,<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;replaces last key in the keyboard buffer if the buffer is full. <br>
+ &nbsp; &nbsp; &nbsp; &nbsp;AA &nbsp;BAT Completion Code, keyboard sends this to indicate the keyboard<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;test was successful.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;EE &nbsp;Echo Response, response to the Echo command.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;F0 &nbsp;Break Code Prefix in Scan Code Sets 2 and 3.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;FA &nbsp;Acknowledge, keyboard sends this whenever a valid command or<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;data byte is received (except on Echo and Resend commands).<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;FC &nbsp;BAT Failure Code, keyboard sends this to indicate the keyboard<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;test failed and stops scanning until a response or reset is sent.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;FE &nbsp;Resend, keyboard request resend of data when data sent to it is<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;invalid or arrives with invalid parity.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;FF &nbsp;Key Detection Error or Overrun Error for Scan Code Set 2 or 3,<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;replaces last key in the keyboard buffer if the buffer is full.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;id &nbsp;Keyboard ID Response, keyboard sends a two byte ID after ACK'ing<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;the Read ID command. &nbsp;The byte stream contains 83AB in LSB, MSB<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;order. &nbsp;The keyboard then resumes scanning.<br>
+<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;- command F7 through FD are NOP's on the AT and are ACK'ed but not<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;acted upon<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;- see &nbsp; <a href="http://docs.huihoo.com/help-pc/hw-8042.html">8042</a>&nbsp; <a href="http://docs.huihoo.com/help-pc/table-make_codes.html">MAKE CODES</a>&nbsp; <a href="http://docs.huihoo.com/help-pc/table-make_codes.html">BREAK CODES</a>&nbsp; <a href="http://docs.huihoo.com/help-pc/int-int_16_3.html">INT 16,3</a><br>
+<br>
+          </td>
+        </tr>
+      </tbody></table>
+    </td>
+  </tr>
+
+  <tr class="bottom">
+    <td class="unimono" style="text-align: left; width: 30%;">Esc or Alt-X to exit</td>
+    <td class="unimono" style="text-align: center; width: 40%;">keyboard commands</td>
+    <td class="unimono" style="text-align: right; width: 30%;">Home/PgUp/PgDn/End &#8592;&#8593;&#8595;&#8594;</td>
+  </tr>
+</tbody></table>
+</body></html>

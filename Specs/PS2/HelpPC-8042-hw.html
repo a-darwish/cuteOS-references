@@ -1,0 +1,179 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html><head>
+
+
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+  <title>HelpPC 2.10 - 8042</title>
+  <link type="text/css" rel="stylesheet" href="HelpPC-8042-hw_files/nostalgic.css" title="nostalgic">
+</head><body>
+<!-- Converted from the original text files by helppc21-convert.pl by Timo Bingmann - http://idlebox.net/ -->
+<table class="bodytable" summary="">
+  <tbody><tr class="top">
+    <td class="unimono" style="text-align: left; width: 30%;"><a class="menuplain" href="http://docs.huihoo.com/help-pc/index.html">HelpPC 2.10</a></td>
+    <td class="unimono" style="text-align: center; width: 30%;"><a class="menuplain" href="http://docs.huihoo.com/help-pc/index.html">Quick Reference Utility</a></td>
+    <td class="unimono" style="text-align: right; width: 40%;">Copyright 1991 David Jurgens</td>
+  </tr>
+  <tr>
+    <td colspan="3">
+      <table style="margin-left: auto; margin-right: auto;" summary="">
+        <tbody><tr>
+          <td class="unimono">
+            <br><span class="highlight"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 8042 - Keyboard Controller &nbsp;(AT,PS/2)</span><br>
+<br>
+<span class="highlight"> &nbsp; &nbsp; &nbsp; &nbsp;8042 Status Register (port 64h read)</span><br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;&#9474;7&#9474;6&#9474;5&#9474;4&#9474;3&#9474;2&#9474;1&#9474;0&#9474; &nbsp;8042 Status Register<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472; output register (60h) has data for system<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472; input register (60h/64h) has data for 8042<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; system flag (set to 0 after power on reset)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; data in input register is command (1) or data (0)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; 1=keyboard enabled, 0=keyboard disabled (via switch)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; 1=transmit timeout (data transmit not complete)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; 1=receive timeout (data transmit not complete)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; 1=even parity rec'd, 0=odd parity rec'd (should be odd)<br>
+<br>
+<span class="highlight"> &nbsp; &nbsp; &nbsp; &nbsp;Port Mode &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Description</span><br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;64h &nbsp;read &nbsp; 8042 status register. Can be read at any time. &nbsp;See<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;table above for more information.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;64h &nbsp;write &nbsp;8042 command register. &nbsp;Writing this port sets Bit 3<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;of the status register to 1 and the byte is treated<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;as a controller command. &nbsp;Devices attached to the<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;8042 should be disabled before issuing commands that<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;return data since data in the output register will<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;be overwritten.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;60h &nbsp;read &nbsp; 8042 output register (should only be read if Bit 0 of<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;status port is set to 1)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;60h &nbsp;write &nbsp;8042 data register. &nbsp;Data should only be written if<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Bit 1 of the status register is zero (register is empty).<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;When this port is written Bit 3 of the status register<br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;is
+set to zero and the byte is treated as a data. &nbsp;The<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;8042 uses this byte if it's expecting data for a previous<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;command, otherwise the data is written directly to the<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;keyboard. &nbsp; See <a href="HelpPC-keyboard-hw.html">KEYBOARD COMMANDS</a>&nbsp;for information on<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;programming the actual keyboard hardware.<br>
+<br>
+<br>
+<span class="highlight"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;8042 Commands Related to PC Systems &nbsp;(Port 64h)</span><br>
+<br>
+<span class="highlight"> &nbsp; &nbsp; &nbsp; &nbsp;Command &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Description</span><br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; 20 &nbsp; Read 8042 Command Byte: current 8042 command byte is placed<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;in port 60h. &nbsp;<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; 60 &nbsp; Write 8042 Command Byte: next data byte written to port 60h is<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;placed in 8042 command register. &nbsp;Format:<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474;7&#9474;6&#9474;5&#9474;4&#9474;3&#9474;2&#9474;1&#9474;0&#9474; &nbsp;8042 Command Byte<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &#9474; &#9474; &#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472; 1=enable output register full interrupt<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &#9474; &#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472; should be 0<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; 1=set status register system, 0=clear<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; 1=override keyboard inhibit, 0=allow inhibit<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; disable keyboard I/O by driving clock line low<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; disable auxiliary device, drives clock line low<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; IBM scancode translation 0=AT, 1=PC/XT<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; reserved, should be 0<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; A4 &nbsp; Password Installed Test: returned data can be read<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;from port 60h; &nbsp;FA=password installed, F1=no password<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; A5 &nbsp; Load Security: bytes written to port 60h will be read<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;until a null (0) is found.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; A6 &nbsp; Enable Security: works only if a password is already loaded<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; A7 &nbsp; Disable Auxiliary Interface: sets Bit 5 of command register<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;stopping auxiliary I/O by driving the clock line low<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; A8 &nbsp; Enable Auxiliary Interface: clears Bit 5 of command register<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; A9 &nbsp; Auxiliary Interface Test: clock and data lines are tested;<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;results placed at port 60h are listed below:<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;00 &nbsp;no error<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;01 &nbsp;keyboard clock line is stuck low<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;02 &nbsp;keyboard clock line is stuck high<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;03 &nbsp;keyboard data line is stuck low<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;04 &nbsp;keyboard data line is stuck high<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; AA &nbsp; Self Test: diagnostic result placed at port 60h, 55h=OK<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; AB &nbsp; Keyboard Interface Test: &nbsp;clock and data lines are tested;<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;results placed at port 60h are listed above with command A9<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; AC &nbsp; Diagnostic Dump: sends 16 bytes of 8042's RAM, current input<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;port state, current output port state and 8042 program status<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;word to port 60h in scan-code format.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; AD &nbsp; Disable Keyboard Interface: sets Bit 4 of command register<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;stopping keyboard I/O by driving the clock line low<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; AE &nbsp; Enable Keyboard Interface: clears Bit 4 of command register<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;enabling keyboard interface.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; C0 &nbsp; Read Input Port: data is read from its input port (which is<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;inaccessible to the data bus) and written to output register<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;at port 60h; &nbsp;output register should be empty before call.<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474;7&#9474;6&#9474;5&#9474;4&#9474;3-0&#9474; &nbsp;8042 Input Port<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472; undefined<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472; 1=enable 2nd 256K of motherboard RAM, 0=disable<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; 1=manufacturing jumper not installed, 0=installed<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; 1=primary display is MDA, 0=primary display is CGA<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; 1=keyboard not inhibited, 0=keyboard inhibited<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; C1 &nbsp; Poll Input Port Low Bits: Bits 0-3 of port 1 placed in<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;status Bits 4-7<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; C2 &nbsp; Poll Input Port High Bits: Bits 4-7 of port 1 placed in<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;status Bits 4-7<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; D0 &nbsp; Read Output Port: data is read from 8042 output port (which is<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;inaccessible to the data bus) and placed in output register;<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;the output register should be empty. &nbsp;(see command D1 below)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; D1 &nbsp; Write Output Port: next byte written to port 60h is placed in<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;the 8042 output port (which is inaccessible to the data bus)<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474;7&#9474;6&#9474;5&#9474;4&#9474;3&#9474;2&#9474;1&#9474;0&#9474; &nbsp;8042 Output Port<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472; system reset line<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472; gate A20<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9474; &#9492;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; undefined<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; output buffer full<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; input buffer empty<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; keyboard clock (output)<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; keyboard data (output)<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; D2 &nbsp; Write Keyboard Output Register: on PS/2 systems the next data<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;byte written to port 60h input register is written to port 60h<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;output register as if initiated by a device; invokes interrupt<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;if enabled<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; D3 &nbsp; Write Auxiliary Output Register: on PS/2 systems the next data<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;byte written to port 60h input register is written to port 60h<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;output register as if initiated by a device; invokes interrupt<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;if enabled<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; D4 &nbsp; Write Auxiliary Device: on PS/2 systems the next data byte<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;written to input register a port at 60h is sent to the<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;auxiliary device<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; E0 &nbsp; Read Test Inputs: 8042 reads its T0 and T1 inputs; data is<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;placed in output register; &nbsp;Bit 0 is T0, Bit 1 is T1:<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&#9474;1&#9474;0&#9474; &nbsp;Test Input Port Bits<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9474; &#9492;&#9472;&#9472;&#9472;&#9472; keyboard clock<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &#9492;&#9472;&#9472;&#9472;&#9472;&#9472; keyboard data<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; Fx &nbsp; Pulse Output Port: Bits 0-3 of the 8042 output port can be<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;pulsed low for 6 &#956;s; &nbsp;Bits 0-3 of command indicate which<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Bits should be pulsed; 0=pulse, 1=don't pulse; pulsing<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Bit 0 results in CPU reset since it is connected to system<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;reset line.<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;- PC systems previous to the AT use the 8255 PPI as a keyboard<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;controller and use the keyboard's internal 8048.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;- the keyboard's internal controller buffers up to 16 bytes of<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;make/break code information. &nbsp;This is common among all PC systems<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;and shouldn't be confused with the (32 byte) keyboard buffer<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;maintained by the BIOS.<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;- see &nbsp;<a href="http://docs.huihoo.com/help-pc/hw-keyboard_commands.html">KEYBOARD COMMANDS</a> for information on programming the<br>
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;keyboards internal microprocessor<br>
+<br>
+          </td>
+        </tr>
+      </tbody></table>
+    </td>
+  </tr>
+
+  <tr class="bottom">
+    <td class="unimono" style="text-align: left; width: 30%;">Esc or Alt-X to exit</td>
+    <td class="unimono" style="text-align: center; width: 40%;">8042</td>
+    <td class="unimono" style="text-align: right; width: 30%;">Home/PgUp/PgDn/End &#8592;&#8593;&#8595;&#8594;</td>
+  </tr>
+</tbody></table>
+</body></html>
