@@ -410,10 +410,13 @@ On accessing fixed disk drivers (hard-disks):
 The 8259A Programmable Interrupt Controller:
 --------------------------------------------
 
-* For superb information, check "The undocumented PC", chapter 17,
-  "Interrupt control and NMI", and the Intel 8259A PIC sheet. In subsequent
-  text, IRR = "Interrupt Request Register", ISR="In-Service Register", IMR =
-  "Interrupt Mask Register".
+* References:
+  - The Intel 8259A PIC datasheet.
+  - The superb information in "The undocumented PC", chapter 17 - "Interrupt
+  control and NMI".
+
+  In subsequent text, and as said by the sheet, IRR = "Interrupt Request
+  Register", ISR="In-Service Register", IMR = "Interrupt Mask Register".
 
 * As described by Brendan Trotter (bcos) on #osdev, and the sheet:
 
@@ -513,4 +516,68 @@ The 8259A Programmable Interrupt Controller:
  12- By clearing the IRQ5 bit in the ISR, the chip is now ready to accept another
      interrupt from IRQ5 or any lower priority interrupt. This completes the
      interrupt cycle.
+
+* On x86 SMP initialization sequence:
+-------------------------------------
+
+* References:
+  - Intel MP specification v1.4, Appendix B - Operating System Programming
+  Guideleins.
+  - Intel Software Dev. Manual vol3A, Chapter 8, 8.4 - Multiple-Processor (MP)
+  initialization.
+  - Intel Software Dev. Manual vol3B, Appendix C - MP Initialization for P6
+  Family Processors.
+
+* Generally, there're two base x86 MP initialization sequences. One for the
+  processors with the external APIC, and a second for processors with internal
+  APIC (P6+ x86 processors).
+
+  We won't bother ourself with the processors with external APICs (80486 and
+  early Pentiums) since we're only targetting long mode.
+
+  All long mode capable processors contains an integrated apic and comply with
+  the new Intel MP bootup sequence, where no FIPI or BIPI are needed.
+
+  On this new sequence, the INIT IPI on AP cores let them wait for the SIPI to
+  get their starting execution vector instead of _unconditionally_ executing the
+  BIOS init code. This avoids the ugly dependency on AT+ BIOSes hacks like the
+  warm-reset vector to let the AP cores start executing from a custom address
+  instead of BIOS init code. Search the MP spec for `Warm-reset vector'.
+
+* After system-wide bootup, or reset, the MP initialization protocol is going to
+  be executed. In this protocol, the hardware setup the APIC IDs for each logical
+  core according to system topology and assign one of the cores as the bootstrap
+  core and the others as APs (Application processors/cores).
+
+  The core nominated as the BSC will fetch and begin executing BIOS bootstrap
+  code at the reset vector physical address 0xfffffff0.
+
+  The remaining cores (setup as APs) will enter a "wait-for-SIPI" state.
+
+* Afterwars, the BIOS init code builds its ACPI and MP tables and count the
+  number of AP cores, and update its tables entries for each new AP core
+  found. For the algorithm, check Intel's volume 3A 8.4.4 MP Initialization
+  Example.
+
+* At the end, the BIOS puts each AP core to halted state with interrupts
+  disabled. By the nature of the halted state with interrupts disabled, only
+  INIT, #NMI, #SMI are able to start the cores again.
+
+  IMPORTANT: The MP protocol will be executed only after a power-up or RESET. If
+  the MP protocol has been completed and a BSP has been chosen, subsequent INITs
+  (either to a specific processor or system wide) do not cause the MP protocol to
+  be repeated. Instead, each processor examines its BSP flag (in the APIC_BASE
+  MSR) to determine whether it should execute the BIOS boot-strap code (if it is
+  the BSP) or enter a wait-for-SIPI state (if it is an AP).
+
+  So any INIT to any of the AP cores by the OS boot code will let it enter a
+  'wait-for-SIPI' state to be able to get its start execution vector.
+
+* Note that the cores get started with all its states uninitialized. We have
+  to update each core from real to long mode, and update its MMU and other
+  system tables to match the bootstrap.
+
+  Kernels usually call this part the SMP `trampoline', since it let the cores
+  jump from its raw uninitialized state to a state similar to the bootstrap's
+  one.
 
