@@ -581,3 +581,108 @@ The 8259A Programmable Interrupt Controller:
   jump from its raw uninitialized state to a state similar to the bootstrap's
   one.
 
+* On linkers 'relocation error's:
+---------------------------------
+
+* References:
+  - Relocation types (R_X86_64_*): System V ABI AMD64 supplement,
+    section 4.4 - Relocation
+  - The Executable and Linkable Format (ELF) spec, Book I - Relocation
+
+* One of the errors that faced me at a number of sensitive places like the
+  kernel head, the SMP trampoline, and the linker script was LD linker's
+  'relocation error'. Due to their relative opaqueness, they puzzled me to
+  a great extent at first. An example of some of those errors from linking
+  a preliminary trampoline code to the rest of the kernel image was:
+
+  trampoline.o: In function `trampoline':
+  (.text+0x1): relocation truncated to fit: R_X86_64_16 against `.text'
+  trampoline.o: In function `_start':
+  (.text+0xc): relocation truncated to fit: R_X86_64_16 against `.data'
+  trampoline.o: In function `_start':
+  (.text+0x11): relocation truncated to fit: R_X86_64_16 against `.data'
+  trampoline.o: In function `_start':
+  (.text+0x14): relocation truncated to fit: R_X86_64_32 against `.bss'
+  trampoline.o: In function `_start':
+  (.text+0x1d): relocation truncated to fit: R_X86_64_32 against `.bss'
+  trampoline.o: In function `_start':
+  (.text+0x21): relocation truncated to fit: R_X86_64_32 against `.bss'
+  trampoline.o: In function `_start':
+  (.text+0x27): relocation truncated to fit: R_X86_64_32 against `.bss'
+  trampoline.o: In function `_start':
+  (.text+0x2b): relocation truncated to fit: R_X86_64_32 against `.bss'
+
+* We need to understand relocation to parse above errors. Relocation Information
+  sections contain information about unresolved references. Since compilers and
+  assemblers do not know at what absolute memory address a symbol will be
+  allocated, and since they are unaware of definitions of symbols in other files,
+  __every__ reference to such a symbol will create a relocation entry.
+
+  The relocation entry will point to the code address where the reference is
+  being made, and to the symbol table entry that contains the symbol that is
+  referenced. The linker will use this information to fill in the correct address
+  after it has allocated addresses to all symbols.
+
+* Dumping the ELF object trampoline.o relocation section ($readelf -a) leads to:
+
+  Relocation section '.rela.text' at offset 0x438 contains 8 entries:
+    Offset          Info           Type           Sym. Value    Sym. Name + Addend
+  000000000001  00010000000c R_X86_64_16       0000000000000000 .text + 5
+  00000000000c  00020000000c R_X86_64_16       0000000000000000 .data + 0
+  000000000011  00020000000c R_X86_64_16       0000000000000000 .data + 6
+  000000000014  00030000000a R_X86_64_32       0000000000000000 .bss + 0
+  00000000001d  00030000000a R_X86_64_32       0000000000000000 .bss + 0
+  000000000021  00030000000a R_X86_64_32       0000000000000000 .bss + 1007
+  000000000027  00030000000a R_X86_64_32       0000000000000000 .bss + 0
+  00000000002b  00030000000a R_X86_64_32       0000000000000000 .bss + 2007
+
+  The relocation table fields are described in the ELF specification. In summary:
+
+  - Offset: location to apply relocation action relative to section start
+  - Info: symbol table index wrt which the relocation must be made
+  - Type: from the AMD64 ABI. _16: max bit width = 16 (rmode). _32: 32 bits max
+  - Addend: constant addend used to compute the value to be stored in the
+    relocatable field. Ex: `lgdt $(gdt + 0x10)' will print `.data + 10' where
+    the addend = 0x10
+
+* Note that all relocatable fields are filled with zeroes in the trampoline
+  ELF object trampoline.o:
+
+  # .code16 (real-mode)
+  0000000000000000 <trampoline>:
+   0:   ea 00 00 00 60     ljmp   $0x6000,$0x0 # ljmp $0x6000, $_start
+
+  0000000000000005 <_start>:
+   5:   e8 2a 00           call   32 <print>   # RIP-relative (7 + 0x002a = 32)
+   8:   fa                 cli
+   9:   0f 01 1e 00 00     lidtw  0x0          # lidt $idtdesc
+   e:   0f 01 16 00 00     lgdtw  0x0          # lgdt $gdtdesc
+  13:   b8 00 00 00 00     mov    $0x0,%eax    # movl %cr3, %eax
+  18:   0f 22 d8           mov    %eax,%cr3
+  1b:   c7 05 00 00 00     movw   $0x0,(%di)   # movl $(init_pgt+0x1007), init_pgt
+  20:   00 00 00 00 00
+  25:   c7 05 00 00 00     movw   $0x0,(%di)   # movl $(init_pgt+0x2007), init_pgt
+  2a:   00 00 00 00 00
+  2f:   f4                 hlt
+  30:   eb fd              jmp    2f <_start+0x2a>
+
+  0000000000000032 <print>:
+
+  Also note that the offsets in the error messages (.text+0x1), (.text+0x11), ..
+  are the same offsets reported in the relocation table entries, and are the
+  same ones filled with zero in the above disassembly.
+
+* With above information in hand, we can simply deduce the errors cause. We link
+  the trampoline assembly code against our long mode kernel, but the kernel linker
+  script sets up the virtual addresses base at 0xffffffff80000000.
+
+  So the linker, obeying the kernel script, tries to assign huge (> -2GB) virtual
+  addresses to our symbols. The linker then discovers that since the trampoline
+  to-be-relocated symbols are setup with the R_X86_64_16 model, it's limited to a
+  width of 16 bits, and limited to 32 bits in case of R_X86_64_32. Ofcourse those
+  bits aren't sufficient, so it has to truncate the addresses producing a wrong
+  final executable.
+
+  In a nutshell, there was a reported error _for each_ relocatable symbol used,
+  reflecting the number of relocation table entries with a type/bit-width that is
+  insufficient to the linker script setup 64-bit virtual addresses.
