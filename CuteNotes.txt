@@ -686,3 +686,116 @@ The 8259A Programmable Interrupt Controller:
   In a nutshell, there was a reported error _for each_ relocatable symbol used,
   reflecting the number of relocation table entries with a type/bit-width that is
   insufficient to the linker script setup 64-bit virtual addresses.
+
+* When %RIP-relativeness goes wrong:
+------------------------------------
+
+* References:
+  - Intel Instruction Set Reference, A-M, vol. 2A. 3.2-CALL--Call procedure.
+
+* One of the interesting errors I faced in jumping away from head or trampoline
+  code to C code was %rip-relativeness related errors. Here are two interesting
+  cases:
+
+  In head.S, after switching to long mode, and setting up the higher-half
+  virtual mappings, we jump to C code:
+
+  .code64
+  startup_64:
+	movq   $stack_end, %rsp
+	...
+	# .. Setup identity mappings
+	# .. Setup high-half virtual addresses mappings
+	# .. Apply the page tables
+	# .. let %RIP be its virtual address equivalent
+	# .. let %RSP, and GDTR be their virtual addresses equivalent
+	# .. Let NULL pointers segfault and avoid physical-address dependent
+	#    code: remove identity mappings
+	...
+	call   kernel_start		# C method: void kernel_start(void);
+
+  But unfortunately we get the machine constantly triple-faulting. As indicated
+  by Bochs debugging output:
+
+  [CPU1 ] BxError: Encountered an unknown instruction b1=0x0e (signalling #UD)
+  [CPU1 ] modrm was 0x00, nnn was 0, rm was 6
+  [CPU1 ] exception(0x06): error_code=0000
+
+  Disassembling the object file, we see that everything is at place. And `callq'
+  points to 0xffffffff80109250; the `kernel_start' method:
+
+  # head.o
+  00000000001000b9 <startup_64>:
+    1000b9:       48 c7 c4 00 50 10 00    mov    $0x105000,%rsp
+    ...
+    10012f:       e8 1c 91 00 80          callq  ffffffff80109250 <kernel_start>
+
+  Or is it?
+
+  A closer inspection at the binary disassembly reveals that the call is a
+  near, relative, displacement relative to next instruction, 32-bit displacement
+  sign-extended to 64-bits in long mode call.
+
+  So the instruction is at 0x10012f, with a length of 5 bytes, relative
+  displacemented is calculated from 0x10012f + 5 = 0x100134.
+
+  Code wants to call `kernel_start', so the relative displacemented =
+  0xffffffff80109250 - 0x100134 = 0xffffffff8000911c, which is the value encoded
+  in the `callq' instruction after sign-extension in a little-endian form. So
+  what's wrong?
+
+  Notice that by the time the CPU is executing the `callq', it's actually using a
+  __different__ %RIP than 0x10012f. The %RIP is in its (%RIP + 0xffffffff80000000)
+  virtual form as the identity mappings are to be removed.
+
+  This clearly messes up the %rip-relative-displacement calculations, and sends
+  the CPUs to unpredictable areas, leading to unknown opcode exceptions and
+  other horrors.
+
+* Another similar case was faced in the trampoline code, when it jumps away to
+  the rest of AP cores C init code. The `callq' instruction was just sending
+  the CPU to irregular places, with horrifying results.
+
+  Why the callq misbehaved in trampoline? Because the trampoline code is linked
+  to the kernel, but actually  copied to a below-1MB 4KB-page, and then executed
+  from there. This messed up external %rip-relativeness.
+
+  Calls to internal trampoline methods worked because those methods retained their
+  relative distances between each other when they were copied. On the other hand,
+  and by definition, external distances was not kept when calling outside code
+  (like the C application_start() code):
+
+  # trampoline.o
+  ffffffff8010ae06 <startup_64>:
+    ffffffff8010ae06:       48 8d a4 24 00 00 00    lea    -0x80000000(%rsp),%rsp
+    ffffffff8010ae0d:       80
+    ...
+    ffffffff8010ae2e:       e8 0d e3 ff ff          callq  ffffffff80109140 <application_start>
+    ffffffff8010ae33:       90                      nop
+
+* Solution: The two examples are special cases of PIC, position-independent code.
+  The trampoline is PIC cause it's executed from different position than where
+  it's linked. The head.S code also applies as parts of it get executed using a
+  different %rip than what it's linked as.
+
+  In the two above cases, we can simply solve them by specifying the absolute
+  address of destination code instead of using relative x86 calls. As said in
+  Intel instruction reference, x86-64 has a near call, with absolute indirect
+  addressing facility. It can be used in GNU AS as follows:
+
+	movq   $application_start, %rax
+	jmpq   *%rax
+
+  And also for head.S:
+
+	movq   $kernel_start, %rax
+	callq  *%rax
+
+  # head.o
+  00000000001000b9 <startup_64>:
+    1000b9:       48 c7 c4 00 50 10 00    mov    $0x105000,%rsp
+    ...
+    10012f:       48 c7 c0 50 92 10 80    mov    $0xffffffff80109250,%rax
+    100136:       ff d0                   callq  *%rax
+
+  which solves our problem nicely.
