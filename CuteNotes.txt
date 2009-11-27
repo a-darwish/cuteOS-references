@@ -799,3 +799,167 @@ The 8259A Programmable Interrupt Controller:
     100136:       ff d0                   callq  *%rax
 
   which solves our problem nicely.
+
+On SMP Memory ordering models:
+------------------------------
+
+* References:
+  - Kourosh Gharachorloo, "Memory Consistency Models for Shared-Memory
+    Multiprocessors", Digital Equipment (DEC) with Stanford and DARPA support
+  - Paul McKenny, Memory ordering in modern processors, 2007.09.19 Draft
+  - Paul McKenny, Memory Barriers: a Hardware View for Software Hackers, IBM
+  - Linux Kernel Documentation/memory-barriers.txt, kernel.org
+  - DEC/HP OpenVMS Ask the Wizard, http://www.webcitation.org/5laUMQfyi
+  - Intel Manuals vol3A, chapter8, MP Management, 8.2 - Memory Ordering
+  - AMD64 Architecture Programmer's Manual, chapter 7 - Memory System
+
+* To understand memory ordering models correctly, we need to understand which
+  parts of our code are loads, which are stores, and which are in fact both.
+  Below example should cover basic cases of shared global variables usage,
+  compare the C code with its assembly output:
+
+  int *global_symbol = (int *)0xdeadbeef;
+
+  int main(void) {
+	/* 1) memory load + dependent memory store to stack */
+	int t = global_symbol;
+
+	/* 2) memory store */
+	global_symbol = (int *)0xbbbb;
+
+	/* A memory load + dependent memory store */
+	*global_symbol = 0xcccc;
+  }
+
+  Disassembly of section .data:
+  ...
+  0000000000600840 <global_symbol>:
+  600840:       ef
+  600841:       be ad de 00 00
+
+  Disassembly of section .text:
+  ...
+  0000000000400448 <main>:
+  400448:       55                      push   %rbp
+  400449:       48 89 e5                mov    %rsp,%rbp
+  # 1) Mem. load + store to stack
+  40044c:       48 8b 05 dd 03 20 00    mov    0x2003dd(%rip),%rax    # 600830 <global_symbol>
+  400453:       89 45 fc                mov    %eax,-0x4(%rbp)
+  # 2) Mem. store
+  400456:       48 c7 05 cf 03 20 00    movq   $0xbbbb,0x2003cf(%rip) # 600830 <global_symbol>
+  40045d:       bb bb 00 00
+  # 3) Mem. load + store to pointed value
+  400461:       48 8b 05 c8 03 20 00    mov    0x2003c8(%rip),%rax    # 600830 <global_symbol>
+  400468:       c7 00 cc cc 00 00       movl   $0xcccc,(%rax)
+  40046e:       c9                      leaveq
+  40046f:       c3                      retq
+
+* Terminology of memory orders:
+  - Program order: the memory operations order specified in object code.
+  - Perceived order: the order a CPU perceives of its and other CPUs memory ops.
+
+* General rules for all architectures:
+  - A given CPU will always _perceive_ its own memory operations as occuring
+    in program order, without a need for memory barriers.
+  - Naturally-aligned loads and stores are always atomic
+  - Code that uses standard synchronization primitives (spinlocks, RCU, ..)
+    should not need explicit mem barriers. Only tricky code that bypasses those
+    primitives need those barriers. An example of a linked list lockless search
+    is given below.
+
+* Example:
+
+  Writer CPU:
+  -----------
+  # Linked list head is `smack_known'
+  struct smack_known *smack_known;
+  mutex_lock(&smack_known_lock);
+  if (skp == NULL) {
+	skp = kzalloc(sizeof(struct smack_known), GFP_KERNEL);
+	if (skp != NULL) {
+1-		skp->smk_next = smack_known;
+2-		skp->smk_secid = smack_next_secid++;
+3-		skp->smk_cipso = NULL;
+		/* 1- BUG: Write barrier needed! */
+4-		smack_known = skp;
+	}
+  }
+  mutex_unlock(&smack_known_lock);
+
+  Reader CPU:
+  -----------
+  # Just locklessly access the list
+  struct smack_label *skp;
+  skp = smack_known;
+  while (skp) {
+	/* 2- BUG: Alpha CPUs!! */
+5-	if (skp->smk_secid == 10) {
+		...
+	}
+	...
+	skp = skp->next;
+  }
+
+  Bug 1:
+  ------
+  In the writer CPU, the latest 3 stores can be re-ordered in any combination.
+  In arhitectures that reorder stores like Alpha, Itanum, POWER, and SPARC, this
+  may lead other CPUs to perceive an incomplete node added to the list: a garbage
+  smk_secid value. This may even lead to graver results if you notice that the
+  first line (skp->smk_next = smack_known) is actually a load followed by a
+  store. So the sequence is:
+
+  Load from smack known
+  store to ->smk_next address
+  ...
+  store to smack_known
+
+  The cpu can reorder the last stores, leading to a linked list head with a
+  bogus next pointer; effectively a user-space segmentation fault or worse,
+  a CPU exception if in kernel mode.
+
+  Bug 2:
+  ------
+  As said by OpenVMS documenatation (Ask the Wizard):
+
+  "Your producer must issue a 'memory barrier' instruction after writing the data
+  to shared memory and before inserting it on the queue; likewise, your consumer
+  _must_ issue a memory barrier instruction after removing an item from the queue
+  and before reading from its memory.  Otherwise, you risk seeing stale data,
+  since, while the Alpha processor does provide coherent memory, it does not
+  provide implicit ordering of reads and writes.  (That is, the write of the
+  producer's data might reach memory after the write of the queue, such that the
+  consumer might read the new item from the queue but get the previous values
+  from the item's memory."
+
+  But how does the consumer sees the pointer before its data even if write
+  barriers were used?
+
+  As said by McKenny, the producer's write barrier will guarantee that the cache
+  invalidates performed by the first 3 lines  will reach the interconnect before
+  that of the last line, but it "makes absolutely no guarantee about the order in
+  which the new values will reach the reading CPU’s core."
+
+  So assume smack_known, and smack_known->smk_secid are on different cache banks.
+  Because of the write barrier, the producer's data will reach the interconnect
+  before updating the queue. The bank holding smack_known is idle, so its line
+  gets invalidated and updated, while the bank holding smk_secid was busy, so the
+  cache invalidates for the new element are being delayed. This leads to seeing
+  new value for the pointer, but old cached values for the new element at line 5.
+
+  Linux kernel documentation explains by stating "some versions of the Alpha CPU
+  have a split data cache, permitting them to have two semantically-related cache
+  lines updated at separate times.  This is where the data dependency barrier
+  really becomes necessary as this synchronises both caches with the memory
+  coherence system, thus making it seem like pointer changes vs new data occur in
+  the right order.
+
+* On the x86 side, only below basic memory access is guaranteed to be atomic:
+  - Readnig or writing a byte
+  - Reading or writing a word aligned on 16-bit boundary
+  - Reading or writing a doubleword aligned on 32-bit boundary
+  - Reading or writing a quadword aligned on 64-bit boundary
+
+  On P6 family processors and up:
+  - Unaligned 16-, 32-, and 64-bit accesses to cached memory that fit within
+    a cache line. (but how do we know whether a memory access fits a cache line?)

@@ -1,0 +1,10 @@
+AMD64: Latest AMD64 architecture manuals, with the original historical version.
+
+i386: Origial Intel's 80386 processor's manual; great for beginners.
+
+i686: Intel's P6 family of processors manuals.
+
+Intel: Latest Intel architecure manuals, covering legacy and future CPUs.
+
+SP-*: Special collection of documents covering a topic closely related to
+  the x86 architecture (memory consistency models, etc).
