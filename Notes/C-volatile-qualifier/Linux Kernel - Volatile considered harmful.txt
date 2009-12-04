@@ -1,0 +1,336 @@
+linux-2.6/Documentation/volatile-considered-harmful.txt
+		++
+(at bottom) Several discussions between Linux kernel devs on "volatile"
+
+Why the "volatile" type class should not be used
+------------------------------------------------
+
+C programmers have often taken volatile to mean that the variable could be
+changed outside of the current thread of execution; as a result, they are
+sometimes tempted to use it in kernel code when shared data structures are
+being used.  In other words, they have been known to treat volatile types
+as a sort of easy atomic variable, which they are not.  The use of volatile in
+kernel code is almost never correct; this document describes why.
+
+The key point to understand with regard to volatile is that its purpose is
+to suppress optimization, which is almost never what one really wants to
+do.  In the kernel, one must protect shared data structures against
+unwanted concurrent access, which is very much a different task.  The
+process of protecting against unwanted concurrency will also avoid almost
+all optimization-related problems in a more efficient way.
+
+Like volatile, the kernel primitives which make concurrent access to data
+safe (spinlocks, mutexes, memory barriers, etc.) are designed to prevent
+unwanted optimization.  If they are being used properly, there will be no
+need to use volatile as well.  If volatile is still necessary, there is
+almost certainly a bug in the code somewhere.  In properly-written kernel
+code, volatile can only serve to slow things down.
+
+Consider a typical block of kernel code:
+
+    spin_lock(&the_lock);
+    do_something_on(&shared_data);
+    do_something_else_with(&shared_data);
+    spin_unlock(&the_lock);
+
+If all the code follows the locking rules, the value of shared_data cannot
+change unexpectedly while the_lock is held.  Any other code which might
+want to play with that data will be waiting on the lock.  The spinlock
+primitives act as memory barriers - they are explicitly written to do so -
+meaning that data accesses will not be optimized across them.  So the
+compiler might think it knows what will be in shared_data, but the
+spin_lock() call, since it acts as a memory barrier, will force it to
+forget anything it knows.  There will be no optimization problems with
+accesses to that data.
+
+If shared_data were declared volatile, the locking would still be
+necessary.  But the compiler would also be prevented from optimizing access
+to shared_data _within_ the critical section, when we know that nobody else
+can be working with it.  While the lock is held, shared_data is not
+volatile.  When dealing with shared data, proper locking makes volatile
+unnecessary - and potentially harmful.
+
+The volatile storage class was originally meant for memory-mapped I/O
+registers.  Within the kernel, register accesses, too, should be protected
+by locks, but one also does not want the compiler "optimizing" register
+accesses within a critical section.  But, within the kernel, I/O memory
+accesses are always done through accessor functions; accessing I/O memory
+directly through pointers is frowned upon and does not work on all
+architectures.  Those accessors are written to prevent unwanted
+optimization, so, once again, volatile is unnecessary.
+
+Another situation where one might be tempted to use volatile is
+when the processor is busy-waiting on the value of a variable.  The right
+way to perform a busy wait is:
+
+    while (my_variable != what_i_want)
+        cpu_relax();
+
+The cpu_relax() call can lower CPU power consumption or yield to a
+hyperthreaded twin processor; it also happens to serve as a memory barrier,
+so, once again, volatile is unnecessary.  Of course, busy-waiting is
+generally an anti-social act to begin with.
+
+There are still a few rare situations where volatile makes sense in the
+kernel:
+
+  - The above-mentioned accessor functions might use volatile on
+    architectures where direct I/O memory access does work.  Essentially,
+    each accessor call becomes a little critical section on its own and
+    ensures that the access happens as expected by the programmer.
+
+  - Inline assembly code which changes memory, but which has no other
+    visible side effects, risks being deleted by GCC.  Adding the volatile
+    keyword to asm statements will prevent this removal.
+
+  - The jiffies variable is special in that it can have a different value
+    every time it is referenced, but it can be read without any special
+    locking.  So jiffies can be volatile, but the addition of other
+    variables of this type is strongly frowned upon.  Jiffies is considered
+    to be a "stupid legacy" issue (Linus's words) in this regard; fixing it
+    would be more trouble than it is worth.
+
+  - Pointers to data structures in coherent memory which might be modified
+    by I/O devices can, sometimes, legitimately be volatile.  A ring buffer
+    used by a network adapter, where that adapter changes pointers to
+    indicate which descriptors have been processed, is an example of this
+    type of situation.
+
+For most code, none of the above justifications for volatile apply.  As a
+result, the use of volatile is likely to be seen as a bug and will bring
+additional scrutiny to the code.  Developers who are tempted to use
+volatile should take a step back and think about what they are truly trying
+to accomplish.
+
+Patches to remove volatile variables are generally welcome - as long as
+they come with a justification which shows that the concurrency issues have
+been properly thought through.
+
+
+NOTES
+-----
+
+[1] http://lwn.net/Articles/233481/
+	http://www.webcitation.org/5ljIeahdW
+
+[2] http://lwn.net/Articles/233482/
+	http://www.webcitation.org/5ljIjTj8r
+
+CREDITS
+-------
+
+Original impetus and research by Randy Dunlap
+Written by Jonathan Corbet
+Improvements via comments from Satyam Sharma, Johannes Stezenbach, Jesper
+	Juhl, Heikki Orsila, H. Peter Anvin, Philipp Hahn, and Stefan
+	Richter.
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+From: Alan Cox <alan <at> lxorguk.ukuu.org.uk>
+Subject: Re: [PATCH] doc: volatile considered evil
+Newsgroups: gmane.linux.kernel
+Date: 2007-05-09 09:21:34 GMT (2 years, 29 weeks, 5 days, 10 hours and 59 minutes ago)
+
+> It's still ambiguous.  A much more explicit title that nobody could argue 
+> with would be "do not use the 'volatile' keyword as a type qualifier for 
+> an object."
+
+Except when you do. The kernel uses the C volatile in various places
+itself for specific good reasons (and some for historical bad ones)
+
+Perhaps a closer summary would be
+
+Do Not Use Volatile
+-------------------
+
+1.	volatile is not a locking mechanism
+
+Volatile does not define sufficiently sane or strong semantics for
+locking. The kernel has proper locking mechanisms which also act as
+compiler fetch/store barriers and where neccessary hardware barriers for
+SMP systems. The kernel knows about all the corner cases, you probably
+don't.
+
+2.	volatile is not needed for mmio space
+
+I/O memory access are done via readb/writeb and friends. They deal with
+volatility themselves so you don't have to. They may nor may not use
+volatile internally to their implementation, but that is none of your
+business.
+
+3.	volatile is not atomic
+
+Using volatile does not guarantee atomic behaviour. This often requires
+special instructions or code sequences too. We have atomic_t and the
+atomic_* operators for this.
+
+4.	volatile is not a store or read barrier
+
+Using volatile is not always sufficient to order accesses on SMP or to
+ensure things execute in the order expected. Instead the kernel provides
+a set of barrier operations which have clearly defined semantics on all
+systems. Make use of rmb, wmb, barrier, smp_wmb etc instead
+
+When Might You Need volatile ?
+------------------------------
+
+When you are implementing the locking primitives on a new platform. When
+you are implementing the I/O and atomic prmitives on a new platform. Also
+in inline gcc assembler where "volatile" is used for subtly different
+purposes.
+
+Possibly very special cases we haven't thought about yet. However if you
+find one remember the need for portability and ask whether it should be
+using volatile or there is a gap in the existing hardware abstraction.
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+From: Andi Kleen <ak <at> suse.de>
+Subject: [PATCH for 2.6.14] x86_64: Fix mce_log
+Newsgroups: discuss@x86-64.org
+Date: Fri Sep 30 00:01:27 CEST 2005
+
+From: Mike Waychison <mikew at google.com>
+...
+AK: Also made all the relevant mce_log fields volatile for further safety.
+Signed-off-by: Mike Waychison <mikew at google.com>
+Signed-off-by: Andi Kleen <ak at suse.de>
+
+...
+Index: linux/include/asm-x86_64/mce.h
+===================================================================
+--- linux.orig/include/asm-x86_64/mce.h
++++ linux/include/asm-x86_64/mce.h
+@@ -47,11 +47,14 @@ struct mce {
+ 
+ #define MCE_LOG_LEN 32
+ 
++/* This structure is changed asynchronously by NMIs so make many fields
++   volatile. Still needs very careful use of memory barriers and
++   other checks when touched. */
+ struct mce_log { 
+ 	char signature[12]; /* "MACHINECHECK" */ 
+ 	unsigned len;  	    /* = MCE_LOG_LEN */ 
+-	unsigned next;
+-	unsigned flags;
++	volatile unsigned next;
++	volatile unsigned flags;
+ 	unsigned pad0; 
+ 	struct mce entry[MCE_LOG_LEN];
+ };
+
+--------
+
+From: Linus Torvalds <torvalds <at> osdl.org>
+Subject: Re: [PATCH for 2.6.14] x86_64: Fix mce_log
+Newsgroups: discuss@x86-64.org
+Date: Fri Sep 30 00:40:58 CEST 2005
+
+On Fri, 30 Sep 2005, Andi Kleen wrote:
+> 
+> AK: Also made all the relevant mce_log fields volatile for further safety.
+
+I refuse to apply this part.
+
+If the memory barriers are right, then the "volatile" doesn't matter.
+
+And if the memory barriers aren't right, then "volatile" doesn't help.
+
+Using "volatile" in data structures is basically _always_ a bug. 
+
+Th eonly acceptable uses for "volatile" are:
+
+ - in _code_, ie for things like the definition of "readb()" etc, where we 
+   use it to force a particular access.
+ - with inline asms
+ - on "jiffies", for stupid legacy reasons
+
+Basically, a volatile on a data structure can NEVER be right. If it makes 
+a difference, it's a sign of improper locking.
+
+And the reason I refuse to apply that part of the patch is that anybody 
+who even _thinks_ that they make a difference is horribly and utterly 
+confused, and doesn't understand locking. 
+
+So please _never_ use them like this.
+
+		Linus
+
+--------
+
+From: Andi Kleen <ak <at> suse.de>
+Subject: Re: [PATCH for 2.6.14] x86_64: Fix mce_log
+Newsgroups: discuss@x86-64.org
+Date: Fri Sep 30 10:13:21 CEST 2005  
+
+On Friday 30 September 2005 00:40, Linus Torvalds wrote:
+
+>
+> Basically, a volatile on a data structure can NEVER be right. If it makes
+> a difference, it's a sign of improper locking.
+
+mce_log is fully lockless - it deals with machine checks which act like NMIs. 
+That is its problem.
+
+In theory the memory barriers should be sufficient, the volatiles are
+just an additional safety net to make it clear to humans/compiler these memory 
+areas can change any time.
+
+-Andi
+
+--------
+
+From: Linus Torvalds <torvalds <at> osdl.org>
+Subject: Re: [PATCH for 2.6.14] x86_64: Fix mce_log
+Newsgroups: discuss@x86-64.org
+Date:  Fri Sep 30 16:48:49 CEST 2005
+
+On Fri, 30 Sep 2005, Andi Kleen wrote:
+>
+> On Friday 30 September 2005 00:40, Linus Torvalds wrote: 
+> >
+> > Basically, a volatile on a data structure can NEVER be right. If it makes
+> > a difference, it's a sign of improper locking.
+> 
+> mce_log is fully lockless - it deals with machine checks which act like NMIs. 
+> That is its problem.
+> 
+> In theory the memory barriers should be sufficient, the volatiles are
+> just an additional safety net to make it clear to humans/compiler these memory 
+> areas can change any time.
+
+If the memory barriers aren't sufficient, the volatiles are useless. If 
+the memory barriers _are_ sufficient, the volatiles are useless.
+
+See? They're useless.
+
+The only thing they do is
+
+ - potentially make the compiler generate worse code for no reason (the 
+   "no reason" being that if there aren't any barriers in between, the 
+   compiler _should_ merge accesses)
+
+ - make some people _believe_ that that compiler does something "right". 
+
+The first point doesn't much matter. The second point matters a LOT.
+
+Anybody who thinks "volatile" matters is WRONG. As such, a "volatile" is 
+anti-documentation - it makes people think that something is true that is 
+NOT true. 
+
+We used to have tons of this in the networking layer, where people thought 
+that marking something volatile made it not need barriers or locking. 
+EVERY SINGLE ONE WAS WRONG.
+
+In other words, volatile on data structures is _evil_, because it instills 
+the wrong kind of beliefs in people. "volatility" is not a data structure 
+issue. It's a matter of the _code_ working on the data structure.
+
+Btw, one way of knowing that "volatile" is wrongly designed is that it's 
+one of the few areas in C that are basically totally undefined despite 
+being specified. The C language would have been much better off with the 
+notion of "barriers".
+
+			Linus

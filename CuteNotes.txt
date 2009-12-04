@@ -858,6 +858,23 @@ On SMP Memory ordering models:
   - Program order: the memory operations order specified in object code.
   - Perceived order: the order a CPU perceives of its and other CPUs memory ops.
 
+* Memory ordering is a tradeoff between programming ease and performance. On
+  uniprocessors, many ops are assumed to execute in program order. Processors can
+  provide the illusion of sequensiality by only preserving sequential order among
+  memory operations to the same location.
+
+  Sequential consistency defined by Lamport provides a simple model to programmers,
+  but it adversely affects efficiency and performance: the illusion trick provided
+  in uniprocessors can't be used on MP systems to provide sequential consistency.
+
+  Weak ordering distinguishes between ordinary memory operations and memory ops
+  used for synchronization. By ensuring consistency only at the synchronization
+  points, weak ordering allows ordinary operations in between pairs of
+  synchronizations to be reordered with respect to one another.
+
+  Such specifications can be considered system-centric since they in effect expose
+  the low-level system optimizations to the programmer.
+
 * General rules for all architectures:
   - A given CPU will always _perceive_ its own memory operations as occuring
     in program order, without a need for memory barriers.
@@ -877,11 +894,11 @@ On SMP Memory ordering models:
   if (skp == NULL) {
 	skp = kzalloc(sizeof(struct smack_known), GFP_KERNEL);
 	if (skp != NULL) {
-1-		skp->smk_next = smack_known;
-2-		skp->smk_secid = smack_next_secid++;
-3-		skp->smk_cipso = NULL;
+  1-		skp->smk_next = smack_known;
+  2-		skp->smk_secid = smack_next_secid++;
+  3-		skp->smk_cipso = NULL;
 		/* 1- BUG: Write barrier needed! */
-4-		smack_known = skp;
+  4-		smack_known = skp;
 	}
   }
   mutex_unlock(&smack_known_lock);
@@ -893,7 +910,7 @@ On SMP Memory ordering models:
   skp = smack_known;
   while (skp) {
 	/* 2- BUG: Alpha CPUs!! */
-5-	if (skp->smk_secid == 10) {
+  5-	if (skp->smk_secid == 10) {
 		...
 	}
 	...
@@ -963,3 +980,99 @@ On SMP Memory ordering models:
   On P6 family processors and up:
   - Unaligned 16-, 32-, and 64-bit accesses to cached memory that fit within
     a cache line. (but how do we know whether a memory access fits a cache line?)
+
+On the C 'volatile' type qualifier:
+-----------------------------------
+
+* References:
+  - Eric Eid & John Regehr, "Volatiles Are Miscompiled, and What to Do about It",
+    Proceedings of the Eighth ACM and IEEE International Conference.
+  - Attached Linux kernel's "volatile-considered-harmful.txt" document, added
+    with various core developers thoughts copied from LKML.
+  - ISO C99 Committee Draft - September 7, 2007
+
+* As said by the C standard, "An object that has volatile-qualified type may be
+  modified in ways unknown to the implementation or have other unknown side
+  effects. Therefore any expression referring to such an object shall be evaluated
+  strictly according to the rules of the abstract machine"
+
+  "Actions on objects so declared shall not be optimized out by an implementation,
+  or reordered except as permitted by the rules for evaluating expressions".
+
+  It's in a practical manner, "for every read or write to a volatile variable
+  that would be performed by a straightforward interpreter for C, exactly one
+  load from or store to the memory locations allocated to the variable must be
+  performed".
+
+* Volatile is used when we don't want the memory access to be re-ordered, cached,
+  or optimized away, as in accessing memory mapped I/O registers. Another case is
+  where global variables get changed behind our back by other execution paths as
+  in interrupt handlers or other threads:
+
+  int var_set_by_irq_handler = 0;
+  ..
+  while (var_set_by_irq_handler == 0);
+
+  The compiler has every right to optimize the loop to an infinite loop. To avoid
+  this, and force the compiler to access the global variable memory at each
+  iteration, we use volatile, since volatile objects "shall not be optimized out
+  by an implementation".
+
+* Take care that the volatile is a type qualifier as `constant'. So in below case:
+
+  static volatile uint64_t *msg = NULL;		/* (1) */
+  while (msg == NULL)
+	asm volatile ("pause");
+
+  The above loop will still be optimized to an infinite loop. The declaration
+  states that the memory area _pointed_ by `msg' is volatile, not that the pointer
+  itself is volatile. So the above declaration should've been:
+
+  static uint64_t * volatile msg = NULL;	/* (2) */
+
+  specifying a volatile pointer. Declaration at (1) is perfectly fine though if
+  we're accessing the variable as in:
+
+  while (*msg == 0x1234)
+	asm volatile ("pause");
+
+  cause now we're referencing the memory declared as volatile. The compiler must
+  fetch the memory pointed by 'msg' at each iteration.
+
+* As seen from above example and the ACM paper, volatiles are really subtle in C
+  and many industrial compilers get them wrong. I prefer the Linux way of handling
+  the issue, namely __minimizing__ 'volatile' as far as possible, and depending on
+  explicit compiler and cpu _barriers_, and SMP primitives as needed.
+
+  --
+  So instead of:
+
+  static uint64_t * volatile msg = NULL;
+  while (msg == NULL)
+	asm volatile ("pause");
+
+  We use an explicit compiler barrier:
+
+  static uint64_t *msg = NULL;
+  while (msg == NULL)
+	asm volatile ("pause": : :"memory");
+
+  --
+  Instead of:
+
+  volatile uint32_t *ioregsel = (uint32_t *)ioapic_base(apic);
+  volatile uint32_t *iowin = (uint32_t *)(ioapic_base(apic) + 0x10);
+  *ioregsel = reg;
+  return *iowin;
+
+  We use MMIO register accessors, which internally includes compiler barriers
+  and any needed volatile qualifiers (See comments at top of include/mmio.h
+  for further rational):
+
+  uint32_t *ioregsel = (uint32_t *)ioapic_base(apic);
+  uint32_t *iowin = (uint32_t *)(ioapic_base(apic) + 0x10);
+  writel(reg, ioregsel);
+  return readl(iowin);
+
+* Finally, check attached LKML messages for extra cases and reasonings by Linus
+  and Andi Kleen.
