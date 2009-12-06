@@ -24,9 +24,10 @@
 *.bin
 
 #
-# Don't ignore ours
+# Don't ignore our conf files
 #
 !.gitignore
+!.gitattributes
 
 #
 # Files of patch, vim, emacs, etc.

@@ -1,0 +1,14 @@
+#
+# Git attributes; check gitattributes(5).
+#
+# Binary files unset the 'crlf' attribute, so it never goes
+# through line endigns conversion upon checkin/checkout.
+#
+# Binrary files also unset the diff attribute, so git won't
+# try to diff them, and just prints 'Binary files differ'.
+#
+# If you're using git 1.6, you can use the macro attribute
+# 'binary' which implies -crlf and -diff.
+#
+
+*.pdf -crlf -diff
