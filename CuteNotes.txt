@@ -1076,3 +1076,140 @@ On the C 'volatile' type qualifier:
 
 * Finally, check attached LKML messages for extra cases and reasonings by Linus
   and Andi Kleen.
+
+On the vaguely documented x86 16-bit protected mode:
+----------------------------------------------------
+
+* References:
+  - Rick A. Hohensee, "The well-factored 386", LKML,
+    http://lkml.org/lkml/2003/7/28/55, http://www.webcitation.org/5luRetOqF
+  - Intel manuals vol3A, chapter 3, 3.4.3 - segment registers
+  - Intel Manuals vol3A, chapter9, Processor Management and Initialization,
+    9.9.2 - Switching Back to Real-Address Mode
+  - Robert R. Collins, "The Segment Descriptor Cache", Dr. Dobb's Journal
+    Undocumented Corner, http://www.rcollins.org/ddj/Aug98/Aug98.html,
+    http://www.webcitation.org/5lxH9NFGa
+
+* The x86 architecture determins the default operand and address size using
+  the D bit in the code segment. If D is set, it indicates 32-bit addresses
+  and operands. Otherwise, we're running in 16-bit mode, using 16-bit
+  addresses and operands. There's a similar C bit for 64-bit long mode.
+
+* One of the states that really puzzled me a lot was the state occurring in
+  the transition from bootup real-mode to 32-bit protected mode. Namely,
+  bewteen enabling protected mode (setting PE = 1) and getting executed in
+  32-bit by using a 32-bit (D = 1) code segment through a far jump. Setting
+  PE and %cs together is not atomic, and there's clearly something in-between.
+
+  An example from our bootsector:
+
+	/* Set the protected mode PE flag */
+	movl   %cr0, %eax
+	orl    $0x1, %eax
+	movl   %eax, %cr0
+
+	jmp    flush_prefetch:
+
+	/* What're the rules covering this state? we're in
+	 * pmode but the cpu is still fetching and executing
+	 * ops in 16-bits! */
+	flush_prefetch:
+	movw   $(gdt_ds - gdt), %ax
+	movw   %ax, %ds
+	movw   %ax, %es
+	movw   %ax, %ss
+	DATA32 ljmp $0x08, $(reloc - _start + 0x7c00)
+
+* To exhaustively think about this, we need to cover all the permuatations
+  of PE (pmode enabled) and the %cs D bit:
+
+  (1)   PE=0    Dbit=0          Canonical (un)Real Mode
+  (2)   PE=1    Dbit=0          16-bit protected mode
+  (3)   PE=1    Dbit=1          Canonical 32-bit Protected Mode
+  (4)   PE=0    Dbit=1          ..
+                         _______________
+                        |    WAKE-UP    |
+                        |canonical rmode|
+                        |  PE=0 use16   |
+                        |_______________|
+                            A        |set PE to 1
+                            |        |
+                 set PE to 0|        |
+                         ___|________V__
+                        |     16-bit    |
+                        |     pmode     |
+                        |   PE=1 use16  |
+                        |_______________|
+                            A       |far xfer
+                            |       | to use32 CS
+                far xfer to |       |
+                    use16 CS|       |
+                         ___|_______V___
+                        |     32-bit    |
+                        |     pmode     |
+                        |   PE=1 use32  |
+                        |_______________|
+                            A        |set PE to 0
+                            |        |
+                 set PE to 1|        |
+                         ___|________V__
+                        |  Forreal Mode |
+                        |      Mode     |
+                        |   PE=0 use32  |
+                        |_______________|
+
+* We can not jump from (1) to (3) directly through a far jump using a D=1 code
+  segment, since we'll be in canonical rmode, and %cs will always be interpreted
+  as in the segmented 8086 model of (%cs << 4 + offset).
+
+  But how can the cpu move to 32-bit execution, if 32-bit execution is controlled
+  by the D bit, but we can't change the D bit due to the 8086 semanticss?
+
+  The answer is to provide a switch. If this switch is on, the cpu will the use
+  the 386 semantics of segments (and be able to modify the segment caches). If
+  it's clear, the cpu will still use the same segmentation circuites but it won't
+  be able to modify most of the segment caches fields like limit, and the D bit,
+  (the base field can still be changed within 2-bytes size), due to the
+  constraints of the 8086 semantics.
+
+  This 'switch' is the PE (pmode Enabled) bit, which acts __independently__ of
+  whether the machine is running on 16 or 32-bit mode (D bit is set or clear)
+
+  So under this 16-bit pmode (PE set, D clear), if we do:
+
+	movw   $0x10, %ax
+	movw   %ax, %ds
+
+  we're in fact using %ds as a segment selector, and are also updating the
+  segment caches with the values found in the third GDT cell.
+
+  But if we're in canonical 16-bit rmode (PE & D clear), if we does the same:
+
+	movw   $0x10, %ax
+	movw   %ax, %ds
+
+  we're in fact using (%ds << 4) as the base field in the segment caches.
+
+* We cannot also jump directly from (3) 32-bit pmode, to cacnonical/bootup rmode
+  at (1). One should change the code and data segmenst limit to 64K and the D bit
+  to 0 __before__ clearing the PE switch: we can not change any of those segments
+  cached fields (except the base) once the PE get cleared.
+
+  Intel's "switching back to Real-Address mode" section also states the same
+  order, but without making the reasoning of this order very clear.
+
+  Intel also elaborates that "the segment registers must be loaded with non-null
+  segment selectors or the segment registers will be unusable in real-address
+  mode." Simply because the segment will be marked in the segment caches as
+  invalid (P = 0), and as we learned from above, we won't be able to change any
+  of those cached bits after clearing PE. Due to this cached P=0 bit, even the
+  usual act in canonical rmode of changing the base within the 2-bytes limit
+  won't be possible, rendering the segment as unusable, as this is their only
+  effective action in 8086 semantics.
+
+* Finally, the difference between 8086 and 386 segmentation is superficial. If
+  the segment was marked as P=1 in the segment caches (valid), 8086 semantics
+  just change the base field (limited to 2-bytes size) of the equivalent 386
+  segment. They all function using the same registers and simple circuity. Intel
+  elaborates: "Note that if the segment registers are not reloaded, execution
+  continues using the descriptor attributes loaded during protected mode."
