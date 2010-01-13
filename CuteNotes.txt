@@ -1213,3 +1213,299 @@ On the vaguely documented x86 16-bit protected mode:
   segment. They all function using the same registers and simple circuity. Intel
   elaborates: "Note that if the segment registers are not reloaded, execution
   continues using the descriptor attributes loaded during protected mode."
+
+
+Using light debugging techniques:
+---------------------------------
+
+* References:
+  - Ulrich Drepper, "How to Write Shared Libraries", 2.1 Data Definitions,
+    http://www.webcitation.org/5mkmxB9Fx
+  - Ian Lance Taylor, "Linkers part 5", http://www.airs.com/blog/archives/42,
+    http://www.webcitation.org/5mkmiZ8FN
+  - Binutils bug report, "ELF linker loads member of archive for common symbol",
+    http://sources.redhat.com/bugzilla/show_bug.cgi?id=1811
+    http://www.webcitation.org/5mknnyUe2
+  - Minor bug-report at http://gcc.gnu.org/bugzilla/show_bug.cgi?id=42726
+
+* Today while writing page allocator test code, I faced a very strange bug: once
+  any of the kernel's text, data, or bss sections exceeds something close to 20
+  KBs, the MPtables code panic()s at different and unpredictable locations. The
+  failure is something like:
+
+     PANIC: MPTables - 1217939456 CPUs found, only 32 supported
+
+* To give some context, there's a system global called 'nr_cpus' representing
+  the number of CPUs in the system. So far, we know the number of CPUs from the
+  MP tables Conf entries, where each CPU entry represents a CPU in the system.
+  Thus, finding 8 CPU entries means that the machine has 8 usable cores.
+
+  This global var 'nr_cpus' is only increased at one and _only_ one place in
+  the system, at the MP tables parsing code:
+
+  /* We call this for each MP CPU entry in the system */
+  static void parse_cpu(void *addr)
+  {
+	struct mpc_cpu *cpu = addr;
+
+	if (!cpu->enabled)
+		return;
+
+	if (nr_cpus >= CPUS_MAX) {
+		panic("MP - %d CPUs found, only %d supported",
+		      nr_cpus, CPUS_MAX);
+	}
+	...
+
+	++nr_cpus;
+  }
+
+* Inspecting the BIOS MP tables more closely, the MP pointer table is at 0xfbb60
+  and its checksum and signature are valid. The MP configuration table header was
+  also valid and checksummed at 0xfba00.
+
+  The problem, it seems, is that the conf table entries got somehow corrupted
+  (thus the wrong number of cpus value), or there's a bug in our parser code.
+
+* Unfortunately, and as usual for such problems, inserting printk()s at any
+  location skews the results randomly, making any printk() useless.
+
+  So we try less invasive debugging techniques like writing to a memory area
+  using a _single_ inlined asm instruction, and inspecting this memory area
+  using an emulator afterwars. This worked and made the problem repeatable!
+
+* First, and to test the parser validity, we choose a memory location that we
+  know before hand it's going to be zero; I chose physical 0x500. In parse_cpu
+  we add a very small asm instruction as follows:
+
+        /* 8-byte instruction */
+        asm volatile("incq (0xffffffff80000500);");
+
+	if (nr_cpus >= CPUS_MAX) {
+		panic("MP - %d CPUs found, only %d supported",
+		      nr_cpus, CPUS_MAX);
+	}
+
+  And thankfully this instruction was light enough, so the system paniced
+  at the same point. Our panic() just calls printk() and hlt the system. So
+  after the system halts, we move to the qemu console handler and check the
+  value at address 0x500. Good for us, we found the value there to be 1, so
+  it seems our parser is behaving correctly.
+
+* Now the problem is getting more mysterious. If the parser is behaving
+  correctly, and the value at address 0x500 is completely valid, how come
+  'nr_cpus' have those very strange values? Remember that we put the 'incl
+  0x500' instruction at the same place of '++nr_cpus', so the two addresses
+  should have the exact same values or something is _completely_ messed up.
+
+  The 'nr_cpus' variable still yielded the value of "1217939456".
+
+* So what did really corrupt the BSS-stored variable nr_cpus at this _very_
+  early stage?
+
+  The very first thing we do in the C part of the kernel is to clear the entire
+  BSS section to zero. So assuming the kernel was copied/setup correctly (which
+  we're not very sure of yet), the problem probably occurs _between_ clearing
+  the BSS section and parsing the MP tables.
+
+  OK, so we'll try to check the value of the 'nr_cpus' variable at different
+  places in the kernel between clearing BSS and MP parsing using this 14-byte
+  code segment:
+
+        asm volatile ("movl %0, %%eax;"
+                      "movl %%eax, (0xffffffff80000500); hlt;"
+                      : : "m"(nr_cpus) : "memory");
+
+  And then use the qemu console to read the address 0x500 'xp 0x500'.
+
+* Very important discovery: Adding the above asm fragment _directly_ after
+  clearning the BSS section yielded the same corrupt value of "1217939456"
+  for the 'nr_cpus' variable! Something is seriously wrong cause 'nr_cpus'
+  is clearly in the BSS section:
+
+  $ readelf -a kernel.elf
+
+  Section Headers:
+    [Nr] Name              Type             Address           Offset
+         Size              EntSize          Flags  Link  Info  Align
+    ...
+    [ 8] .bss              NOBITS           ffffffff8010f5e0  0010f5e0
+         00000000000028c8  0000000000000000  WA       0     0     32
+
+  Symbol table '.symtab' contains 183 entries:
+     Num:    Value          Size Type    Bind   Vis      Ndx Name
+     ...
+     151: ffffffff80111d80     4 OBJECT  GLOBAL DEFAULT    8 nr_cpus
+
+* I think we're getting closer. Notice from above ELF analysis, the BSS
+  section starts at 0xffffffff8010f600, and it has a length of 0x28c8:
+
+  This means that from reading the ELF:
+
+     BSS start = 0xffffffff8010f5e0
+     BSS end = 0xffffffff8010f5e0 + 0x28c8 = 0xffffffff800111ea8
+     'nr_cpus' is at 0xffffffff80111d80
+
+  But very strangely, here are the results of printing __bss_start and
+  __bss_end symbols exported by our kernel linker script we wrote since the
+  dawn of time:
+
+     BSS start = 0xffffffff8010f5e0
+  !! BSS end = 0xffffffff801115e0
+     'nr_cpus' is outside of this region!
+
+  As you see, somehow the kernel sees a _trimmed_ BSS section from the
+  linker script, and to add insult to injury, 'nr_cpus' is not included
+  in that trimmed region.
+
+* Things began to make sense: the kernel obviously has a misguided view about
+  its bss section. This is disastrous cause at this level, we're the ones
+  responsible of clearing this BSS area before use. Ofcourse, we directly move
+  to our linker script BSS section to see what's wrong:
+
+  SECTIONS
+  {
+          ...
+           .bss : {
+                   __bss_start = .;
+                   *(EXCLUDE_FILE (*head.o *e820.o) .bss)
+                   __bss_end = .;
+           }
+           __kernel_end = .;
+          ...
+  }
+
+  Things should be fine and everything is at its place, but the corruption still
+  exists. So I tried a small modification of:
+
+           .bss : {
+                   __bss_start = .;
+                   *(EXCLUDE_FILE (*head.o *e820.o) .bss)
+           }
+           __bss_end = .;
+           __kernel_end = .;
+
+  And things worked magically! Ofcourse leaving the issue as this will be immature
+  as we didn't understand yet why this trivial change produced this huge effect.
+
+* Trying to debug the issue further, we restore the linker script to its original
+  state and let the linker be more verbose by using the -M flag. Inspecting the
+  output, a very interesting thing came up when the linker displayed the final
+  memory map:
+
+  ('...' denotes trimmed output lines)
+
+  Allocating common symbols				// mm, ..
+  Common symbol       size              file
+
+  test_symbol         0x8               mmap.o
+  ioapic_descs        0x60              ioapic.o
+  nr_ioapics          0x4               ioapic.o
+  nr_cpus             0x4               smpboot.o
+  mp_irqs             0x700             mptables.o
+  nr_mpcirqs          0x4               mptables.o
+  cpu_descs           0x100             smpboot.o
+
+  Linker script and memory map
+
+                 0x0000000000100000                . = 0x100000
+
+  .text.head     0x0000000000100000      0x310
+  ...
+  .bss           0xffffffff8010f5e0     0x28c8 load address 0x000000000010692c
+                 0xffffffff8010f5e0                __bss_start = .
+  *(EXCLUDE_FILE(*e820.o *head.o) .bss)
+  .bss           0xffffffff8010f5e0        0x0 common.o
+  .bss           0xffffffff8010f5e0        0x0 main.o
+  .bss           0xffffffff801105e0        0x0 i8259.o
+  .bss           0xffffffff801105e0        0x0 apic.o
+  ...
+  .bss           0xffffffff80110610        0x0 lib/string.o
+  .bss           0xffffffff80110620      0xfc0 lib/printf.o
+                 0xffffffff801115e0                __bss_end = .
+  COMMON         0xffffffff801115e0       0x64 ioapic.o
+                 0xffffffff801115e0                ioapic_descs // Outside of BSS!
+                 0xffffffff80111640                nr_ioapics   // Outside of BSS!
+  *fill*         0xffffffff80111644       0x1c 00
+  COMMON         0xffffffff80111660      0x704 mptables.o
+                 0xffffffff80111660                mp_irqs      // Outside of BSS!
+                 0xffffffff80111d60                nr_mpcirqs   // Outside of BSS!
+  *fill*         0xffffffff80111d64       0x1c 00
+  COMMON         0xffffffff80111d80      0x120 smpboot.o
+                 0xffffffff80111d80                nr_cpus      // Outside of BSS!
+                 0xffffffff80111da0                cpu_descs    // Outside of BSS!
+  COMMON         0xffffffff80111ea0        0x8 mmap.o
+                 0xffffffff80111ea0                test_symbol  // Outside of BSS!
+                 0xffffffff80111ea8                __kernel_end = .
+
+  So at last we got it, the linker script didn't put variables like nr_cpus,
+  nr_ioapics etc in the BSS section, thus they were not cleared in our clear_bss()
+  function. As you can see, those symbols are allocated past the __bss_end symbol.
+
+* OK, so we inspect the LD manual for this 'COMMON' section, to find:
+
+  "A special notation is needed for common symbols, because in many object file
+  formats common symbols do not have a particular input section. The linker treats
+  common symbols as though they are in an input section named ‘COMMON’ ..."
+
+* Unfortunately the documentation was a bit vague, and there was no explanation
+  of what "common symbols" were really used for. So we dig deeper to find this
+  great explanation from Ulrich's paper on shared libraries:
+
+  "Common variables are widely used in fortran, but they got used in C and C++
+  as well to work around mistakes of programmers. Since in the early days people
+  used to drop the 'extern' keyword from variable definitions, in the same way
+  it is possible to drop it from function declaration, the compiler often had
+  multiple definitions of the same variable in different files.
+
+  To help the poor and clueless programmer, the C/C++ compiler normally generates
+  common variables for uninitialized definitions such as `int foo;'
+
+  For common variables, there can be more than one definition, and they all get
+  unified in one location in the output file .. their values does not need to be
+  stored in the ELF file."
+
+* And also from Ulrich, a description of -fno-common which is more accurate than
+  gcc's manual:
+
+  "If the programmer uses the compiler command-line option -fno-common, the
+  generated code will contain uninitialized variables instead of common variables
+  if a vriable definition has no initializer. ..
+
+  The result at run-time is the same as for common variable, no value stored in
+  the file. But the representation in the object file is different [BSS section],
+  and it allows the linker to find multiple definitions and flag them as errors."
+
+* And finally from Ian Lance Taylor's series on linkers:
+
+  "A section index of SHN_COMMON (0xfff2) indicates a common symbol. Common
+  symbols were invented to handle Fortran common blocks, and they are also often
+  used for uninitialized global variables in C.
+
+  A common symbol has unusual semantics. Common symbols have a value of zero, but
+  set the size field to the desired size. If one object file has a common symbol
+  and another has a definition, the common symbol is treated as an undefined
+  reference.
+
+  If there is no definition for a common symbol, the program linker acts as though
+  it saw a definition initialized to zero of the appropriate size. Two object
+  files may have common symbols of different sizes, in which case the program
+  linker will use the largest size.
+
+  Implementing common symbol semantics across shared libraries is a touchy
+  subject, somewhat helped by the recent introduction of a type for common symbols
+  as well as a special section index (see the discussion of symbol types below)."
+
+  (Also check nm(1) on "C"/COMMON symbols, and --warn-common on ld(1))
+
+* And by now everything is super-clear, and the fix is only adding the COMMON
+  symbols within the output object BSS boundaries:
+
+	.bss : {
+		__bss_start = .;
+		*(EXCLUDE_FILE (*head.o *e820.o) .bss)
+		*(EXCLUDE_FILE (*head.o *e820.o) COMMON)
+		__bss_end = .;
+	}
+
+  What a bug this was.
