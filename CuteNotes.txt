@@ -990,6 +990,7 @@ On the C 'volatile' type qualifier:
   - Attached Linux kernel's "volatile-considered-harmful.txt" document, added
     with various core developers thoughts copied from LKML.
   - ISO C99 Committee Draft - September 7, 2007
+  - My OSDEV forums post: http://forum.osdev.org/viewtopic.php?t=21210&start=17
 
 * As said by the C standard, "An object that has volatile-qualified type may be
   modified in ways unknown to the implementation or have other unknown side
@@ -1509,3 +1510,127 @@ Using light debugging techniques:
 	}
 
   What a bug this was.
+
+
+Musings on Memory Management:
+-----------------------------
+
+* References:
+  - Uresh Vahalia, "Unix Internals: the new frontiers", Chapter 12 - Kernel
+    Memory Allocation
+  - Kirk McKusick, J. Karles, "Design of a General Purpose Memory Allocator
+    for the 4.3BSD UNIX Kernel", Berkely, Usenix 1988 conference
+  - Daniel Bovet, Marco Cesati, "Understanding the Linux Kernel", Chapter 8 -
+    Memory Management, Section 8.1 - Page Frame Management
+  - Kirk McKusick, George Neville, "The Design and Implementation of the
+    FreeBSD Operating System", Section 5.3 - Kernel Memory Management
+  - Maurice Bach, "The Design of the UNIX Operating System", Chapter 9 -
+    Memory Management Policies
+
+* In all Unices, memory is page-based, and the page is the smallest unit of
+  allocation, protection, address translation, and mapping. X86-64 does not
+  even provide segmentation.
+
+* The very first step for writing a MM subsystem is writing the page-level
+  allocator. Due to virtual memory, the page-allocator doesn't need to find
+  contiguous free pages to satisfy its request: non-contigous frames mapped as
+  contiguous addresses shall be enough.
+
+  The kernel often needs chunks of memory much less of size than a page, there's
+  where the 'kernel memory allocator' job comes into play for allocating this
+  kind of memory within the pages. It depends internally on the page allocator.
+
+* Early Unix like SVR2 avoided dynamic memory altogether, and used fixed-size
+  tables for vnodes and proc structures. On the other hand, when memory was
+  required for holding temporary pathnames, they borrowed buffers from the block
+  buffer cache (Check chapter 3 of Maurice's book).
+
+  Another case was the 4.2BSD, which in McKusick wordings had "at least ten
+  different memory allocators. Some of them handle large blocks, some handle
+  small chained data structures, and others include information to describe
+  I/O operations. .. Multiple allocators reduce the effeciency with which memory
+  is used. The kernel ends up with many different free lists of memory instead
+  of a single freelist from which all allocation can be drawn"
+
+* Currently, our page allocator is interfaced through two simple functions:
+  get_free_page() which returns a page frame descriptor, and free_page(page)
+  which frees given page frame. The naming is taken from Linux, which are the
+  historic names Torvalds used in his 0.01 relase and are still in-use today.
+
+* Now that we've finished writing our page allocator, we focus on kmalloc()-like
+  kernel memory allocators. A memory allocator utilization factor =
+
+	          total memory 'requested' by the kmalloc() caller
+	-------------------------------------------------------------------
+	  total memory 'required' by allocator to satisfy those requests
+
+  As said by McKusick, Good memory utilization in the kernel is more important
+  than in user processes. Pages in the process address space that are in 'required'
+  but not in the 'requested' pool need not tie up physical memory. But the kernel
+  is not typically paged out, so any not-well-utilized kernel-allocated memory
+  pages are held forever, and can not be used for other purposes.
+
+  It's typical of user-space memory allocators not to release unused memory in
+  the required pool to avoid the syscall overhead. Kernel allocators are required
+  to release such memory as quick possible though, due to above point of holding
+  kernel memory pages forever, and because the kernal can  quickly manipulate its
+  own page maps.
+
+* Not to degrade performace, memory returned by the allocator must be aligned
+  according to the machine requirements. I guess for our x86-64 case, the safest
+  haven is 8-byte alignemnt.
+
+  Speaking of speed, McKusick suggests that the allocator need only to be fast for
+  small pieces of memory. Inspecting a time-shared machine at Berkely, he noticed
+  that "large allocations occur infrequently, and are typically for long-lived
+  objects such as buffers to hold the superblock for a mounted file system".
+
+* For a nice survey of kernel memory allocators, check referenced 'Unix Internals'
+  chapter. The 4.2BSD allocator, is covered under 'Simple Power-of-Two Free Lists',
+  and the 4.3BSD allocator, explained in the McKusick paper, is clearly described
+  under 'The McKusick-Karles Allocator' section; Vahalia is a great writer.
+
+* Before jumping to sketching our own allocator, we finally survey some of the
+  allocators used in modern unix kernels:
+
+  In Linux, the page allocator provides contiguous pages using a binary buddy
+  system instead of depending on hardware circuity to emulate this continuity.
+  This, in Daniel Bovet words, offers the big advantage of leaving the kernel
+  paging tables unchanged, which leads to less average memory access times cause
+  such modifications lets the CPU flush its Translation-Lookaside Buffers.
+
+  NOTE! The smallest unit returned by this buddy page allocatoris one PAGE. The
+  groups of 2, 4, 8, 16, .., 1024 are a physically contigous set of page frames.
+  This is not a kernel memory allocator (KMA) like the McKusick-Karles one; this
+  is a page allocator that uses the buddy algorithm for serving _contigous pages_
+  instead.
+
+  The page allocator main structure used is mem_map, which holds all the page
+  descriptors of the specific memory zone this page allocator belongs, like
+  ZONE_DMA, HIGHMEM, etc. Notice that mem_map is also the historic naming Linus
+  used for his page allocator in the 0.01 release. That page allocator was done
+  using a bitmap, which as we can see, fits the 'mem_map' naming better.
+
+  Above this page allocator in Linux exists the regular sl[au]b object-caching
+  allocator, which requests pages from the page allocator upon need.
+
+  In FreeBSD, the kernel uses the 4.3BSD allocator described in the McKusick
+  paper for small allocations. For large fixed-size allocations, it uses the
+  Zone/slab allocator instead.
+
+* In our kernel, we assign high weights to simplicity without sacrificying much
+  speed and memory resources.
+
+  Our page allocator's main structure is the Page Frame Descriptor Table
+  (pfdtable; Unix SVR2 terminology), which is an array/table that contains all
+  the system's available (non e820-reserved; above kernel memory area) physical
+  pages descriptors.
+
+  Free pages descriptors are connected in place by a linked list pfdfree_head
+  as the list head. Allocation and Reclamation is a simple O(1) matter of adding
+  to or removing from the pfdfree_head list.
+
+  The kernel memory allocator is the 4.3BSD McKusick-Karles allocator. I chose
+  it cause of its beautiful simplicity, speed, and space effeciency for small
+  allocations. We shall develop a slab-like caching allocator for big objects
+  once the need arise; we're obviously influenced by FreeBSD in this area.
