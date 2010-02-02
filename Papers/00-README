@@ -1,0 +1,131 @@
+This folder collects academic papers I needed while developing 'Cute', organized
+by topic and importance.
+
+Important notes extracted from the papers are put after each one's entry, which
+are often direct quotes. PDFs were downloaded from authors university homepages
+and from the ACM Portal service.
+
+Memory Management:
+------------------
+
+* TOC:
+
+  - Denning70, 'Virtual Memory', ACM Computing Surveys
+  - Denning68, 'The working set model for program behaviour'
+  - McKusick88, 'Design of a General Purpose Memory Allocator for the 4.3BSD
+    UNIX Kernel'
+
+* Denning70, 'Virtual Memory', ACM Computing Surveys.
+
+  - One of the best papers written surveying the now-classical virtual memory
+    concept, and basic memory allocation.
+
+  - Denning surveys the storage allocation problem, determining at each moment
+    of time how information shall be distributed among the hierarchical levels of
+    memory.
+
+  - Denning also states the usefulness of dynamic memory allocation, a fact that
+    became more obvious every day since that paper.
+
+  - The idea of 'virtual memory' came from Manchester, England by the Atlas computer
+    implementers. They suggested the idea that 'address is a concept distinct from
+    physical location'
+
+  - This led to several advantages, mainly:
+    - It became the responsibility of computer hardware and system software to move
+      information into main memory when, and only when, memory is required. No more
+      tricks like 'memory overlays'.
+    - Basing memory use on system observation rather than poor programmer use of
+      space
+    - Forming an adaptive system, instead of pre-planned allocation.
+
+  - Disadvantages are also discussed:
+    - The illusions of unlimited memory may let programmers slack on making good
+      use of memory (as apparent to this day). Unnecessary large programs may
+      generate excessive overhead from the automatic storage mechanism.
+    - Fragmentation cause of rounding up to pages (solved mostly by a good memory
+      allocator)
+    - "pure demand paging" costs at startup time.
+    - Some systems showing extreme sensitivity to thrashing.
+    - Increased complexity of the addressing mechanism
+
+  - To implement virtual addressing, two things are needed:
+    - allow the programmer use a set of addresses different from that provided by
+      virtual memory.
+    - A mechanism for translating program-generated addresses to the correct
+      memory location address.
+
+  - Virtual memory management performs most efficiently when programs exhibit
+    good locality (concentrate references in small regions of the address space)
+
+  - For memory mapping, the paper provides a table structure representing all
+    virtual memory addresses. If the address is mapped, its cell contains the
+    mapped physical address. Otherwise, it's zero.
+
+    Of Course this is very wasteful of memory resources, so the paper discusses
+    3 methods to remedy the situation, i.e. methods to cause significant reduction
+    in the amount of mapping information that needs to be stored. Those are
+    'segmentation', 'paging', and a mix of the two. Pure paging is the clear winner
+    for the x86 architecture since the 2000s (x86-64), and for most RISC CPUs.
+
+  - Using paging, and in machines using binary arithmetic, power-of-2 page sizes
+    are chosen, to let address calculation be as trivial and fast as possible.
+
+  - Paging offers simple 'uniform treatment' for all system memory, which is very
+    beneficial. Loading a segment requires finding an unallocated region large enough
+    to contain the new segment, where's loading a page very simply requires finding an
+    unallocated page frame.
+
+    Although Paging offers uniformity at the price of internal fragmentation, the
+    fragmentation can be properly controlled by proper choice of page sizes.
+
+    Also for hard disks, fixed-length page transports are much simpler to manage
+    than variable-length segment transports. The difficulty of transporting variable
+    length segments is compounded by overhead in watching out for the specific segm-
+    ent length in order not to overrun buffers.
+
+  - "One occasionally hears proposals to the effect that paging systems could be
+    improved markedly if swapping were used to load a program's working information
+    at the beginning of a time quantum, and demand paging were used within a time
+    quantum. [Dismissal trimmed]
+
+    Prepaging, however, may have some value when properly managed from a paging drum"
+
+  - To reduce the time of reading pages from hard-disk relative to reading them from
+    memory, two approaches are described. One is 'slave' or 'cache' memory, and the
+    other is 'distributive' memory. The cache approach, began to be used by IBM 360
+    mainframes, is the winning approach.
+
+  - Another aspect of improving hardware for virtual memory includes mechanisms for
+    obtaining measurements useful in memory allocation as the modified bit, used bit,
+    unused bit, etc
+
+* Denning68, 'The working set model for program behaviour'
+
+  - In above paper, the working set principle is formalized for measuring a process
+    'memory demand'. The paper suggests _against_ preloading memory pages and
+    emphasizes the importance of coupling scheduling decisions with process memory
+    state.
+
+  - Nearly every paging strategy is demand paging. As Denning puts it, there have
+    been few proposals to date recommending look-ahead, or anticipatory page loading
+    because there's no reliable advance source of allocation information, be it the
+    programmer or the compiler.
+
+    Note: Preloading pages might be relevant these days. Check Con Kolvias's
+    swap-prefetch Linux kernel patches.
+
+  - Although the working set is the desired information, it might be futile to preload
+    pages: there's no guarantee a process will not block shortly after resumption,
+    having referenced only a fraction of its working set and wasting the OS time
+
+  - The implementation of a paging subsystem has generally two parts, paging-in
+    (handling page faults, locating the required page in auxiliary memory), and
+    paging-out (swapping rarely used pages to the swapping device)
+
+* McKusick88, 'Design of a General Purpose Memory Allocator for the 4.3BSD UNIX
+  Kernel', Berkely, Usenix 1988 conference
+
+  - This is the memory allocator used so far in our 'Cute' kernel, with the
+    intention of adding a slab-like allocator for big objects. Check the code
+    comments and the CuteNotes file for extra discussion on this allocator.

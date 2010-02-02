@@ -1512,7 +1512,7 @@ Using light debugging techniques:
   What a bug this was.
 
 
-Musings on Memory Management:
+Musings on Memory Allocation:
 -----------------------------
 
 * References:
