@@ -1,3 +1,5 @@
+			Notes on the Cute Kernel
+
 On Intel Documents:
 -------------------
 
@@ -730,7 +732,7 @@ The 8259A Programmable Interrupt Controller:
     ...
     10012f:       e8 1c 91 00 80          callq  ffffffff80109250 <kernel_start>
 
-  Or is it?
+  Or does it?
 
   A closer inspection at the binary disassembly reveals that the call is a
   near, relative, displacement relative to next instruction, 32-bit displacement
@@ -1659,3 +1661,261 @@ Musings on Memory Allocation:
   it cause of its beautiful simplicity, speed, and space effeciency for small
   allocations. We shall develop a slab-like caching allocator for big objects
   once the need arise; we're obviously influenced by FreeBSD in this area.
+
+
+On Virtual Memory:
+------------------
+
+* References:
+  - Uresh Vahalia, "Unix Internals", Chapter 13 - Virtual Memory
+  - Peter J. Denning, 'Virtual Memory', Princeton, ACM Computing Surveys
+  - Maurice Bach, "The Design of the UNIX Operating System", Chapter 9 -
+    Memory Management Policies
+  - Jonathan Corbet, "Four-level page tables", LWN.net,
+    http://lwn.net/Articles/106177/, http://www.webcitation.org/5ncgFSpzm
+
+* First, please check our detailed notes on the great Dennings's virtual memory
+  paper; the paper covers a huge number of now very-well-established concepts.
+  Below paragraphs assumes familiarity with the concepts covered in that paper.
+
+* To cause considerable reduction in the amount of virtual-to-physical mapping
+  information that needs to be stored, methods like segmentation and paging
+  were invented. In the words of Denning, "each method groups information into
+  blocks, a block being a set of contiguous addresses in address space. The
+  entries in the mapping table will refer now to blocks, which are _far_ less
+  numerous than addresses in a process address space".
+
+  In other words, instead of storing mapping information for each address, we
+  store the mapping info fore each equally-sized _page_ or for each _segment_.
+
+* In paging, even while storing mapping information for each page instead of
+  for each address, the page table can consume a huge area of memory. For
+  example, in a fictional 32-bit machine with a page size of 1KB, and an
+  address space of 2GB, we need: 2^31 / 2^10 = 2^21 entries. For an entry size
+  of 32-bit, 4-bytes: page table size = 2^21 * 2^2 = 2^23 = 2^3 * 2^20 = 8MB.
+  So we'll need an 8MB table for _each_ process address space which is a lot.
+
+* Analyzing the problem, we see that the root cause is having mapping information
+  for non-used pages; a process rarely use its entire address space anyway. It's
+  also common to have a virtual address-space which is much larger than machine's
+  available physical memory. To solve this problem we either:
+
+  - have segmented page tables. Each segment of the process has its own page table
+  which is just large enough to hold the valid address range for that segment.
+
+  - second is having the page table itself paged, which means an additional higher
+  level page table is used to map the lower-level page table. With such a multi-
+  teired hierarchy, we need to allocate only those pages of the lower-level table
+  that map used/valid addresses of the process. This is the common approach.
+
+
+On Partitionting the 64-bit kernel address space:
+-------------------------------------------------
+
+* References:
+  - Andi Kleen, "Porting Linux to x86-64", SuSe Labs
+  - Michael Matz, Hubicka, Andrea Jaeger, Mark Mitchell, "System V Application
+    Binary Interface, AMD64 processor supplement", SuSe Labs, Codesourcey
+  - Linux Kernel linux-2.6/Documentation/x86/x86_64/mm.txt, kernel.org
+  - Our kernel comments at head.S and include/paging.h
+  - MSDN Library, Win32 and COM development, "64-bit Virtual Address Space",
+    http://msdn.microsoft.com/en-us/library/aa384271(VS.85).aspx
+    http://www.webcitation.org/5nckv6YBf
+  - Intel Manuals volume 2A, A-M Instructions Reference
+
+* Partitioning the address space of a long mode kernel is an interesting challenge.
+  There are so many tradeoffs to be taken care of. First, let's remember that we
+  have full 64-bit space. This has obvious potentials, but also some drawbacks that
+  need be taken care of.
+
+* The first drawback of using a full 64-bit address space is code size. Imagine when
+  every far jump, global data access, and function call uses a full 64-bit address.
+  The difference is outlied in below small app:
+
+	/* File1: sum.c */
+	int global;
+	int sum() {
+		return 0;
+	}
+
+	/* File2: app.c */
+	extern int global;
+	int x;
+	int main() {
+		global = 0xdead;
+		x = 0xceeb;
+		return sum();
+	}
+
+	# -m32: 32-bit compilation and linkage
+	$ gcc -O3 -m32 sum.c app.c -o app
+
+  which generates the very small code below:
+
+	$ objdump -D app
+	0804956c <x>:	/* 4-byte address */
+	 804956c:       00 00                   add    %al,(%eax)
+         ...
+	08049570 <y>:	/* 4-byte address */
+	 8049570:       00 00                   add    %al,(%eax)
+
+	08048370 <main>:
+	 /* 10-bytes in total
+	  * 4-byte address dereference */
+	 8048376:       c7 05 68 95 04 08 ad    movl   $0xdead,0x8049568
+	 804837d:       de 00 00
+
+	 /* 10-bytes in total
+	  * 4-byte address dereference */
+	 8048380:       c7 05 6c 95 04 08 eb    movl   $0xceeb,0x804956c
+	 8048387:       ce 00 00
+
+	 /* Only 5 bytes in total
+	  * 4-byte offset */
+	 8048394:       e8 c7 ff ff ff          call   8048360 <sum>
+	 ...
+
+  Now imagine if above app used full 64-bit virtual addresses, each 4-byte address
+  dereference above would have consumed full 8-bytes; even some ops would consume
+  140% extra size. Inspect below results:
+
+	$ gcc -m64 -mcmodel=large -c sum.c -o sum.o
+	$ gcc -m64 -mcmodel=large -c app.c -o app.o
+	$ ld  -Ttext 0xffff800000000000 app.o sum.o -o app
+        $ objdump -D app
+
+	ffff8000002000cc <x>:   /* .. 8-byte address */
+	ffff8000002000cc:       00 00                   add    %al,(%rax)
+         ...
+	ffff8000002000d0 <y>:   /* .. 8-byte address */
+         ...
+
+	ffff800000000024 <main>:
+
+	 /* 8-bytes address, 15-bytes ops size in total. Compare
+	  * with the 10-byte 32-bit equivalent ops (50% increase) */
+	 ffff800000000028:       48 b8 c8 00 20 00 00    mov    $0xffff8000002000c8,%rax
+	 ffff80000000002f:       80 ff ff
+	 ffff800000000032:       c7 00 ad de 00 00       movl   $0xdead,(%rax)
+
+	 /* 8-bytes address, 15-bytes ops size in total. Compare
+	  * with the 10-byte 32-bit equivalent ops (50% increase) */
+	 ffff800000000038:       48 b8 cc 00 20 00 00    mov    $0xffff8000002000cc,%rax
+	 ffff80000000003f:       80 ff ff
+	 ffff800000000042:       c7 00 eb ce 00 00       movl   $0xceeb,(%rax)
+	 ...
+
+	 /* 8-byte address, *12-bytes* ops size in total. Compare
+	  * with the 5-byte 32-bit equivalent ops (140% increase!) */
+	 ffff80000000005d:       48 ba 00 00 00 00 00    mov    $0xffff800000000000,%rdx
+	 ffff800000000064:       80 ff ff
+	 ffff800000000067:       ff d2                   callq  *%rdx
+
+* As you can see from above, naively using the 64-bit address space can lead to
+  diastrous effects on code size, and thus, the cache footprint. To solve this, some
+  help from both the kernel and the compiler is needed.
+
+  First, let's focus on user-space. To let user-space avoid this large code-size hit,
+  it's common to assign to it the 0 -> 4GB+ virtual space, and let the compiler
+  generate 32-bit addresses for code and global data. This is for example, how the Linux
+  ecosystem does it. The kernel assigns below virtual addresses to user-space (for each
+  process):
+
+	0000000000000000 - 00007fffffffffff (=47 bits) user space, different per mm
+	hole caused by [48:63] sign extension
+
+  And let gcc emits 32-bit addressing for code and global data using the -mcmodel=small
+  parameter, which is the default memory model. %rip-relative addressing is also used
+  by default at this model for dereferencing objects globals.
+
+* Now how are we going to produce similar effect in kernel-space code when the
+  0 -> 4G+ space has been already reserved by user-space?
+
+  Thanks to the elegance of the 2's complement model, the common case is to use
+  negative 32-bit addresses for kernel linking. This leads to negative 32-bit
+  discplacement for kernel ops. We then let the CPU implcitly (automatically)
+  sign-extend those discplacements, leading us to use the top 64-bit address space,
+  but with the size-effeciency of 32-bit addresses!
+
+  An example is overdue. Imagine linking our kernel with the 0xffffffff80000000
+  as base. %rax points to a physical address in our text or data area. To let it
+  be virtual, we add the base to it. Mainly we want to do:
+
+	%rax = %rax + 0xffffffff80000000
+
+  Now, thanks to the sign-extension trick, the above instruction can be size-
+  -effeciently encoded as if the displacement was 32-bit as follows:
+
+	ffffffff8010b347: 48 05 00 00 00 80       add    $0xffffffff80000000,%rax
+
+  As you can see, only 4-bytes are used for displacement (0x80000000). The REX.W
+  prefix (0x48) with the x86 ADD opcode (05) will let the x86-64 cpu automatically
+  sign extend the 32-bit immediate 0x80000000 to $0xffffffff80000000 and achieve
+  our goals.
+
+* Here's a more complete explanation from our kernel comments:
+
+  Using -2GB as a base empowers the compiler to directly encode symbolic
+  references as 32-bit values, and let the CPU implicitly sign-extended those to
+  64-bits due to the REX.W prefix. Thus, we use the top 64-bit address space, but
+  with 32-bit size effeciency! Check below example:
+
+  Passing global strings to memcpy:
+
+   48 c7 c6 80 24 8b 80    mov    $0xffffffff808b2480,%rsi
+   48 c7 c7 60 d8 10 80    mov    $0xffffffff8010d860,%rdi
+   e8 f4 39 00 00          callq  ffffffff8010bb00 <memcpy>
+
+  To avoid the size-overhead of 64-bit offsets in function calls, we limit the
+  kernel text to a 32-bit virtual area. Thus, an x86-64 callq will only consume a
+  4-byte offset: relative space between next op and the destination label.
+
+  To get kernel globals values (instead of just their addresses), we'll use
+  %rip-relative addressing within + or - 2GB limit, avoiding the size-overhead of
+  referencing a full 8-byte address.
+
+  All of this was in fact designed by the SysV AMD64 ABI developers, and is called
+  the 'kernel code model'. We use this code  model, and let userspace use the
+  'small' or the 'medium' one. It's interesting to note that NT userspace defaults
+  to the medium model, while most UNIX implementations default to the 'small' one.
+
+  This is the reason Linux's amd64, unlike the ia32 one, __PAGE_OFFSET =
+  0xffff880000000000, which is different from the kernel linking base at -2GB =
+  __START_KERNEL_MAP = 0xffffffff80000000.
+
+* To get a state of the size difference, check the difference of function call
+  size overhead between the 'large' and the 'kernel' code models:
+
+  $ objdump -j .text -D kernel.elf | grep call		# -mcmodel=kernel
+
+  ffffffff801090c8:       e8 e3 45 00 00          callq  ffffffff8010d6b0 <vsnprintf>
+  ffffffff801090df:       e8 ec 48 00 00          callq  ffffffff8010d9d0 <printk>
+  ffffffff80109105:       e8 86 41 00 00          callq  ffffffff8010d290 <memset>
+  ffffffff8010b97b:       e8 70 f9 ff ff          callq  ffffffff8010b2f0 <spin_lock>
+  ffffffff8010ba61:       e8 6a ff ff ff          callq  ffffffff8010b9d0 <get_free_page>
+  ffffffff8010bdd8:       e8 83 fc ff ff          callq  ffffffff8010ba60 <get_zeroed_page>
+  ffffffff8010c749:       e8 a2 f8 ff ff          callq  ffffffff8010bff0 <__kmalloc>
+  ...
+
+  $ objdump -j .text -D kernel.elf | grep call		# -mcmodel=large
+
+  /* Notice the ~%140 increase in size per call */
+  ffffffff801090cb:       48 b8 d0 e6 10 80 ff    mov    $0xffffffff8010e6d0,%rax
+  ffffffff801090d2:       ff ff ff
+  ffffffff801090d5:       ff d0                   callq  *%rax
+  ffffffff801091a3:       48 bb 00 ea 10 80 ff    mov    $0xffffffff8010ea00,%rbx
+  ffffffff801091aa:       ff ff ff
+  ffffffff801091b9:       ff d3                   callq  *%rbx
+  ...
+
+  So, while admittedly using -mcmodel=large makes things a bit easier for the 64-bit
+  kernel developer, it induces too much size overhead that it's worth the effort to
+  avoid it.
+
+* So, keeping above points in mind, we'll use below strategy for dividing our kernel
+  space addresses:
+
+  0x0000000000000000 -> 0x00007fffffffffff	userspace mappings
+  0x0000800000000000 -> 0x0000ffffffffffff	not canoncial; cannot be used
+  0xffff800000000000 -> 0xffffc00000000000	maps for all physical memory (64TB max)
+  0xffffffff80000000 -> 0xffffffffc0000000	kernel text and data map
