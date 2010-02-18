@@ -800,6 +800,31 @@ The 8259A Programmable Interrupt Controller:
 
   which solves our problem nicely.
 
+
+Testing libc()-like kernel code:
+--------------------------------
+
+* An interesting way to test libc()-like kernel code (e.g. std string methods)
+  is to replace system's libc implementation with our own. Afterwards, we run a
+  huge program (Firefox, OpenOffice or gcc) and observe the results.
+
+  Those tests usually cover huge number of cases, and give a good indicator of
+  tested kern code stability. I've usually found that even the smallest mistake
+  in such tests produce either a non-behaving app or a direct segfault.
+
+* Unix linkers LD_PRELOAD feature can help us immensely. Assuming our string
+  methods resides at 'string_lib.c', we do something similar to:
+
+  # Position-independent object, suitable for dynamic linking
+  $ gcc -fPIC -c string_lib.c -o string_lib.o
+
+  # Produce shared object (instead of final executable) that can
+  # be linked with other objects to form an executable.
+  $ gcc -shared -o string_lib.so string_lib.o
+
+  $ LD_PRELOAD='./string_lib.so' firefox-bin
+
+
 On SMP Memory ordering models:
 ------------------------------
 
