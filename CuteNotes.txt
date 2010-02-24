@@ -1919,3 +1919,133 @@ On Partitionting the 64-bit kernel address space:
   0x0000800000000000 -> 0x0000ffffffffffff	not canoncial; cannot be used
   0xffff800000000000 -> 0xffffc00000000000	maps for all physical memory (64TB max)
   0xffffffff80000000 -> 0xffffffffc0000000	kernel text and data map
+
+
+* Debugging -O3 triggered problems:
+-----------------------------------
+
+* While adding a good number of GCC warning request flags to detect bugs as early
+  as possible, I enabled the -O3 switch only to discover that it triggered a good
+  number of hidden kernel bugs.
+
+  First bug led to several exceptions. Upon investigating the CPU's reported
+  faulting instruction, I found its an SSE x86 op. SSE ops require special %cr0
+  and %cr4 setup that we're not ready for.
+
+  The solution was simply instructing GCC to avoid emitting SSE ops using its
+  -mno-see{2,3,4} and -mno-3dnow control flags.
+
+* Second bug was way uglier. It was only triggered at -O3 and with Kmalloc test
+  code (and only kmalloc test code, not any of the rest of the tests) enabled.
+
+  The faults were a bit random, from continuous triple faults to rubbish on the
+  screen by printk(). This also means that printk is not available for debugging.
+
+  Switching to -O2 mute all those faults ..
+
+* An important debugging tool when printf is not available is inspecting the final
+  kernel ELF. Having the ELF at hand helps us at:
+
+  - directly knowing the exact addresses of all global symbols
+
+  - translate any %rip address to the exact place in the executable. This aids in
+    knowing things like whether a core had deadlock on a spinlock (%rip inifinitely
+    tied at the spin loop), the exact x86 op of a faulting %rip address, etc
+
+* Applying above methods, we inspect the global vga_buffer array. This array get
+  its contents directly copied to the vga card, so we can have a nice view about
+  the source of screen corruption:
+
+  $ readelf --syms kernel.elf | grep vga_buffer
+
+  114: ffffffff8010eb60  4000 OBJECT  LOCAL  DEFAULT    6 vga_buffer
+
+  Halting the CPU and inspecting physical address 0x10eb60 contents, we find that:
+  At -O2, well-formatted vga text: 0f 75 0f 43 0f 64 0f 74 - 'Cute'
+  At -O3, it's rubbish: 9f 19 9e fa 9f 9f ae 80 ...
+
+  Further inspecting the printk() code, I found there's no apparent problem in
+  the code itself (or its generated assembly). The printk() code was mainly passed
+  rubbish strings, instead of the expected valid ones.
+
+* Inspecting the issue further, I've put a global string:
+
+  static char string[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+
+  $ readelf --syms kernel.elf | grep string
+
+  114: 0000000000000000     0 FILE    LOCAL  DEFAULT  ABS string.c
+  118: ffffffff8010e680    37 OBJECT  LOCAL  DEFAULT    7 string
+
+  Inspecting those mem locations at -O2, yielded the expected byte values:
+  41 42 43 44 45 46 47 48 ..
+
+  At -O3, however, below values were found:
+  10 80 48 89 f2 48 03 53 08 48 01 eb
+
+* Checking the unexpected bytes sequence above, I smelled x86 opcodes, which
+  they truly were! They were from the disassembly:
+
+  ffffffff80108140 <e820_init>:
+   ...
+   ffffffff801081b7:       48 c7 c7 18 e3 10 80    mov    $0xffffffff8010e318,%rdi
+   ffffffff801081be:       48 89 f2                mov    %rsi,%rdx
+   ffffffff801081c1:       48 03 53 08             add    0x8(%rbx),%rdx
+   ffffffff801081c5:       48 01 eb                add    %rbp,%rbx
+   ...
+
+  So we got a lead, but it's just an indication of something utterly and
+  completely messed-up.
+
+* Trying to inspect the issue further, I halted the CPU and dumped first 10MB
+  of RAM before the crash. There were some really surprising results.
+
+  Searching for some of the strings we send to printk() led to nothing, nada,
+  nil. The strings we send, they must be there at the kernel binary in ASCII
+  form, aren't simply there. Instead most of them are replaced by x86 ops.
+
+* Thinking about the situation, a change to kernel binary at such scale can
+  mostly happen by a serious bug at bootstrap code.
+
+  Checking the first 3 lines of our bootstrap disassembly, where it moves
+  kernel code from bootstrap BSS to its expected place, made everything
+  clear:
+
+  kern/kernel.elf:     file format elf64-x86-64
+
+  Disassembly of section .text.head:
+
+  0000000000100000 <startup_32>:
+  100000:       be a0 03 10 00          mov    $0x1003a0,%esi
+  100005:       bf 04 80 10 00          mov    $0x108004,%edi <-- [1]
+  10000a:       b9 00 00 02 00          mov    $0x20000,%ecx
+
+  [1] As you can see, if the kernel image we're copying away from bootstrap
+  BSS to its right place exceeded a size of 0x8000 bytes, the part of the
+  image > 0x8000 will be overriden, which leads to the mess we were in.
+
+  As in C's memmove(), we now avoid such corruption by copying kernel code
+  to a safe temporary buffer first, then copy it again to the final
+  overlapping place.
+
+  (Sometimes reading disassembly makes you catch bugs quicker than reading
+  source code. Although in this case the source was really in assembly, when
+  we saw the _numbers_ instead of just the symbols exported by the linker
+  script, we caught the bug rather instantaneously)
+
+* Important lessons:
+
+  - Take extreme care of overlaps while coding x86 'rep movsb' and friends.
+    It's good to dynamically assure that:
+
+    + src < dst, AND dst >= (src + len)		.. i.e., no overlap
+    + OR src >= dst				.. i.e., safe overlap
+
+    Any other condition means direct corruption.
+
+    The 'safe' overlap is only so if we are using 'movsb' instead of movsl
+    or movsq. Also remember that this 'safe' overlap corrupts the source,
+    but keep the destination data valid.
+
+  - We may add asserts to memcpy() and friends assuring no such diastrous
+    overlaps occur in the C side of the kernel.
