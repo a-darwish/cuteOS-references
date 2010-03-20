@@ -2049,3 +2049,257 @@ On Partitionting the 64-bit kernel address space:
 
   - We may add asserts to memcpy() and friends assuring no such diastrous
     overlaps occur in the C side of the kernel.
+
+* Global lessons:
+
+  - Disassembly is a great tool for debugging kernel code, since a lot of things
+    taken for granted at user-space is not guaranteed here anymore. Abstraction
+    cut both ways indeed.
+
+  - It's _very important_ to deeply test each code path, no matter how trivial
+    it seems (basic stuff, but sometimes we forget the basics).
+
+  - Memory dumping of critical kernel regions is really valuable; remember to use
+    it as needed.
+
+  - It's important to test the code with different environment combinations:
+    different optimization levels: GCC's -O {0, 1, 2, 3, s}
+    different memory sizes: Qemu's -m {2, 3, .., 500, .., 2000, ..}
+    different number of cores: -smp {1, 2, 3, ..}
+    different CPU speeds: Bochs's ips= parameter
+    different BIOSes: different versions of Bochs Bios, different PC forms, ..
+
+* The Zone:
+-----------
+
+  (Or the bug that took me around 6 days to solve)
+
+* While writing the context switch code, I observed a very ugly bug. Somehow the
+  montonic PIT interrupts that got triggered every 1 millisecond corrupts kernel
+  state.
+
+  Symptoms: random exceptions and random assert() failures allover the place.
+
+* So I first thought there must be something wrong in the timer handler itself.
+  So what if the PIT handler did exactly nothing but acknowledging the local APIC?
+  (It must acknowledge the APIC so future IRQs get handled)
+
+  The handler code was successfully reduced to:
+
+	push   %rax
+	movq   $(VIRTUAL(APIC_PHBASE) + APIC_EOI), %rax
+	movl   $0,(%rax)
+	pop    %rax
+	iretq
+
+  But still the same buggy behavior prevailed.
+
+* After reducing the handler code to a number of bytes, with no positive results,
+  I thought let's check the IDT validity. Inspecting the IDT cells date yielded
+  nothing interesting.
+
+  Also checking the %rflags, bit by bit, led to nothing interesting.
+
+  So I thought maybe we should setup the IDT cells as 'trap' instead of 'interrupt'
+  gates, but this is ofcourse wrong. Trap gates leaves the IF flag set while
+  servicing the interrupt, which means handlers can get interrupted indefinitely,
+  and our stack can get overflowed in a matter of milliseconds.
+
+* OK, so I thought instead of focusing on the IRQ handlers and the IDT, lets focus
+  on the _code_ that get interrupted itself. The failed code was usually the
+  general memory allocator kmalloc() test cases.
+
+  After inspecting the interrupted code, I found nothing interesting.
+
+* To let the problem domain be smaller, and after minimizing the handler code, I
+  thought lets also minimize the interrupted code and see. Having a bunch of
+  printk()s in a tight loop, with the timer handler on, triggered the problem!
+
+  Here the second day finishes. Either something is really messed up, or I'm a
+  shitty developer that can't even write a stable printk().
+
+  Furthermore, running any testcases after enabling the interrupts make them
+  fail miserably. From all the debugging I've done in the last 6 months, I
+  began to feel the instincts of such 'deep' kernel bugs: this is definitely
+  one of them.
+
+* So, I began to feel hopeless. I'll just inspect the x86 ops that triggered
+  the exceptions, hoping to find any pattern in the code that trigger the
+  bug. Definitely a pattern was clearly there; some examples of the failing
+  x86 ops:
+
+	mov    %rax, 0x0(%rbp)
+	movzbl (%rax), %eax
+	movl   $0x2, 0x8(%rax)
+	movl   $0x1, 0x4(%rax)
+	...
+
+  And the most triggered, probably the _only_ triggered, exception was the page
+  fault #PF exception, vector 14. The faulting (unmapped) address was things
+  like %cr2=0x0, %cr2=0x8, %cr2=0x200020, etc.
+
+  From above pattern, I thought: who's really messing up with our registers,
+  getting them loaded with weird values like 0, 0x8, etc?
+
+* So, we're in the verge of the third day end with no direct results, and nothing
+  known about the source of the bug. Having nothing specific to think about, I
+  inspected the critical kernel paths: the IDT setup, IOAPIC entries setup, the
+  GDT, the bootsector, early kernel boot setup, printk() code, etc.
+
+  Funnily, cause I had a 'global' view about the kernel while doing this deep
+  inspection, 9 issues scattered around was discovered that needs to be fixed.
+  Unfortunately, fixing those 9 issues didn't really solve our main problem, but
+  it was nice nonetheless to discover them.
+
+* So we're now in the fifth day, and nothing is clear. Hopelessly, I swap our
+  printk code with FreeBSD's one. Things work fine, but once we enable interrupts
+  and the PIT in monotonic mode, similar erroneous behavior appears. Swapping
+  the FreeBSD code with the Linux code, and again, leading to the same failures.
+
+  So I was right, something 'deep' is messed up, not just the nature of the
+  interrupted code.
+
+  Another hopeless try was swapping the data segment descriptor index @ the GDT
+  from 0x10 to 0x18. Something interesting was discovered; the page faults
+  addresses occurs from values originating from %cs, %ss, and %rflags; it was
+  completely repeatable. Sounds familiar? Yes, they should! Those are the values
+  pushed by the CPU before invoking IRQ handlers!
+
+  So somehow, registers that get dereferenced get the wrong values from the
+  state pushed and popped by the CPU before and after invoking an IRQ handler.
+  Now _this_ is an interesting discovery.
+
+  So, how the %ss, %cs, and %rflags values got 'leaked' to our general-purpose
+  registers? The stack _must_ have been corrupted somehow ..
+
+* Trying different directions, we minimize the timer handler even further only to
+  the 'iretq' x86 op, but how do we acknowledge the local APIC this way?
+
+  In fact, we dont. I just masked all the IOAPIC entries, and let the PIT trigger
+  through the PIC. The PIC was then programmed in 'Automatic EOI' mode, where no
+  acknowledgment was needed. This reduced the handler only to:
+
+	iretq
+
+  Even with this super-minimal handler, the bug gets triggered :(
+
+  It was also interesting that, again, the #PF handler reported bad memory values
+  resembling %rflags, %ss, etc.
+
+* So after minimizing the timer handler to the absolute architecturally minimum,
+  we try to minimize the faulting code even further. After some hours of
+  disassembly, I find that at -O1 the VGA code alone (without the printk() code
+  that called it) triggers the problem.
+
+  After even further inspection and disassembly (and wasted hours), I find that
+  not only we can limit the code to VGA writing, but only to the string function
+  memcpy().
+
+  So, now, all I have is the timer interrupt and an infinite loop containing
+  memcpy, and the code still fails!
+
+  And, yes, the memcpy() code was valid (ehem, Dijkestra's 'Humble Programmer')
+
+* So I go crazy stripping the entire kernel. All what was left was code that
+  re-programs the PIC, the PIT setup code, and the string function memcpy()
+  and   the    code     still    failed.
+
+  That was, well, weird. We really have nothing now except a very small number of
+  lines of code and I don't know what to do.
+
+  Once we enable interrupts, the memcpy() function fail with similar patterns to
+  the one described above (page faults, with faulting memory values similar to
+  %ss and %rflags)
+
+  Well, you can imagine the state I'm in after all those days.
+
+* Another step for more explicitness was disabling the PIT, and triggering its
+  handler manually using software interrupts. I've inject software interrupts
+  around strategic C statements like '*src = *dst', etc.
+
+* So at the middle of the middle of the sixth day, I disassemble the memcpy()
+  function, draw the stack on paper, and trace. Now something became directly
+  apparent. Notice those instructions (gcc -O0):
+
+  /* Classical stack setup */
+  ffffffff80109c88:       55                      push   %rbp
+  ffffffff80109c89:       48 89 e5                mov    %rsp,%rbp
+  ffffffff80109c8c:       48 89 7d e8             mov    %rdi,-0x18(%rbp)
+  ffffffff80109c90:       48 89 75 e0             mov    %rsi,-0x20(%rbp)
+
+  /* Bochs magic breakpoint */
+  ffffffff80109caa:       66 87 db                xchg   %bx,%bx
+
+  /* Our manual software interrupt */
+  ffffffff80109cad:       cd f0                   int    $0xf0
+
+  /* Failing code, specially last line */
+  ffffffff80109caf:       48 8b 45 f8             mov    -0x8(%rbp),%rax
+  ffffffff80109cb3:       0f b6 10                movzbl (%rax),%edx
+  ffffffff80109cb6:       48 8b 45 f0             mov    -0x10(%rbp),%rax
+  ffffffff80109cba:       88 10                   mov    %dl,(%rax)
+
+  Notice something? Look again. See those `mov -0x8(%rbp), %rax' and
+  `mov -0x10(%rbp), %rax) ops?
+
+  Now check the top of the function, especially the stack pointer setup. Can't
+  you notice something?
+
+  YES, GCC used areas of the stack _B E L O W_ the stack pointer to keep parts
+  of the leaf function local state. Now when the interrupt was triggered at
+  `int $0xf0', the CPU rightfully pushed CPU state in that order:
+
+	%ss
+	%rsp
+	%rflags
+	%cs
+	%rip
+
+  Which meant that parts of that function local state get corrupted through
+  the implicit CPU stack usage!
+
+  This is also the reason we found faulting addresses of values resembling %ss
+  and %rflags. Our processor modified our pointers with those!
+
+* Wow, THAT WAS INTERESTING and worthwhile to invest the week in. Inspecting the
+  AMD64 ABI to see why GCC uses this behavior, which is _certainly_ interrupt and
+  signals unsafe, I found the answer: it's 'The Red Zone'.
+
+  Now I've really had enough for today, see the discussion of this zone at the
+  AMD64 ABI document.
+
+* Solution:
+
+  Either:
+  [1] Ignore the 128-byte region in the IRQ handler  OR
+  [2] Let the compiler avoid using this Red Zone
+
+  We can't really use [1], since the CPU pushes its state behind our backs. We
+  can't let it wind 128-bytes of the stack. Also the kernel stack is a very
+  valuable resource, and we shouldn't waste 128-Bytes of it to save an x86 op
+  or two.
+
+  Thus, we pick the second option. That's also what the mainstream folks like
+  {Open, Free}BSD and Linux do (which I discovered too lately).
+
+* Lessons:
+
+  - When faced with triple faults, inspect the following:
+    - the IDT table: if it has been overwritten, then the machine will definitely
+      triple fault.
+    - stack sanity: If the stack was not sane, then pushes and pops will lead to
+      faults, leading to triple faults.
+    - MM structures sanity. If the pagetables have been erroneously overwritten,
+      the stack will get erroneously mapped.
+    - Kernel stack overflow: corrupt stack = triple faults
+
+  - If you noticed that an interrupt randomly triggers a problem in the kernel,
+    it can be good to disable interrupts (avoid distractions), then find the most
+    affected code path and _manually_ inject interrupts there using software IRQs.
+
+  - The best possible way to let IRQ handlers be as minimal as possible is to use
+    the PIC in Automatic EOI (AEOI) mode. They will get the handler minimized to
+    the 2 byte `iretq' x86-64 op.
+
+  - Let code binary single-stepping be our last debugging resort to make sure we
+    understand the algorithms and code we've just written well enough.
