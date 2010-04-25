@@ -2303,3 +2303,73 @@ On Partitionting the 64-bit kernel address space:
 
   - Let code binary single-stepping be our last debugging resort to make sure we
     understand the algorithms and code we've just written well enough.
+
+Debugging periodic timers using statistical data:
+-------------------------------------------------
+
+* A problem appeared while running the scheduler with the APIC timer instead of
+  the PIT. Using observation, it was clear that the running intervals given
+  to processes by the APIC timer are twice as long as the ones given by the PIT.
+  Both timers were supposedly programmed to produce 40 millisecond intervals,
+  so where's the fault?
+
+  Note: we are talking about monotonic PIT and APIC interrupts since those are
+  the only ones used by the scheduler; we don't use the one-shot variants here.
+
+* One of the best ways I found to debug this problem, instead of depending on
+  shaky heuristics, is to store the occurrence of the timer ticks interrupts in
+  a statistical manner.
+
+  An example of this statistical method would be finding the number of timer
+  ticks occurrence after a sequence of independently-programmed delay intervals.
+
+* How to do so without sacrificing simplicity?
+
+  Setup the scheduler periodic timer through the PIT or the APIC:
+  `pit_monotonic(40)' OR `apic_monotonic(40)'.
+
+  Setup a counter representing the number of scheduler timer ticks so far:
+
+  .globl ticks_counter
+  ticks_counter:
+	.quad 0
+
+  .globl timer_handler
+  timer_handler:
+	...
+	incq   ticks_counter
+	...
+
+  Then, do _independent_ time delays and store the number of timer ticks so far
+  after each delay. This way, we can have a statistical comparison between the
+  two timers, the one used for the delay and the one used for the ticks. An
+  example of this would be:
+
+	/* ticks[i]: number of scheduler timer ticks after the `i'th delay
+	 * interval, having in mind that we've setup both the ticks and delay
+	 * timers with the same time priod.
+	 *
+	 * If `1 2 3 4 5 6 ..' is printed, then the two timers are in harmony.
+	 * Having the sequence '3 5 7 9 11 ..' means that the ticks timer runs
+	 * twice as fast as the delay one. */
+	for (int i = 0; i < 100; i++)
+		pit_mdelay(52), ticks[i] = ticks_counter;
+	for (int j = 0; j < 100; j++)
+		printk("%d ", ticks[j]);
+
+  Comparing the statistical results, we found that the PIT in monotonic mode
+  ticks twice as fast as the PIT programmed in delay mode. It also ticked twice
+  as fast as the APIC timer in delay mode. This heavily suggests something wrong
+  in our PIT monotonic-mode setup!
+
+  Meanwhile, setting up the scheduler ticks using the APIC timer ran in perfect
+  harmony with the PIT-programmed delays. This heavily re-enforces above paragr-
+  aph reasoned speculation: something is wrong in our PIT periodic mode code.
+
+* Now that the problem was isolated, the error was a misunderstanding of the
+  PIT's mode-3 behavior; mode-2 fitted our goals better.
+
+  Interestingly, I found this method really helpful for testing periodic timers
+  code in general. We already test timer delays code by calibrating its produced
+  delays against wall clock time; this method complement the tests by also
+  testing the monotonic/periodic interrupts code.
