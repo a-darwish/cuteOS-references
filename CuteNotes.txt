@@ -1072,8 +1072,7 @@ On the C 'volatile' type qualifier:
   the issue, namely __minimizing__ 'volatile' as far as possible, and depending on
   explicit compiler and cpu _barriers_, and SMP primitives as needed.
 
-  --
-  So instead of:
+* So instead of:
 
   static uint64_t * volatile msg = NULL;
   while (msg == NULL)
@@ -1085,13 +1084,21 @@ On the C 'volatile' type qualifier:
   while (msg == NULL)
 	asm volatile ("pause": : :"memory");
 
-  --
-  Instead of:
+  The compiler barrier will assure "GCC not to keep memory values cached in
+  registers across the assembler instruction and not to optimize stores or loads
+  to that memory". In other words, it will force gcc to reload any values from
+  memory over the busy loop.
+
+* Instead of:
 
   volatile uint32_t *ioregsel = (uint32_t *)ioapic_base(apic);
   volatile uint32_t *iowin = (uint32_t *)(ioapic_base(apic) + 0x10);
   *ioregsel = reg;
   return *iowin;
+
+  where we don't want to the compiler to re-order the last two 'independent'
+  read and write cause this re-ordering will imply different semantics to the
+  programmed hardware.
 
   We use MMIO register accessors, which internally includes compiler barriers
   and any needed volatile qualifiers (See comments at top of include/mmio.h
@@ -2373,3 +2380,10 @@ Debugging periodic timers using statistical data:
   code in general. We already test timer delays code by calibrating its produced
   delays against wall clock time; this method complement the tests by also
   testing the monotonic/periodic interrupts code.
+
+  Note that for testing, specifying a large delay period catches more periodic
+  timers accuracy errors. Values from 50 ms and up proved to be good.
+
+* A similar test-case for periodic timers is comparing their statistical
+  ticks occurrences relative to each other. This will guarantee that all system
+  periodic timers really measure the same concept of time!

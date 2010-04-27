@@ -1,0 +1,150 @@
+Useful discussions and help I got from the great people at #osdev
+
+Special thanks to:
+	- Brendan Trotter (bcos), the BCOS project, http://bcos.hopto.org/
+	- Travis Geiselbrecht (geist), http://tkgeisel.com/
+
+On APIC Timers and calibration:
+-------------------------------
+
+<darwish> Doh .. took me an hour to discover the hard way that APIC timer has
+	  different frequency than the CPU's one ..
+<webczat> darwish: you was calibrating using pit?
+<darwish> Yeah, and it detects the CPU clock rightfully on different machines I
+	  tested
+<darwish> But seems CPU 'bus frequency' is different from CPU clock speed? I don't
+	  know
+<darwish> This is what the Linux log confirms: [   23.622558] Detected 10.390 MHz
+	  APIC timer.
+<darwish> while having a 1.8 GHz dual-CPU
+<darwish> mm, after some googling, seems the 'bus frequency' is the 'external
+	  clock frequency' ..
+<darwish> which seems needs _another_ calibration beside the calibration already
+	  done to detect CPU internal clock. Anyone confirming?
+<darwish> I'll calibrate this external clock thing with the CPU TSC .. that will
+	  be the easiest approach
+<bcos>	  darwish: Use a stable time-base (e.g. PIT, RTC) to calibrate local APIC
+	  timer
+<bcos>    darwish: Then use the local APIC timer each time you need to recalibrate
+	  the TSC
+<webczat> bcos: why not to use pit for tsc, at first? maybe because tsc is per
+	  cpu?
+<bcos>    Maybe because TSC takes a lot of work to get right
+<webczat> bcos: why it does?
+<bcos>    (starting with figuring out what it counts, followed by when it changes
+	  frequency)
+<darwish> Yeah, I was worried about the stability thing. My 2 years old laptop has
+	  a stable TSC, but I can't guarantee that on all x86-64 CPUs indeed
+<bcos>    Hmm - if you only care about 64-bit CPUs, then it should be much easier
+	  (there's a "TSC-invariable" flag returned by CPUID which should handle
+	  half of them)
+<geist>   yeah
+<geist>   i think most of the big cpus in the last few years have had tht set
+	  * bcos nods
+<bcos>    If that bit isn't set though, you end up using CPU.vendor and CPU.family
+<bcos>    webczat: For some CPUs (e.g. modern 64-bit) it measures time (which has
+	  nothing to do with the current CPU speed). In other cases it measures
+	  current CPU speed (which has nothing to do with time)
+<geist>   yeah, it ended up failing for both things it could have been useful to
+	  measure
+<geist>   since it's not consistent
+<geist>   it worked back in the day before cpus started changing speeds. i
+	  remember speedstep start to show up in about 1999 or so
+<geist>   and it was starting to screw up BeOS, which was using TSC as their time
+	  base
+<darwish> oh 
+<bcos>    Intel introduced a new (architectural, and easy to use) performance
+	  monitoring counter for measuring CPU speed
+<geist>   then they went out of business and we never had to fix it :)
+<geist>   right
+<darwish> bcos: yeah, but only for core2duo+ if I remember :(
+<bcos>    The other thing you need to watch out for is whether or not TSC stops
+	  counting in varies sleep states..
+<bcos>    "various"
+<geist>   right, so ultimately what it means is you can only really use TSC for
+	  counting small deltas of time/cycles
+<geist>   for performance measuring purposes
+<geist>   it's not useful for longer periods of time, or to generally keep the
+	  system time bas
+<bcos>    geist: I think the "TSC invariant" flag also implies the TSC keeps
+	  ticking in most(?) sleep states
+<darwish> bcos, I guess so, that's what I understood from the manual
+<geist>   right
+<bcos>    There are older CPUs that could have the "TSC invariant" flag set (if
+	  the flag existed when the CPU was made)
+<geist>   it's no longer measuring precisely cycles, but it became hard to do that
+	  when the thing became superscalar and superpipelined anyway
+<geist>   since it's sort of undefined exactly where instruction boundaries are
+<bcos>    geist: A CPU cycles is still a CPU cycle (regardless of where
+	  instruction boundaries are)
+<geist>   darn interesting discussion but i gotta wander out for a few
+<geist>   ta ta
+<darwish> bcos, If I understand correctly, there also problems of TSCs being
+	  stable, but unsynchronized between CPUs ..
+<bcos>    darwish: Yes
+<bcos>    darwish: I disable "RDTSC at CPL=3" so that doesn't worry me... :-)
+<bcos>    darwish: For each thread I keep track of a virtual TSC, so RDTSC causes
+	  a GPF and the GPF handler returns the thread's virtual TSC
+<darwish> bcos, that's an interesting solution ..
+<bcos>    darwish: For measuring time threads have to ask the kernel, and for
+	  measuring "used CPU time" the TSC a thread gets doesn't include time
+	  spent running other tasks
+<bcos>    darwish: Also prevents some security exploits
+<bcos>    (there's been research in the past about using the RDTSC on one CPU to
+	  detect how much work another CPU is doing, and using that information to
+	  help find encryption keys)
+<bcos>    (mostly for hyper-threading)
+<darwish> I heard about using the x86 CPU as an entropy for encryption ;)
+<darwish> Though it's really weird how one can get keys from the cycles itself ..
+<bcos>    darwish: Would take precise timing - e.g. detect if the other CPU is
+	  doing "MUL" by timing "MUL" on the other logical CPU on the same core
+<darwish> bcos, that's pretty hardcore
+	  * bcos nods
+<bcos>    darwish: Making RDTSC generate a GPF would be enough to make it useless
+	  (not precise/fast enough) for that sort of thing though.. ;-)
+<darwish> bcos, yeah, will mark this in my notes ..
+<darwish> (RDTSC and userspace)
+<bcos>	  It's funny, but Intel's programmers manual suggests that "RDTSC at
+	  CPL=3" should be disabled for "a secure OS"
+<bcos>	  (but no OS actually does it)
+	  * bcos needs to sleep - 5:19 in the morning, and the clocks went back an
+	  hour earlier (daylight savings)
+<darwish> maybe they don't do it as a backward compatibility thing?
+<webczat> bcos: but how to do detection like that?
+<darwish> bcos, oh .. good night then :)
+<bcos>	  darwish: Not sure - TSC can be useful
+<bcos>    G'nights! :-)
+
+
+On PIT idiosyncrasies:
+----------------------
+
+<darwish> The PIT is accurate enough for micro-second delays; isn't it?
+<bcos>    Yes, but it depends on how it's used
+<darwish> mm, can you elaborate a bit? I'm thinking of regular delays (like the
+	  ones needed while firing secondary CPUs)
+<darwish> long time bcos :) I've been busy last month at college; I hope things
+	  are fine on your side
+<bcos>    Always fine on this end :-)
+<bcos>    If you poll the "current tick", then you'll miss ticks because of I/O
+	  port delays, andend up with about 2 ms accuracy (at best) or worse
+<darwish> Yes, I poll the OUT-2 pin to do the delay; didn't know port access is
+	  very slow like that (in order of ms if I understood correctly)
+<bcos>    For the legacy/ISA stuff, it typically takes about 1 us to access an IO
+	  port
+<darwish> "andend up with about 2 ms accuracy (at best) or worse" <-- I thought
+	  this part is cause of the IO delay
+<bcos>    Doh - sorry - meant "about 2 us accuracy"
+<bcos>    For e.g. you poll an I/O port a tiny fraction before it's updated, then
+	  1 us later (when you find out the delay has expired) you're 1 us late
+<darwish> yeah; gonna add a comment on that. But thankfully the accuracy isn't too
+	  bad for my purposes so far (usually > 50 us)
+<bcos>    Best accuracy would be from using "one-shot" mode - in that case you're
+	  always 1 us late (due to sending EOI) and you can just use a slightly
+	  smaller count to adjust for it.. ;-)
+<bcos>	  But, if you only need > 50 us accuracy then it should be fine..
+<darwish> For such very sensitive cases, I'll use the APIC ;)
+<darwish> I have the bootstrap one spare; but the rest are used for the scheduler
+<darwish> 'sensitive cases' <-- where 1 us will make a difference
+<darwish> Thanks a lot bcos!
+<geist>   indeed
