@@ -80,17 +80,17 @@ On Data Alignment:
   mixed byte, word, and doubleword items) and efficiency in memory
   utilization.
 
-  ## When used in a configuration with a 32-bit bus, actual transfers of
-    data between processor and memory take place in units of doublewords (4bytes)
-  beginning at addresses evenly divisible by four ##
+  ** When used in a configuration with a 32-bit bus, actual transfers of
+  data between processor and memory take place in units of doublewords (4bytes)
+  beginning at addresses evenly divisible by four **
 
   However, the processor converts requests for misaligned words or doublewords
   into the appropriate sequences of requests acceptable to the memory interface.
-  ## Such misaligned data transfers reduce performance by requiring extra memory
+  ** Such misaligned data transfers reduce performance by requiring extra memory
   cycles. For maximum performance, data structures (including stacks) should
   be designed in such a way that, whenever possible, word operands are aligned
   at even addresses and doubleword operands are aligned at addresses evenly
-  divisible by four. ##
+  divisible by four. **
 
   Due to instruction prefetching and queuing within the CPU, there is no
   requirement for instructions to be aligned on word or doubleword boundaries.
@@ -369,7 +369,7 @@ On Real Mode:
 
 * The above terminology is also the root of 386+ protected mode 'far pointer'
   which is a 'logical address' containing a segment selector (16 bit) and an
-  offset (32 bit) relative to the segment pointed by the selector.
+  offset (32 bit) relative to the segment pointed by that selector.
 
 On accessing fixed disk drivers (hard-disks):
 ---------------------------------------------
@@ -408,6 +408,97 @@ On accessing fixed disk drivers (hard-disks):
   and is supported in all bios chips post-1995, so we use it exclusively.
 
   Check the boot sector code for more details.
+
+On x86 jumps:
+-------------
+
+* References:
+  - Intel i686 Manual, vol. 2, Instruction Set Reference, Chapter 3: JMP
+  - Sun Microsystems, [AT&T] x86 Assembly language reference manual
+
+* Judging by my early naive trial-and-error experiences and the nature of
+  newbies questions at osdev.org forums, the most common failure point while
+  developing bootloaders and early kernel stages is either an intra or an
+  inter-module jump. Because of this, we'll clarify the most used x86 jumps
+  here, detailing their AT&T syntax and opcodes. We don't use the Intel
+  syntax in our kernel, so it won't be discussed here; it's already clearly
+  defined in the official Intel manuals.
+
+  First, let's stress that a 'jump' is only a mechanism to disrupt the CPU
+  execution flow, moving EIP to a different code (hopefully not data!) region.
+
+  Generally, x86 jumps can be classified to either near or far. Near jumps
+  are 'intra-segment', meaning that they only move within the limits of the
+  currently setup and cashed code segment. Meanwhile, far jumps are
+  'inter-segment': they take a (mostly new) code segment descriptor and an
+  offset within such segment.
+
+  The kind of displacement in such jumps can also be either relative or
+  absolute. Relative addresses (to the next instruction address) were
+  introduced to save opcodes size. Absolute addresses are usually very
+  useful for jumping between different and unrelated code objects.
+
+  Examples of jumps:
+
+	<AT&T Syntax>			  |	<Objdump Disassembly>
+
+  [A] Near jump, 8-bit relative displacement (-128):  [short jump]
+
+  1:	movl $0xdeadbeef, %eax		  | af:     b8 ef be ad de
+	jmp  1b				  | b4:     eb f9
+
+  [B] Near jump, 8-bit relative displacement (+127):  [short jump]
+
+  1:	movl $0xdeadbeef, %eax	      	  | af:     b8 ef be ad de
+	jmp  2f				  | b4:     eb 00
+  2:	movl $0xcafebabe, %ebx		  | b6:     bb be ba fe ca
+
+  [C] Near jump, 16-bit relative displacement:
+
+	[Not supported by GAS]
+
+  [D] Near jump, 32-bit relative displacement:
+
+	jmp    dst			  | 12:     e9 f8 ff 0f 00
+  .skip 0xffff8				  | ...
+  dst:  movl   $0xdeadbeef, %eax	  | 10000f: b8 ef be ad de
+
+  [E] Near jump, absolute indirect displacement (register):
+
+	mov   $0x100000, %eax             | af:     b8 00 00 10 00
+	jmp   *%eax			  | b4:     ff e0
+
+  [F] Near jump, absolute indirect displacement (memory reference):
+
+	jmpl   *(0x7c00 + mem)		  | af:     ff 25 b5 7c 00 00
+  mem:	.long  0x100000                   | b5:     00 00 10 00
+
+  (AT&T syntax uses the '*' operator for indirect jumps)
+
+  Note that the _only_ available way for specifying _near_ absolute
+  displacements is to encode such displacements 'indirectly' (i.e. not
+  in the operands themselves) using a register or a memory reference.
+
+  [G] Far jump, absolute 32-bit far pointer in operand (16-bit %cs
+  index + 16-bit offset):
+
+  .code16				  |
+	ljmp   $0x08, $(0x7c00 + rel)	  | 99:     ea 9e 7c 08 00
+  .code32				  |
+  rel:	movl   $0x10000, %esi             | 9e:     be 00 00 01 00
+
+  [H] Far jump, absolute 48-bit far pointer in operand (16-bit %cs
+  index + 32-bit offset):
+
+  .code32				  |
+	# KERNEL_CS = 0x08		  |
+	# startup_64 = 	0x100112	  |
+	ljmp   $KERNEL_CS, $startup_64	  | 10006f: ea 12 01 10 00 08 00
+
+  [I] Far jumps, 32-bit or 48-bit absolute indirect displacement
+  (memory reference):
+
+	[Rarely used, let's only know that they exist]
 
 The 8259A Programmable Interrupt Controller:
 --------------------------------------------
