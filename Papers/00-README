@@ -60,16 +60,22 @@ Memory Management:
 
   - For memory mapping, the paper provides a table structure representing all
     virtual memory addresses. If the address is mapped, its cell contains the
-    mapped physical address. Otherwise, it's zero.
+    mapped physical address. Otherwise, it's zero. As a memory space
+    optimization, only mapped addresses will be  included in the mapping table
+    structure. If an address is not in the table, then it's not mapped.
 
-    Of Course this is very wasteful of memory resources, so the paper discusses
-    3 methods to remedy the situation, i.e. methods to cause significant reduction
-    in the amount of mapping information that needs to be stored. Those are
-    'segmentation', 'paging', and a mix of the two. Pure paging is the clear winner
+    Ofcourse this is still very wasteful of memory, so the paper discusses 3
+    methods to remedy the situation, i.e. methods to cause significant reduction
+    in the amount of mapping information that needs to be stored. Instead of
+    mapping individual addresses, we map 'blocks', a block being a set of
+    contiguous addresses in address space. The entries in the mapping table will
+    refer now to blocks, which are far less numerous than individual addresses
+    in the address space.
+
+    These methods are 'segmentation', dividing the _address space_ into blocks
+    (segments) of arbitary size, 'paging', organizing _memory space_ into blocks
+    (pages) of fixed size, and a mix of the two. Pure paging is the clear winner
     for the x86 architecture since the 2000s (x86-64), and for most RISC CPUs.
-
-  - Using paging, and in machines using binary arithmetic, power-of-2 page sizes
-    are chosen, to let address calculation be as trivial and fast as possible.
 
   - Paging offers simple 'uniform treatment' for all system memory, which is very
     beneficial. Loading a segment requires finding an unallocated region large enough
@@ -83,6 +89,15 @@ Memory Management:
     than variable-length segment transports. The difficulty of transporting variable
     length segments is compounded by overhead in watching out for the specific segm-
     ent length in order not to overrun buffers.
+
+  - In machines using binary arithmetic, power-of-2 page sizes are essential for
+    fast addresses calculations. Assume a paged virtual address is in the form (p, w),
+    where 'p' is the page number, and 'w' is the word offset within such page. To
+    find the page and offset of virtual address 'a', we can do:
+    (I) page-number (p) = [address (a) / page-size (z)].
+    (II) word-index (w) = R_z(a), aka the remainder of the division a/z.
+    These two operations I, and II can occur blazingly fast using left and right
+    shifts iff 'z' (page size) is a power of 2.
 
   - "One occasionally hears proposals to the effect that paging systems could be
     improved markedly if swapping were used to load a program's working information
