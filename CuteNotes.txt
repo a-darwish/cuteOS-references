@@ -434,9 +434,13 @@ On x86 jumps:
   offset within such segment.
 
   The kind of displacement in such jumps can also be either relative or
-  absolute. Relative addresses (to the next instruction address) were
-  introduced to save opcodes size. Absolute addresses are usually very
-  useful for jumping between different and unrelated code objects.
+  absolute. Relative addresses (wrt the next instruction address) were
+  introduced to save opcodes size. [*]
+
+  Absolute addresses are very important when relative offsets to an
+  outside-of-code-object destination address cannot be validly calculated
+  at link-time. Check the 'When %RIP-relativeness goes wrong' section's
+  summary for further details.
 
   Examples of jumps:
 
@@ -499,6 +503,12 @@ On x86 jumps:
   (memory reference):
 
 	[Rarely used, let's only know that they exist]
+
+  [*] footnote: On x86-32, only jumps and calls had the relative addressing
+  facility. To save opcode size, especially while handling 64-bit wide virtual
+  addresses, AMD introduced a global and default %RIP-relative addressing
+  scheme for most ops, including most important, dereferencing global data.
+
 
 The 8259A Programmable Interrupt Controller:
 --------------------------------------------
@@ -892,6 +902,20 @@ The 8259A Programmable Interrupt Controller:
     100136:       ff d0                   callq  *%rax
 
   which solves our problem nicely.
+
+* Summary: For a code object which is run from a _different_ address than what
+  it was originally linked to, a 'jmp' or 'call' op to a label (or an address)
+  outside of that unlucky object needs absolute addresses instead of the
+  _default_ %rip-relative ones. In this case, the 'next opcode address', being
+  the base of %RIP-relativeness calculations, is not the same at both link-time
+  and run-time; at run-time, the linker-calculated relative offset of the
+  destination becomes completely invalid due to the _now-different_ %RIP base,
+  jumping intentionally to the unknown.
+
+  Meanwhile, relative jumps and calls to labels within the same object are still
+  valid: the relative distance is still maintained within the object itself, no
+  matter where it's running from. This kind of internal relativeness is usually
+  calculated by the assembler (instead of the linker) and is safe here.
 
 
 Testing libc()-like kernel code:
