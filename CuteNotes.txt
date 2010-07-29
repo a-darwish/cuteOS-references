@@ -1,5 +1,33 @@
 			Notes on the Cute Kernel
 
+
+TOC:
+----
+
+(1)  On Intel Documents
+(2)  On Data Alignment
+(3)  On little-endian byte ordering
+(4)  On Real Mode
+(5)  On accessing fixed disk drivers (hard-disks)
+(6)  On x86 jumps
+(7)  On referencing global symbols
+(8)  The 8259A Programmable Interrupt Controller
+(9)  On x86 SMP initialization sequence
+(10) On linkers 'relocation error's
+(11) When %RIP-relativeness goes wrong
+(12) Testing libc()-like kernel code
+(13) On SMP Memory ordering models
+(14) On the C 'volatile' type qualifier
+(15) On the vaguely documented x86 16-bit protected mode
+(16) Using light debugging techniques
+(17) Musings on Memory Allocation
+(18) On Virtual Memory
+(19) On Partitionting the 64-bit kernel address space
+(20) Debugging -O3 triggered problems
+(21) The Zone!
+(22) Debugging periodic timers using statistical data
+
+
 On Intel Documents:
 -------------------
 
