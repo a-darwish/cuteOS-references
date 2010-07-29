@@ -150,7 +150,7 @@ On Data Alignment:
 * Useful numbers:
 
   0x100   = 256 bytes
-  0x200   = 512 bytes  (bootsector size)
+  0x200   = 512 bytes  (bootsector size, number of entries in PML{4, 3, 2} tables)
   0x400   = 1KB
   0x1000  = 4KB        (x86 normal page size/alignment)
   0x8000  = 32KB
@@ -409,12 +409,14 @@ On accessing fixed disk drivers (hard-disks):
 
   Check the boot sector code for more details.
 
+
 On x86 jumps:
 -------------
 
 * References:
   - Intel i686 Manual, vol. 2, Instruction Set Reference, Chapter 3: JMP
   - Sun Microsystems, [AT&T] x86 Assembly language reference manual
+  - Cute: boot/bootsect.S, boot/head.S, boot/e820.S, boot/trampoline.S
 
 * Judging by my early naive trial-and-error experiences and the nature of
   newbies questions at osdev.org forums, the most common failure point while
@@ -508,6 +510,185 @@ On x86 jumps:
   facility. To save opcode size, especially while handling 64-bit wide virtual
   addresses, AMD introduced a global and default %RIP-relative addressing
   scheme for most ops, including most important, dereferencing global data.
+
+
+On referencing global symbols:
+------------------------------
+
+* References:
+  - GNU LD Manual, 'Using LD', Section 3.5.4 -'Source Code Reference'
+  - Cute: include/idt.h, kernel/idt.S
+
+* To gracefully fail instead of triple faulting the machine, one of the first
+  things implemented while writing the C part of the kernel was setting up CPU
+  exception handlers. To setup these handlers, we needed access to the IDT table
+  and its descriptor; both were already defined in assembly files. What are the
+  rules for accessing these data structures natively in C?
+
+  When a global symbol is declared in C, two things happen. The compiler reserves
+  enough space in the executable .data or .bss section holding the _value_ of the
+  symbol. Second, it creates an entry in the program's symbol table which holds
+  the symbol _address_ (in that section). For a small example, check below
+  program and its disassembly:
+
+  --> globals.c (a1):		|  --> [disassembly, $gcc -O3]:
+  int x;			|  0000000000600800 <y>: 11 11 00 00 ... (.data)
+  int *y = 0x1111;		|  0000000000600818 <x>: ...  (.bss, 8 bytes)
+				|
+  int main(void) {		|  0000000000400460 <main>:
+    x = 0xdeadbeef;		|  400460: movq 0x200399(%rip),%rax  #600800 <y>
+    *y = 0xcafebabe;		|  400467: movl $0xdeadbeef,0x2003a7(%rip) #600818 <x>
+  }				|  400471: movl $0xcafebabe,(%rax)
+				|  400477: retq
+
+  As you can see, accessing the global 'x' required a single memory dereference
+  of the address 0x600818 stored in the program's symbol table. Meanwhile,
+  dereferencing the pointer 'y' required TWO memory dereferences: one for
+  dereferencing the variable 'y' address 0x600800, getting its value/contents,
+  and _another_ dereference for such value stored (0x1111); after all, a pointer
+  is just a special 8-byte variable.
+
+* Furthermore, check below program which has several symbols defined in an
+  assembly file with different treatments of such symbols (and their data) in C:
+
+  --> data.S (a2):		|  --> app.c (a2):
+  .section .data		|  uint32_t x;
+  .globl x			|  extern uint32_t *y;
+  x:				|  extern uint32_t z[];
+	.long 0xdeadbeef	|
+				|  int main(void) {
+  .globl y			|    printf("&x = 0x%lx\n", &x);
+  y:				|    printf("&y = 0x%lx\n", &y);
+	.long 0xcafebabe	|    printf("&z = 0x%lx\n", &z);
+				|
+  .globl z			|    printf("x = 0x%x\n", x);
+  z:				|    printf("y = 0x%x\n", y);
+	.long 0xeeeeeeed	|    ...    /* further code: check the output */
+				|  }
+
+  $ gcc -O3 data.S app.c -o output.elf
+  $ objdump -D output.elf -j .data
+  0000000000600af0 <x>:
+  600af0:		ef be ad de be ba
+  0000000000600af4 <y>:
+  600af4:		be ba fe ca ed
+  0000000000600af8 <z>:
+  600af8:		ed ee ee ee
+
+  $ ./output.elf
+  'int x'   is a global located at program area (&x = ): 0x600af0
+  'int *y'  is a global located at program area (&y = ): 0x600af4
+  'int z[]' is a global located at program area (&z = ): 0x600af8
+
+  x = 0xdeadbeef		|  *x = <not-applicable>
+  y = 0xcafebabe		|  *y = <segmentation fault> (0xcafebabe unmapped)
+  z = 0x600af8			|  *z = 0xeeeeeeed
+
+  x[0] = <not-applicable>
+  y[0] = <segmentation fault> since 0xcafebabe is not mapped
+  z[0] = 0xeeeeeeed
+
+  As seen from above introspection, y is just a global variable holding
+  0xcafebabe. y _address_ is '0x600af4', buts its _value_ is 0xcafebabe. Thus,
+  '*y' will produce two memory dereferences, and the second of the two will
+  result in a CPU exception (segmentation fault) since 0xcafebabe is not
+  mapped.
+
+* So, if we have a structure like the below IDT table descriptor:
+
+  /* Located at ffffffff8010e240
+   * Binary value (little endian): 00 10 80 16 11 00 00 80 ff ff */
+  .globl idtdesc
+  idtdesc:
+	.word  idt_end - idt		# limit
+	.quad  VIRTUAL(KTEXT_PHYS(idt))	# base
+
+  we can _not_ reference it in C as
+
+  struct idt_descriptor {
+	uint16_t limit;
+	uint64_t base;
+  } __packed;
+
+  extern struct idt_descriptor *idtdesc;	/* WRONG!! */
+  idtdesc->limit = 0;				/* Page-fault exception! */
+
+  since in above case, the variable pointer _address_ (&idtdesc = ) will be
+  0x10e240, and the pointer _value_ (idtdesc = ) will equal 0x8000001116801000.
+  Thus, dereferencing such pointer as in 'idtdesc->limit' above will in fact
+  dereference 0x10e240 first, then afterwards dereference the unmapped address
+  0x8000001116801000! Final result: a CPU page fault exception.
+
+  The only wrong thing above was specifying the wrong type for the 'idtdesc'
+  label. Having the type as the struct itself instead of a pointer will let the
+  struct address be 0x10e240, and its value will equal 0xffff8000001116801000
+  which _is_ the desired result:
+
+  extern const struct idt_descriptor idtdesc;
+  idtdesc.limit = 0;				/* Safe!! */
+
+* Now, if we want to reference the IDT table itself:
+
+  /* IDT_GATES: number of entries in the table */
+  .align 16
+  .globl idt
+  idt:
+	.skip  IDT_GATES * 16
+  idt_end:
+
+  Assuming a pre-defined C type of 'struct idt_gate', representing a single IDT
+  table entry structure, all what we need is an array of such types. Namely:
+
+  extern struct idt_gate idt[IDT_GATES];
+
+  Note that after all, an array 'A' is a special kind of pointer where A = &A.
+  (label value and address are the same, equalling link-time label address
+  stored in the symbol table)
+
+* Finally, let's reference below exception handler stubs, where they catch the
+  exception vector number through their positions in the stubs table:
+
+  /* Each stub code size = IDT_STUB_SIZE bytes */
+  .globl idt_exception_stubs
+  idt_exception_stubs:
+        i = 0
+	.rept  EXCEPTION_GATES_CNT
+	movq   $i, %rsi
+	jmp    default_exception_handler
+	i = i + 1
+	.endr
+
+  Well, let's first remember here that we're pointing to code, so we're only
+  interested in  each stub address,  not by any mean its contents. So, after
+  all, since this is a table, an array fits our goals nicely. What will be the
+  base object type? We only care about addresses, so let the types be 'char*':
+  char pointers makes pointer arithmetic very simple. An initial try can be
+
+  extern const char idt_exception_stubs[EXCEPTION_GATES_CNT];
+
+  Nice, but by this, each table cell is of size 1 byte (char). We want each
+  table cell to have the size IDT_STUB_SIZE chars (bytes). Namely:
+
+  idt_exception_stubs[EXCEPTION_GATES_CNT][IDT_STUB_SIZE]
+
+  which makes the compiler automatically calculate any stub address for us.
+  If we want the address of the third stub, we'll simply write:
+
+  void *addr = &idt_exception_stubs[3];
+
+* Summary: the simple declaration 'extern int x' directly reference the 4 bytes
+  marked as 'x' in the executable, where 'x' address is specified at link-time
+  in the program's symbol table. The operator [] in the declaration
+  'extern type SYMBOL[]' leaves it open only to the number of base type objects
+  which are present, not *where* they are. SYMBOL[n] just adds more static-time
+  safety; SYMBOL[n][s] let the compiler automatically calculates an entry (of
+  size 's')index for us.
+
+  Meanwhile, the '*' operator in a declaration 'extern TYPE *P' only binds
+  where the _8-byte variable_ P reside in the executable (its address), NOT
+  where the base type object is. The base-object itself can be reached only by
+  a double dereference: dereference of P address first, then a dereference of
+  P's content itself (which is, in turn, an 8-byte address).
 
 
 The 8259A Programmable Interrupt Controller:
