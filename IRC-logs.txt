@@ -12,8 +12,8 @@ TOC:
 (3)  Geist great help on schedulers
 (4)  On PIT idiosyncrasies
 
-On Testing the Page allocator:
-------------------------------
+On Testing the Page allocator (December 2009):
+----------------------------------------------
 
 <geist>   i usually do something like create an array of pointers, say 512 of them
 <geist>   then have a test app that randomly picks a slot, frees if something is
@@ -39,8 +39,8 @@ On Testing the Page allocator:
 	  was a bit uncomfortable on how to test those
 <darwish> Things look much brighter now; thanks a lot geist ;)
 
-On APIC Timers and calibration:
--------------------------------
+On APIC Timers and calibration (April 2010):
+--------------------------------------------
 
 <darwish> Doh .. took me an hour to discover the hard way that APIC timer has
 	  different frequency than the CPU's one ..
@@ -150,8 +150,8 @@ On APIC Timers and calibration:
 <bcos>	  darwish: Not sure - TSC can be useful
 <bcos>    G'nights! :-)
 
-Geist great help on schedulers:
--------------------------------
+Geist great help on schedulers (February 2010):
+-----------------------------------------------
 
 <darwish> After some thinking, I guess the best approach now to continue is:
 	  writing a primitive initrd -> build the luser/kernel divide -> write
@@ -226,8 +226,8 @@ Geist great help on schedulers:
 <darwish> geist, as always, thanks a lot :-)
 * darwish goes to schedulers land ..
 
-On PIT idiosyncrasies:
-----------------------
+On PIT idiosyncrasies (April 2010):
+-----------------------------------
 
 <darwish> The PIT is accurate enough for micro-second delays; isn't it?
 <bcos>    Yes, but it depends on how it's used
