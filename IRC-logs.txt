@@ -4,6 +4,41 @@ Special thanks to:
 	- Brendan Trotter (bcos), the BCOS project, http://bcos.hopto.org/
 	- Travis Geiselbrecht (geist), http://tkgeisel.com/
 
+TOC:
+----
+
+(1)  On Testing the Page allocator
+(2)  On APIC Timers and calibration
+(3)  Geist great help on schedulers
+(4)  On PIT idiosyncrasies
+
+On Testing the Page allocator:
+------------------------------
+
+<geist>   i usually do something like create an array of pointers, say 512 of them
+<geist>   then have a test app that randomly picks a slot, frees if something is
+	  there and allocates a new random sized allocation
+<geist>   that way you get a lot of sizes and their allocation/free order is random
+<geist>   tests all of your free space list coherency
+<geist>   you can also test for any corruption by maybe filling each allocation with
+	  a random bit pattern, seeded by the slot number of the array
+<geist>   and then double check before freeing that it hasn't been corrupted by
+	  other allocations
+<darwish> geist, this is going to be a good test indeed. I'll do it, it will make
+	  me way more comfortable about the code
+<geist>   i did this on my heap that i haul around for embedded projects
+<geist>   been using it for a few years so as far as i know it's bug free
+<darwish> which makes me feel even better :D
+<geist>   btw, the heap is
+	  http://git.newos.org/?p=lk.git;a=blob;f=lib/heap/heap.c;h=385d13a70d481614a625d015016bb6a8d8ee1767;hb=master
+<geist>   super simple, not particularly fast
+<geist>   but works
+<darwish> just finished checking it
+<darwish> will be of great help
+<darwish> That's my first time to code such memory algos as you know, so my mind
+	  was a bit uncomfortable on how to test those
+<darwish> Things look much brighter now; thanks a lot geist ;)
+
 On APIC Timers and calibration:
 -------------------------------
 
@@ -115,6 +150,81 @@ On APIC Timers and calibration:
 <bcos>	  darwish: Not sure - TSC can be useful
 <bcos>    G'nights! :-)
 
+Geist great help on schedulers:
+-------------------------------
+
+<darwish> After some thinking, I guess the best approach now to continue is:
+	  writing a primitive initrd -> build the luser/kernel divide -> write
+	  syscalls building blocks -> implement fork() and exit() -> think about
+	  the scheduler
+<darwish> went through some circles cause all above steps are inter-dependent,
+	  but I hope that sequence is sane ..
+<geist>   sounds fun
+<geist>   though i dont know the context of your statement, but i almost always
+	  recommend fleshing out your kernel before worrying about user space too
+	  much
+<geist>   you can write quite a complex system before user space comes along
+<geist>   threading, smp, full vm, net stack, driver model, fs layer, etc
+<geist>   all of those dont require user space to use
+<darwish> mm, I wanted to build the scheduler first, thus the above steps. Maybe
+	  I got concerned about the scheduler a bit early ..
+<geist>   seems like the scheduler is one of the first steps
+<geist>   how can you do all of that other stuff without any scheduling?
+<darwish> geist, I thought I won't know what to schedule if there were no
+	  binaries loaded (thus the initrd and syscalls steps), I guess my
+	  assumptions are wrong?
+<geist>   i did it almost completely first. 'kernel' as in something you can start
+	  running code in ring 3, then simple memory management, then threads
+	  (and hence scheduler), then smp, then more complicated paging vm
+<geist>   darwish_: so what do you mean by 'schedule'?
+<geist>   when ihear the word scheduler i usually take that to mean 'supports more
+	  than one thread'
+<geist>   and my question is how can you *not* support more than one thread almost
+	  immediately
+<darwish> geist, by schedule I meant interleaving two execution paths safely ..
+<geist>   right
+<geist>   so yeah, you want to do that almost immediately
+<geist>   user space is nothing particularly special, it's just a sandboxed way to
+          run code on your OS
+<geist>   it doesn't fundamentally change the design of the kernel
+<geist>   i think i hacked on my kernel for a year or so before even bothering with
+	  user space
+<geist>   and by then it was pretty full featured. i had just previopusly run test
+          code as threads in kernel space
+<darwish> geist, mm, so I can just start interleaving kernel code paths instead of
+	  worrying about userspace ..
+<geist>   darwish: sure. any modern preemptive kernel is not fundamentally different
+	  from user space
+<geist>   it's just ring 0 code that is multithreaded like user space
+<darwish> mm ...
+<geist>   think of the kernel as just a fancy library
+<geist>   user space just makes calls into it via an abstract mechanism
+<geist>   but on the other side it's still threaded and whatnot
+<geist>   it's just a big fancy library loaded in every processe's address space
+<darwish> so If I'm going to jump at the scheduler, what will the process
+	  abstraction structure represent, a 'kernel thread'?
+<geist>   if you design it right, there's no difference whatsoever
+<geist>   there are just threads
+<geist>   kernel threads are just threads that never leave kernel space
+<darwish> geist, that's possibly a stupid question; you advised above that I cant
+	  really have syscalls and user/kernel divide without the scheduler
+	  first.
+<geist>   well, it just doesn't make any sense
+<darwish> geist, is this cause syscalls requires saving the user-process context
+	  anyway before switching to the kernel?
+<geist>   it's just dumb
+<geist>   that's all,. you can do what you want, but there's no reason to delay
+	  getting a scheduler working
+<geist>   that's the meat of the kernel
+<darwish> That's what I'll do now, I'm just making sure I understood your points
+	  correctly ;)
+<darwish> I guess I finished comprehending above advice. The goal now will be
+	  firing several execution paths (threads) and interleaving them
+	  SMP-safely, _without_ bogging myself with any other details ..
+<geist>   yep. it's actually somewhat simpler than you think
+<geist>   once you fully grokk it
+<darwish> geist, as always, thanks a lot :-)
+* darwish goes to schedulers land ..
 
 On PIT idiosyncrasies:
 ----------------------
