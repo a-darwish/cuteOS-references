@@ -11,8 +11,9 @@ TOC:
 (2)  On APIC Timers and calibration
 (3)  Geist great help on schedulers
 (4)  On PIT idiosyncrasies
+(5)  Virtual Memory in a long mode kernel
 
-On Testing the Page allocator (December 2009):
+On Testing the Page allocator (01/01/2010!)
 ----------------------------------------------
 
 <geist>   i usually do something like create an array of pointers, say 512 of them
@@ -258,3 +259,69 @@ On PIT idiosyncrasies (April 2010):
 <darwish> 'sensitive cases' <-- where 1 us will make a difference
 <darwish> Thanks a lot bcos!
 <geist>   indeed
+
+
+Virtual Memory in a long mode kernel (February 2010):
+----------------------------------------------------
+
+<darwish> OK, So I'm now building new page tables instead of the one setup at long
+          mode boot. At this stage the kernel is already based on a virtual
+          addresses base of 0xffffffff80000000
+<darwish> I'm thinking of having a central kernel page table having the -2GB
+          virtual space mapped to physical 0x0 upward. Any physical address > 2GB
+          will need to be explicitly mapped (using a function like kmap()) ..
+<darwish> Is this a valid strategy?
+<darwish> I hope I won't face any surprises with this while doing the scheduler
+<geist>   seems reasonable
+<geist>   i think a general strategy is to map the kernel to 0xfffffff800000000
+<geist>   and then 'below' that put a large physical mapping
+<geist>   or just do what you ask and use < -2GB as your temporary mapping
+<geist>   since you have essentially an infinite amount of address space I'd
+          personally use -2GB -> 0  as your temporary mapping space
+<geist>   and then size up physical address and map it in one large chunk below that
+<geist>   say if you had 16GB of ram, map it to -20GB+ or something
+<geist>   you can use 1GB pages if you have an amd and not have to burn a lot of
+          memory on page tables
+<darwish> mm ..
+<darwish> geist, If I'm understanding correctly, you're talking about mapping the
+          entire physical space and ditch this kmap() thing I proposed above
+          completely
+<geist>   pretty much
+<geist>   it really depends on how you want to deal with the physical map in kernel
+          space
+<geist>   if you choose the linux strategy of having live data structures on 'top'
+          of it then go with what you're thinking
+<geist>   i'm not a huge fan of it, but i can see the appeal
+<geist>   i'm peronally more of a fan of treating the kernel address space like
+          any other, and have all the regions dynamically allocated
+<geist>   but then also have this big mapping of chunks (or all of) physical space
+          when you need it
+* darwish is comprehending ..
+<geist>   not too bad
+<geist>   running some git maintenance on the server at work
+<darwish> geist, Are 'live data structures' the ones allocated by the page
+          allocator, kmalloc(), etcetera?
+<geist>   kmalloc style styff, yeah
+<geist>   and things like loadable modules
+<geist>   linux runs its slab allocator on top of the physical mapping
+<geist>   so that there's a 1:1 mapping of physical allocations to virtual space
+<darwish> aah, that was my intention too (having the page allocator returning
+          pages < physical 2GB for the kernel) ..
+<darwish> Now parsing your second approach ..
+<darwish> geist, Things began to be clear. So what are the advantages of the
+          second non-Linux approach, address-space uniformity?
+<geist>   for one you dont need any special zones in your physical allocator
+<geist>   all of physical ram is perfectly available for everything
+<geist>   except for maybe 32bit pci issues
+<darwish> mm, this will let my page allocator and kmalloc stay simple as they are
+          now ..
+<geist>   i just think it's more uniform, but the linux strategy has some advantages
+<darwish> beside the less page tables main advantage?
+<geist>   if you can put up with the different zones for physical, and the need to
+          ask for different types of physical ram, it already has everything
+          mapped so the TLB pressure on kernel space is much lower
+<geist>   and you dont have to modify the page tables much which means less TLB
+          shootdowns on an smp system
+<geist>   anyway, off to the store for a bit
+<darwish> mm, I'll add above discussion to the wiki ..
+<darwish> Thanks a lot geist!!
