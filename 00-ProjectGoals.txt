@@ -1,0 +1,39 @@
+
+
+			"I believe each incoming freshman must be started at once on his own research
+			 project if we are to preserve his secret dream of greatness and make it come
+			 true." -- Edwin H. Land
+
+GOALS:
+------
+
+- "Nearly from the start, the system was able to, and did, maintain itself. This
+  fact is more important than it might seem. If designers of a system are forced
+  to use that system, they quickly become aware of its functional and
+  superficial deficiencies and are strongly motivated to correct them before it
+  is too late." -- Dennis Richie & Ken Thomson, The UNIX Time-Sharing System
+
+- A self-hosting SMP-safe x86_64 operating system where running on 32-bit x86
+  processors is not supported. AMD64 is now the predominant architecture for
+  PCs, laptops, and servers
+
+- Learn, by doing, UNIX kernels implementation details ** inside out **
+
+- Deep understanding of today's hardware/software interface, including the
+  x86-64 architecture, legacy BIOS, legacy PC hardware, MP/ACPI specs,
+  parallelism complexities on modern CPUs (e.g. memory ordering models), etc.
+
+- A mean to explore historical and current operating systems literature on
+  topics like memory management, schedulers, filesystems, etc
+
+- A mean to further understand historical and current Unix kernels, including
+  SVR2, 4.{2,3}BSD, old and new FreeBSDs and Linux
+
+- First milestone: reach a level of maturity to run basic GNU applications
+  including GCC, binutils, and coreutils (in that order)
+
+
+			"A little sleep, a little slumber, a little folding of the hands to rest -
+			 and poverty will come on you like a bandit and scarcity like an armed man."
+			 -- Proverbs 24:33-34 NIV
+
