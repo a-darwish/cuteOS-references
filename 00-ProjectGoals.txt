@@ -23,7 +23,7 @@ GOALS:
   x86-64 architecture, legacy BIOS, legacy PC hardware, MP/ACPI specs,
   parallelism complexities on modern CPUs (e.g. memory ordering models), etc.
 
-- A mean to explore historical and current operating systems literature on
+- A mean to study historical and current operating systems literature on
   topics like memory management, schedulers, filesystems, etc
 
 - A mean to further understand historical and current Unix kernels, including
