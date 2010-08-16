@@ -1,0 +1,132 @@
+Small notes on building and configuring the bochs x86 emulator for
+kernels development ..
+
+Bochs is much slower than Qemu, but its binary debugger, emulation
+environment configuration, and debugging output is way more superb.
+
+
+Build process:
+--------------
+
+Use CVS snapshots; two of the 'stable' versions I tested were buggy.
+
+Major Dependencies: 
+ - the `bcc' compiler for compiling the BIOS
+ - ncurses, readline, and X development packages
+
+Don't use WxWidgets. Although it's eye-candy cause of following
+the GTK theme, it _forcess_ a really buggy and ugly GUI binary
+debugger on us. Default to Xlib instead, and use the great bochs
+command-line debugger.
+
+$ autoconf
+$ ./configure --prefix /usr/local/bochs		\
+            --enable-a20-pin			\
+            --enable-x86-64			\
+            --enable-smp			\
+	    --enable-acpi			\
+            --enable-pci			\
+            --enable-readline			\
+            --enable-alignment-check		\
+            --enable-debugger			\
+            --enable-disasm			\
+            --enable-iodebug			\
+            --enable-x86-debugger		\
+	    --enable-logging			\
+            --enable-show-ips			\
+	    --disable-plugins			\
+            --disable-docbook			\
+	    --disable-debugger-gui		\
+	    --with-x				\
+	    --with-x11
+$ make
+
+/usr/local/bochs/bin/bochs -f ~/.bochsrc	# conf file
+
+
+Configuration file (Check bochs documentation):
+-----------------------------------------------
+
+#
+# Replace hardcoded paths below with ones suiting your system
+# Does Bochs support string variables in its conf file?
+#
+
+#
+# WxWidgets, which is eye-candy cause it follows the
+# GTK theme, forces a really buggy GUI debugger on us.
+#
+# Default to Xlib instead, and use the CLI debugger.
+#
+display_library: x, options="hideIPS"
+config_interface: textconfig
+
+#
+# Physical memory
+#
+megs: 35
+
+#
+# ROM BIOS
+#
+romimage: file=/usr/local/bochs/share/bochs/BIOS-bochs-latest
+
+boot: disk
+ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
+ata0-master: type=disk, mode=flat, translation=auto, path="/home/darwish/Cute/cute/data/temp", cylinders=20, heads=16, spt=63, biosdetect=auto, model="Generic 1234"
+ata1: enabled=1, ioaddr1=0x170, ioaddr2=0x370, irq=15
+i440fxsupport: enabled=1
+vga_update_interval: 40000
+vga: extension=vbe
+
+#
+# CPU
+# @count: number of cores
+# @quantum: max instructions allowed to execute by processor before returning control to another cpu.
+# @rest_on_triple_fault: 1 - highly recommended
+# @ips: emulated Instructions Per Second.
+#
+cpu: count=2:2:2, ips=5000000, quantum=5, reset_on_triple_fault=1, msrs="msrs.def"
+
+print_timestamps: enabled=0
+
+#
+# Path to bochs debugger output
+#
+debugger_log: bochs-dbgout.txt
+
+port_e9_hack: enabled=0
+text_snapshot_check: enabled=0
+private_colormap: enabled=0
+clock: sync=none, time0=local
+# no cmosimage
+ne2k: enabled=0
+pnic: enabled=0
+sb16: enabled=0
+# no loader
+log: bochsout.txt
+logprefix: %t%e%d
+
+#
+# Debugging levels
+#
+error: action=report
+info: action=report
+debug: action=ignore
+pass: action=fatal
+panic: action=report
+
+#
+# Debugging: enable internal debugger magic points
+#
+# The useless CPU instruction XCHG BX, BX causes bochs
+# to automatically enter the debugger mode.
+#
+magic_break: enabled=1
+
+keyboard_type: mf
+keyboard_serial_delay: 250
+keyboard_paste_delay: 100000
+keyboard_mapping: enabled=0, map=
+user_shortcut: keys=none
+mouse: enabled=0, type=ps2
