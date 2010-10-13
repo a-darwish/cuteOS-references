@@ -1,6 +1,13 @@
-This folder collects academic papers I needed while developing 'Cute', organized
-by topic and importance.
+Historical and (relatively) new research documents that was needed while
+working on this interesting project.
 
-Important notes extracted from the papers are put after each one's entry, which
-are often direct quotes. PDFs were downloaded from authors university homepages
-and from the ACM Portal service.
+Notes I've written while studying these papers are also included under
+each folder.
+
+Max column length for these ACII notes is 75 cols.
+
+mm/
+	- Memory management papers
+
+sched/
+	- Scheduling algorithms
