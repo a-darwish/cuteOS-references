@@ -1,0 +1,268 @@
+
+				Schedulers
+				----------
+
+
+Study notes for a number of Scheduling-related papers; this serves as
+a preparation for building an SMP scheduler for our 'Cute' kernel.
+
+Ahmed S. Darwish <darwish.07@gmail.com>
+
+* TOC:
+  ----
+
+  - Corbato62, 'An Experimental Time-Sharing System', MIT
+  - Sliberchatz08, Bibliography from the 'Operating System Concepts' book
+
+* F.J. Corbato et al., 'An Experimental Time-Sharing System', 1962:
+  -----------------------------------------------------------------
+
+  This is one of the earliest papers on time-sharing schedulers. The core
+  of the paper (beside its overall historical importance) is the section
+  'A Multi-Level Scheduling Algorithm', which is in modern terminology now
+  called the 'Multi-level Feedback Queue'. Important points:
+
+  - The core problem the algorithm tries to solve is system saturation:
+    a) total size of active user programs exceed high-speed memory
+    b) too  many active user programs to maintain an adequate response at
+    each user console.
+
+    The paper assumes that a good design of the system to solve the
+    saturation problem is to have a 'saturation procedure' which gives
+    __graceful__ degradation of the response time and effective real-time
+    computation speed of the large and long-running users.
+
+  - The paper argues that a simple round-robin scheduler will not work in
+    case of saturation cause it will cause an 'abrupt collapse of service'
+    due to the sudden burden of time required to swap programs in-and-out
+    of secondary memory such as a disk.
+
+    The multi-level scheduling algorithm is presented, which is claimed to
+    improve the __saturation performance__ of a time-sharing system.
+
+  - We now delve into the scheduler algorithm details: from the very first,
+    the scheduler partitions its runqueue to several priority queues
+    l_0, l_1, ..., l_L. ('L' is to be calculated later)
+
+  - In general, the bigger the program memory footprint (size), the less
+    queue priority it's assigned to. But, the less the queue priority, the
+    bigger the runtime for each of its tasks in number of quantum.
+
+    Mathematically: l = [ log_2( [w_p/w_q] + 1 ) ]
+
+    where each task at queue 'l' runs for 2^l quanta, and that if
+    l_a < l_b, then l_a has a higher priority than l_b. We can deduce
+    several things from above equation:
+
+    a) if      0 < w_p <    w_q, [w_p/w_q] =  0, runtime =  1 quantum |-- 1
+    b) if    w_q < w_p <  2*w_q, [w_p/w_q] =  1, runtime =  2 quanta  -|
+    c) if  2*w_q < w_p <  3*w_q, [w_p/w_q] =  2, runtime =  2 quanta  -|-- 2
+    d) if  3*w_q < w_p <  4*w_q, [w_p/w_q] =  3, runtime =  4 quanta  ..|
+    e) if  4*w_q < w_p <  5*w_q, [w_p/w_q] =  4, runtime =  4 quanta  ..|
+    f) if  5*w_q < w_p <  6*w_q: [w_p/w_q] =  5, runtime =  4 quanta  ..|-- 4
+    g) if  6*w_q < w_p <  7*w_q: [w_p/w_q] =  6, runtime =  4 quanta  ..|
+    h) if  7*w_q < w_p <  8*w_q: [w_p/w_q] =  7, runtime =  8 quanta  +++
+    ...								      +++|-- 8
+    p) if 15*w_q < w_p < 16*w_q: [w_p/w_q] = 15, runtime = 16 quanta  xxxx
+    ...								      xxxx|-- 16
+    _) if 31*w_q < w_p < 32*w_q: [w_p/w_q] = 31, runtime = 32 quanta  @@@@@
+    ...								      @@@@@|-- 32
+    _) if 63*w_q < w_p < 64*w_q: [w_p/w_q] = 63, runtime = 64 quanta
+
+    Note: at point 'a)', queue 'l' is equal to 0: the __highest__ possible
+    queue in priority.
+
+  - The above point in scheduler design _tries_ to solve the first part of
+    the problem the algorithm tackles: the stated point 'a) total size of
+    active user programs exceed high-speed memory' above.
+
+    From now on, the paper tackles second part of the problem, 'b) too many
+    active user programs to maintain an adequate response'.
+
+  - The scheduler __always__ begin with the tasks at the head of the
+    highest priority queue (l_0). After that queue gets exhausted, it moves
+    to the direct following queue l_1, and so on  <== (I)
+
+    Tasks in a single queue get run in a round-robin fashion.
+
+  - If while executing a task at queue 'l' (during the 2**l quantum), a
+    task got assigned to a higher priority queue 'l*', the current
+    executing task get put at the __head__ of the 'l'th queue, and the
+    process at (I) is restarted from queue 'l*', and so on.
+
+    In other words, a task cannot get executed while another task is
+    waiting at a higher priority queue.
+
+  - If a program in queue 'l' has not 'completed' (did not issue any I/O)
+    within its 2**l-quantum runtime, it's placed at the __tail__ of the
+    less-priority queue 'l+1'
+
+  - A powerful point in the algorithm above (beside broad bounds on system
+    performance) is that the classification procedure for tasks is entirely
+    automatic: it depends on performance and program size rather than
+    static declarations or (the possibly malicious) users hopes.
+
+  - As once stated above, the main theme around this scheduler is improving
+    the __saturation performance__ of the system.
+
+    This performance improvement on saturation exists cause as a user taxes
+    the system, the degradation of service occurs progressively starting
+    with users with large or long-running programs (least-priority queues)
+    first.
+
+  - Starvation: there's a probable case of a big number of active high
+    priority tasks starving less-priority CPU-bound tasks out of execution.
+
+    The paper __models__ a worst cast of having N tasks, each running at
+    queue 'l', and each relinquishing the CPU __directly__ before their
+    2**l quantum runtime, and thus each also returning to the the same-
+    priority queue, with the condition of returning to the runqueue only
+    't_u'-seconds later (time for finishing I/O and, or, user response).
+
+    If the system will always be busy at queue 'l' above, starving all less
+    priority queues 'l + x' for x > 0, then the queue 'l' must never be
+    empty; we must have:
+
+	N * 2^l * q >= t_u
+	2^l         >= (t_u / N*q)
+	l           >= log_2 (t_u / N*q)
+
+    where 'N' is the number of tasks at queue 'l'.
+
+    From above, we've found a lower-bound on the priority queue that can
+    be serviced: queues > 'l' above can possibly starve if number of tasks
+    reach N. Thus, we have a guarantee that all
+
+	l_a        <= [ log_2 (t_u / N * q) ]
+
+    will be serviced and will __not__ get starved (given the estimated
+    response time t_u), where '[]' denotes the integral part of enclosed
+    equation. The author calls this queue the 'highest serviced level'
+    queue.
+
+  - The equation above has set a bound on the starvation problem. So if we
+    set the max possible 'highest serviced queue' to the max possible queue
+    on the system, we have a __theoretical guarantee__ of no starvation in
+    the system.
+
+    (Providing this guarantee is very hard for modern-day general purpose
+    operating systems: we cannot easily put a limit on the number of tasks
+    'N', and we cannot even have a valid estimation of 't_u', the I/O
+    or user response finish time.
+
+    These values can be calculated easily if the target hardware and work
+    load is previously known; this is the case in the paper [IBM 7090],
+    and this can also be the case for small and predictable devices like a
+    small network router.)
+
+  - By now, we've analyzed most of the paper sans the response time
+    analysis.
+
+    While these response time equations are intellectually simulating, they
+    offer very broad bounds that are not entirely practical for a general
+    purpose scheduler, similar to the paper's way of handling starvation in
+    the above point.
+
+
+* Bibliography from 'Operating System Concepts', by Sliberchatz et al.:
+  --------------------------------------------------------------------
+
+  Feedback queues were originally implemented on the CTSS system described
+  in Corbato et al.[1]. This feedback queue scheduling system was analyzed
+  by Scharge[2]. The preemptive priority scheduling algorithm was suggested
+  by Kleinrock[3].
+
+  [1] Fernando J. Corbato et al., 'An Experimental Time-Sharing System', 
+      Proceedings of the AFIPS Fall Joint Computer Conference (1962)
+
+  [2] L. E. Scharge, 'The Queue M/G/I with Feedback to Lower Priority
+      Queues', Management Science, Volume 13 (1967)
+
+  [3] L. Kleinrock, 'Queuing Systems, Volume II: Computer Applications,
+      Wiley Interscience (1975)
+
+  Anderson et al.[4], Lewis and Berg[5], and Philbin et al[6] discuss
+  thread scheduling.
+
+  [4] T. E. Anderson et al., 'The Performance Implications of Thread
+      Management Alternatives for Shared-Memory Multiprocessors', IEEE
+      Transactions on Computers, Volume 38, Number 12 (1989)
+
+  [5] B. Lewis and D. Berg, 'Multithreaded Programming with Pthreads,
+      Sun Microsystems Press (1998)
+
+  [6] J. Philbin et al., 'Thread Scheduling for Cache Locality',
+      Architectural Support for Programming Language and Operating Systems,
+      (1996)
+
+  Scheduling techniques that take into account information regarding
+  process execution times from previous runs are described in Fisher[7],
+  Hall et al.[8], and Lowney et al.[9]
+
+  [7] J. A. Fisher, 'Trace Scheduling: A Technique for Global Microcode
+      Dispatching', IEEE Transactions on Computers, Volume 30, Number 7
+      (1981)
+
+  [8] L. Hall et al., 'Scheduling to Minimize Average Completion Time:
+      Off-line and On-line Algorithms', SODA: ACM-SIAM Symposium on
+      Discrete Algorithms (1996)
+
+  [9] P. G. Lowney et al., 'The Multiflow Trace Scheduling Compiler',
+      Journal of Supercomputing, Volume 7, Number 1-2 (1993)
+
+  Fair-share schedulers are covered by Henry[10], Woodside[11], and Kay
+  Kay and Lauder[12]
+
+  [10] G. Henry, 'The Fair Share Scheduler', AT&T Bell Laboratories
+       Technical Journal (1984)
+
+  [11] C. Woodside, 'Controllability of Computer Performance Tradeoffs
+       Obtained Using Controlled-Share Queue Schedulers', IEEE
+       Transactions on Software Engineering, Volume SE-12, Number 10
+       (1986)
+
+  [12] J. Kay and P. Lauder, 'Fair Share Scheduler', Communications of the
+       ACM, Volume 31, Number 1 (1988)
+
+  Siddha et al[13] discusses __MODERN__ challenges on multicore systems.
+
+  [13] S. Siddha et al, 'Process Scheduling Challenges in the Era of
+       Multi-Core Processors', Intel Technology Journal, Volume 11 (2007)
+
+  Multiprocessor scheduling was discussed by Tucker and Gupta[14], Zahorjan
+  and McCann[15], Fietelson and Rudolph[16], Leutenegger and Vernnon[17],
+  Blumofe and Leisersonn[18], Polychronopoulos and Kuck[19], and Lucco[20].
+
+  [14] A. Tucker and A. Gupta, 'Process Control and Scheduling Issues for
+       Multiprogrammed Shared-Memory Multiprocessors', Proceedings of the
+       ACM Symposium on Operating Systems Principles (1989)
+
+  [15] J. Zahorjan and C. McCann, 'Processor Scheduling in Shared-Memory
+       Multiprocessors', Proceedings of the Conference on Measurement and
+       Modeling of Computer Systems (1990)
+
+  [16] D. Fietelson and L. Rudolph, 'Mapping and Scheduling in a Shared
+       Parallel Environment Using Distributed Hierarchial Control', 
+       Proceedings of the International Conference on Parallel Processing,
+       (1990)
+
+  [17] S. Leutenegger and M. Vernnon, 'The Performance of Multiprogrammed
+       Multiprocessor Scheduling Policies', Proceedings of the Conference
+       on Measurement and Modeling of Computer Systems (1990)
+
+  [18] R. Blumofe and C. Leisersonn, 'Scheduling Multi-threaded
+       Computations by Word Stealing', Proceedings of the Annual Symposium
+       on Foundations of Computer Science (1994)
+
+  [19] C. D. Polychronopoulos and D. J. Kuck, 'Guided Self-Scheduling:
+       'A Practical Scheduling Scheme for Parallel Supercomputers', IEEE
+       Transactions on Computers, Volume 36, Number 12, (1987)
+
+  [20] S. Lucco, 'A Dynamic Scheduling Method for Irregular Parallel
+       Programs', Proceedings of the conference on Programming Languages
+       Design and Implementation, (1992)
+
+  The authors then list the standard books covering well-known general
+  purpose operating systems kernels like SVR2, the BSDs, Linux, NT, and
+  Solaris by Bach, Kirk McKusick, Bovet and Cesati, Solomon and
+  Russionovich, and Mauro and McDougal respectively.
