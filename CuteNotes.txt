@@ -2395,17 +2395,67 @@ On Partitionting the 64-bit kernel address space:
   - Take extreme care of overlaps while coding x86 'rep movsb' and friends.
     It's good to dynamically assure that:
 
-    + src < dst, AND dst >= (src + len)		.. i.e., no overlap
+    + src < dst, AND dst >= (src + len)		.. i.e., bad overlap
     + OR src >= dst				.. i.e., safe overlap
 
     Any other condition means direct corruption.
 
     The 'safe' overlap is only so if we are using 'movsb' instead of movsl
-    or movsq. Also remember that this 'safe' overlap corrupts the source,
-    but keep the destination data valid.
+    or movsq. Remember that this 'safe' overlap corrupts the source, but
+    keeps the destination data valid.
 
-  - We may add asserts to memcpy() and friends assuring no such diastrous
-    overlaps occur in the C side of the kernel.
+  - To be safe against such kind of overlaps in C parts of the kernel,
+    we've added below memcpy() asserts:
+
+    if (src >  dst && (src - dst) < 8) OR
+       (src <= dst && (dst - src) < len):
+         panic()						[1]
+
+    which can be reduced by logic (check Appendix) to:
+
+    if (dst + 8 > src) AND (src + len > dst):
+        panic();						[2]
+
+    The first check is used cause of 'movsq' 8-byte block copy. We've
+    intentionally transformed substraction in the '>' and '<' expressions
+    to addition cause of the _unsigned_ pointer values.
+
+    ----------------------------------------------------------------------
+    |					Appendix
+    |
+    | It's easy to prove equivalence of the 'if' conditions marked
+    | with [1] and [2] above; let:
+    |
+    | A eq 'src > dst'		==>   ~A eq 'src <= dst'
+    | B eq '(src - dst) < 8'
+    | C eq '(dst - src) < len)'
+    | D eq '(A and B) or (~A and C)'
+    | src >= 0, dst >= 0, len >= 0
+    |
+    | We want to prove that:
+    | D   is fully equivalent to   (B and C)
+    |
+    | From the premises, we can see that:
+    | if (B and C) is true, then
+    | '(A and B) or (~A and C)' is true, then
+    | D is true						   (I)
+    |
+    | From the premises, we can also see that:
+    | if A is true, then C is true			   (II)
+    | if ~A is true, then B is true			   (III)
+    |
+    | From premises and (II):
+    | if (A and B) is true, then (A and B and C) is true   (IV)
+    |
+    | From premises and (III):
+    | if (~A and C) is true, then (~A and C and B) is true (V)
+    |
+    | From premises, (IV), and (V):
+    | if D is true, then (B and C) is true		   (VI)
+    |
+    | From (I) and (VI):
+    | D   is fully equivalent to   (B and C)		   Q.E.D.
+    ----------------------------------------------------------------------
 
 * Global lessons:
 
