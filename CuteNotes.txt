@@ -26,6 +26,7 @@ TOC:
 (20) Debugging -O3 triggered problems
 (21) The Zone!
 (22) Debugging periodic timers using statistical data
+(23) The Naughty Multiply
 
 
 On Intel Documents:
@@ -2718,3 +2719,161 @@ Debugging periodic timers using statistical data:
 * A similar test-case for periodic timers is comparing their statistical
   ticks occurrences relative to each other. This will guarantee that all system
   periodic timers really measure the same concept of time!
+
+
+The Naughty Multiply:
+---------------------
+
+* References:
+  - Intel Instruction Set Reference, A-M, vol. 2A, MUL.
+  - GCC manual, 'Using the GNU Compiler Collection'
+
+* So I was writing a casual number of test-cases, where this sequence of code:
+
+  void run_tests(void) {
+	memset(_arr, 0xFF, 0x100);
+	__memcpy_forward(_arr, _arr + 20, 10);
+	__memcpy_forward(_arr + 20, _arr, 10);
+  }
+
+  produced a NULL-dereference exception. As printed by our exception handler:
+
+	Exception: vector=14, errcode=0x2, %cs=0x8, %rip=0xffffffff8010b6f7,
+	%ss=0x0, %rsp=0xffffffff80104ff0, %rflags=0x200202, %cr2=0x0,
+	%cr3=0x3ffef000, %cr4=0x20
+
+  It was weird: the code of these two functions was a very simple and
+  straightforward inline GCC assembly.
+
+  The problem was clearly related somehow to registers-usage pressure (the
+  compiler register allocator decisions) in the mother function run_tests().
+  Removing one memcpy() above, or adding a printk() in a random place in that
+  function would make the NULL exception disappear.
+
+* Disassembling the area around the faulting opcode, we found:
+
+  ffffffff8010b6a0 <string_run_tests>:
+  ffffffff8010b6a0:       48 c7 c2 20 fb 10 80    mov    $0xffffffff8010fb20,%rdx
+  ffffffff8010b6a7:       31 f6                   xor    %esi,%esi
+  ffffffff8010b6a9:       b8 ff 00 00 00          mov    $0xff,%eax
+  ffffffff8010b6ae:       48 89 d7                mov    %rdx,%rdi
+  ffffffff8010b6b1:       b9 00 01 00 00          mov    $0x100,%ecx
+  ffffffff8010b6b6:       48 89 ce                mov    %rcx,%rsi
+  ffffffff8010b6b9:       48 83 e1 07             and    $0x7,%rcx
+  ffffffff8010b6bd:       f3 aa                   rep stos %al,%es:(%rdi)   (+)
+  ffffffff8010b6bf:       48 89 f1                mov    %rsi,%rcx
+  ffffffff8010b6c2:       48 c1 e9 03             shr    $0x3,%rcx
+  ffffffff8010b6c6:       48 89 c6                mov    %rax,%rsi
+  ffffffff8010b6c9:       48 b8 01 01 01 01 01    mov    $0x101010101010101,%rax
+  ffffffff8010b6d0:       01 01 01
+  ffffffff8010b6d3:       48 f7 e6                mul    %rsi
+  ffffffff8010b6d6:       f3 48 ab                rep stos %rax,%es:(%rdi)  (++)
+  ffffffff8010b6d9:       41 b9 0a 00 00 00       mov    $0xa,%r9d
+  ffffffff8010b6df:       31 c0                   xor    %eax,%eax
+  ffffffff8010b6e1:       48 c7 c6 34 fb 10 80    mov    $0xffffffff8010fb34,%rsi
+  ffffffff8010b6e8:       48 89 d7                mov    %rdx,%rdi
+  ffffffff8010b6eb:       44 89 c9                mov    %r9d,%ecx
+  ffffffff8010b6ee:       41 89 c0                mov    %eax,%r8d
+  ffffffff8010b6f1:       41 89 c8                mov    %ecx,%r8d
+  ffffffff8010b6f4:       83 e1 07                and    $0x7,%ecx
+  ffffffff8010b6f7:       f3 a4                   rep movsb %ds:(%rsi),%es:(%rdi)
+
+  From our exception handler, we can see that the faulting instruction
+  is the above 'rep movsb'. We can also deduce that (+) and (++) ops are
+  produced for memset(), and the rest are the memcpy() opcodes.
+
+* Tracing the code by hand, I reached the faulty instruction without
+  catching the NULL dereference. A null dereference at the 'movsb'
+  instruction can only mean that either %rsi = 0, or %rdi = 0, or both
+  had magically turned to zeroes.
+
+  Wondering about the state, I overwrote this movsb instruction in the
+  final kernel binary with a Bochs magic breakpoint code (66 87 db)
+  using a simple hex editor.
+
+  After moving to the debugging console, thanks to the magic breakpoint,
+  here was the Bochs registers dump:
+
+  (0) Magic breakpoint
+  CPU0:
+  rax: 0x00000000:00000000 rcx: 0x00000000:00000002
+  rdx: 0x00000000:00000000 rbx: 0xffffffff:801129a8
+  rsp: 0xffffffff:80104ff0 rbp: 0x00000000:00000000
+  rsi: 0xffffffff:8010fb34 rdi: 0x00000000:00000000
+  r8 : 0x00000000:0000000a r9 : 0x00000000:0000000a
+  r10: 0x0f200f20:0f200f20 r11: 0x66656463:62613938
+  r12: 0x00000000:00000000 r13: 0x00000000:00000000
+  r14: 0x00000000:00000000 r15: 0x00000000:00000000
+  rip: 0xffffffff:8010b6fa
+  eflags 0x00200202: ID vip vif ac vm rf nt IOPL=0 of df IF tf sf zf af pf cf
+
+  One thing was clearly noted: for some reason, %rdx (and %rdi by consequence)
+  have magically turned to zeroes, leading to the NULL dereference!
+
+* Finding that no explicit opcode zeroed %rdx above, then the zeroing
+  must have been a side-effect of some instruction above the faulty
+  dereference. Looking at the Intel Manual for cues, I found that
+  opcode: it was the 'mul %rsi' one.
+
+  So why didn't GCC know about this? Because _I_ did not know about
+  it while coding, thus I did not explicitly tell GCC that this nice
+  register will get implicitly clobbered.
+
+  GCC, naively thought that the register value was unmodified, and
+  rightfully re-used that register value at address 0x8010b6e8. GCC
+  is really competent wrt to optimizations. The faulty code was:
+
+	asm volatile (
+	    [...]
+	    "mov  %[ch], %[tmp];"
+	    "mov  $0x0101010101010101, %[ch];"
+	    "mul  %[tmp];"
+	    "rep  stosq;"
+	    : [tmp] "=&r"(tmp), [dst] "=&D"(d0), [ch] "=&a"(uch),
+	      [len] "=&c"(ulen)
+	    : "[dst]"(dst), "[ch]"(uch), "[len]"(ulen), "[tmp]"(tmp)
+	    : "memory");
+
+  As you can see, %rdx was not mentiond as a clobbered register, and
+  not even as an output register. GCC had all the rights to believe
+  that this register value was not modified in that snippet.
+
+  In another way, the clobber list tells gcc which registers (or
+  memory) are changed by the snippet, but not listed as an output.
+
+* The simple solution was adding the 'rdx' register to the assembly
+  snippet clobber list. Now the compiler output looks like:
+
+  ffffffff8010b6a0 <string_run_tests>:
+  ffffffff8010b6a0:       49 c7 c0 20 fb 10 80    mov    $0xffffffff8010fb20,%r8
+  [...]
+  ffffffff8010b6e8:       48 89 d7                mov    %r8,%rdi
+  [...]
+  ffffffff8010b6f7:       f3 a4                   rep movsb %ds:(%rsi),%es:(%rdi)
+
+  where the compiler uses the new register %r8, entirely avoiding
+  the %rdx register in the process.
+
+* From investigation, it seems GCC need to also be notified if the
+  assembly snippet alters the condition code register %rflags. We now
+  handle this by adding `cc' to the clobber list while using ops like
+  'andq', 'popfq', 'decq', and 'shrq'.
+
+  Cases where we forgot to clobber 'rcx' after using opcodes like
+  'rep XX' were also caught. For this, we only need to set 'rcx' as a
+  double input+output register; GCC will infer the rest.
+
+  Another faulty case was having 'rsi' be only set as an input register
+  amid the existence of 'movsq' in the assembly snippet.
+
+* Lesson:
+
+  While I did study the privileged x86 ring0 opcodes carefully (mainly
+  Intel's manual vol. 3A, and AMD vol. 2), the basic x86 opcodes were
+  learned 'on the go'. The problem we faced today is a small price for
+  that; I should re-read Intel's vol. 1 docs way more carefully.
+
+  To make-up for this, and also using the Intel manuals, I investigated
+  the side effects of __every__ opcode used in the kernel inlined
+  assembly snippets. That's how I caught the %rflags, %rcx, and %rsi
+  cases mentioned in the above point!
