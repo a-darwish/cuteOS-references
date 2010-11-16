@@ -1,3 +1,5 @@
+
+
 			Notes on the Cute Kernel
 
 
@@ -187,6 +189,7 @@ On Data Alignment:
   0x10000 = 64KB
   0x80000 = 512KB      (our initial kernel size!)
 
+
 On little-endian byte ordering:
 -------------------------------
 
@@ -300,6 +303,7 @@ On little-endian byte ordering:
   +---------------+---------------+---------------+---------------+^
                                                   Address start ---|
 
+
 On Real Mode:
 -------------
 
@@ -399,6 +403,7 @@ On Real Mode:
 * The above terminology is also the root of 386+ protected mode 'far pointer'
   which is a 'logical address' containing a segment selector (16 bit) and an
   offset (32 bit) relative to the segment pointed by that selector.
+
 
 On accessing fixed disk drivers (hard-disks):
 ---------------------------------------------
@@ -830,6 +835,7 @@ The 8259A Programmable Interrupt Controller:
      interrupt from IRQ5 or any lower priority interrupt. This completes the
      interrupt cycle.
 
+
 * On x86 SMP initialization sequence:
 -------------------------------------
 
@@ -893,6 +899,7 @@ The 8259A Programmable Interrupt Controller:
   Kernels usually call this part the SMP `trampoline', since it let the cores
   jump from its raw uninitialized state to a state similar to the bootstrap's
   one.
+
 
 * On linkers 'relocation error's:
 ---------------------------------
@@ -999,6 +1006,7 @@ The 8259A Programmable Interrupt Controller:
   In a nutshell, there was a reported error _for each_ relocatable symbol used,
   reflecting the number of relocation table entries with a type/bit-width that is
   insufficient to the linker script setup 64-bit virtual addresses.
+
 
 * When %RIP-relativeness goes wrong:
 ------------------------------------
@@ -1150,6 +1158,14 @@ Testing libc()-like kernel code:
   $ gcc -shared -o string_lib.so string_lib.o
 
   $ LD_PRELOAD='./string_lib.so' firefox-bin
+
+  Note: always run these tests with the binaries themselves instead of
+  their bash-script wrappers. Such shell wrappers don't play very well
+  with LD_PRELOAD at times.
+
+* It is interesting to note that a 30-second run of Firefox produced
+  655,227 memset() and memcpy() calls! A 1-minute run of Google Chrome
+  produced 1,889,087 calls! (counted by `wc -l').
 
 
 On SMP Memory ordering models:
@@ -1333,6 +1349,7 @@ On SMP Memory ordering models:
   - Unaligned 16-, 32-, and 64-bit accesses to cached memory that fit within
     a cache line. (but how do we know whether a memory access fits a cache line?)
 
+
 On the C 'volatile' type qualifier:
 -----------------------------------
 
@@ -1436,6 +1453,7 @@ On the C 'volatile' type qualifier:
 
 * Finally, check attached LKML messages for extra cases and reasonings by Linus
   and Andi Kleen.
+
 
 On the vaguely documented x86 16-bit protected mode:
 ----------------------------------------------------
@@ -2408,6 +2426,7 @@ On Partitionting the 64-bit kernel address space:
     different CPU speeds: Bochs's ips= parameter
     different BIOSes: different versions of Bochs Bios, different PC forms, ..
 
+
 * The Zone:
 -----------
 
@@ -2642,6 +2661,7 @@ On Partitionting the 64-bit kernel address space:
 
   - Let code binary single-stepping be our last debugging resort to make sure we
     understand the algorithms and code we've just written well enough.
+
 
 Debugging periodic timers using statistical data:
 -------------------------------------------------
