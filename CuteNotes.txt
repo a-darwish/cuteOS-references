@@ -1151,7 +1151,7 @@ Testing libc()-like kernel code:
   methods resides at 'string_lib.c', we do something similar to:
 
   # Position-independent object, suitable for dynamic linking
-  $ gcc -fPIC -c string_lib.c -o string_lib.o
+  $ gcc --std=gnu99 -O3 -fPIC -c string_lib.c -o string_lib.o
 
   # Produce shared object (instead of final executable) that can
   # be linked with other objects to form an executable.

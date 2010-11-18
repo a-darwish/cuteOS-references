@@ -8,11 +8,15 @@ a preparation for building an SMP scheduler for our 'Cute' kernel.
 
 Ahmed S. Darwish <darwish.07@gmail.com>
 
+
 * TOC:
   ----
 
   - Corbato62, 'An Experimental Time-Sharing System', MIT
+  - Corbato63, 'The Compatible Time-Sharing System - A Programmer's Guide'
+  - Dingledine09, 'Performance Improvements on Tor'
   - Sliberchatz08, Bibliography from the 'Operating System Concepts' book
+
 
 * F.J. Corbato et al., 'An Experimental Time-Sharing System', 1962:
   -----------------------------------------------------------------
@@ -72,6 +76,9 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     Note: at point 'a)', queue 'l' is equal to 0: the __highest__ possible
     queue in priority.
 
+    By above design, the bigger the program, the bigger its allocated
+    number of quanta, making the time-overhead of swapping negligible.
+
   - The above point in scheduler design _tries_ to solve the first part of
     the problem the algorithm tackles: the stated point 'a) total size of
     active user programs exceed high-speed memory' above.
@@ -129,7 +136,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
 
     where 'N' is the number of tasks at queue 'l'.
 
-    From above, we've found a lower-bound on the priority queue that can
+    From above, we've found an upper-bound on the priority queue that can
     be serviced: queues > 'l' above can possibly starve if number of tasks
     reach N. Thus, we have a guarantee that all
 
@@ -162,6 +169,56 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     offer very broad bounds that are not entirely practical for a general
     purpose scheduler, similar to the paper's way of handling starvation in
     the above point.
+
+
+* F.J. Corbato et al., 'The CTSS: A Programmer's Guide', 1963:
+  -------------------------------------------------------------
+
+  This manual gives a very nice overview of the historical time-sharing
+  hands-on experience. It's a worthwhile read while studying the CTSS
+  scheduler paper above.
+
+  A useful demonstration of a programmer's session on CTSS is also
+  presented in the Appendix. Interesting text editor!! it makes me
+  remember the original UNIX editor 'ed'.
+
+
+* Roger Dingledine, 'Performance Improvements on Tor', 2009:
+  ----------------------------------------------------------
+
+  Now why am I including a paper on Tor while we're dealing with
+  schedulers? Because the Tor network tries to solve a problem very
+  similar to the one Corbato was designing his scheduler model against:
+
+  ``Section 1 described mechanisms to let low-volume streams have a
+  chance at competing with high-volume streams. Without those mechanisms,
+  normal web browsing users will always get squeezed out by people
+  pulling down larger content and tolerating high latency.
+
+  But the next problem is that some users simply add more load than the
+  network can handle. Just making sure that all the load gets handled
+  __fairly__ isn't enough if there’s too much load in the first place.(+)
+
+  When we originally designed Tor, we aimed for high throughput. We
+  figured that providing high throughput would mean we get good latency
+  properties for free. However, now that it’s clear we have several user
+  profiles trying to use the Tor network at once, we need to consider
+  changing some of those design choices. Some of these changes would
+  aim for better latency and worse throughput. (++) ''
+
+  The statement marked with (+) matches word-by-word the problem
+  statement of the Multi-Level Feedback Queue paper: to gracefuly handle
+  'system saturation' while maintaining an acceptable level of system
+  responsiveness. Thus, avoiding the 'abrupt collapse of service' caused
+  by OS scheduler's round-robin algorithm or Tor's full fairness in high
+  overlad.
+
+  A main theme of the MLFQ solution, and Tor's one proposed at (++), is
+  not to let throughput-driven jobs (compilers in schedulers case, an
+  700-MB ISO download in the Tor case) deprive latency-senitive jobs
+  out of quickly-needed resources. Examples of such latency-sensive
+  apps include an editor or web-browser GUI scrolling in OS schedulers,
+  and servicing HTML websites in Tor.
 
 
 * Bibliography from 'Operating System Concepts', by Sliberchatz et al.:
