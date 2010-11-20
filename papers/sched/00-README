@@ -12,10 +12,82 @@ Ahmed S. Darwish <darwish.07@gmail.com>
 * TOC:
   ----
 
+  - Arpaci00, Operating Systems Notes, 'Scheduling: Introduction'
   - Corbato62, 'An Experimental Time-Sharing System', MIT
   - Corbato63, 'The Compatible Time-Sharing System - A Programmer's Guide'
   - Dingledine09, 'Performance Improvements on Tor'
   - Sliberchatz08, Bibliography from the 'Operating System Concepts' book
+
+
+* Remzi Arpaci-Dusseau, Operating Systems Notes, 2000:
+  ----------------------------------------------------
+
+  The included portion of Remzi's notes (ch. 6, 7, and 8) build a light-
+  weight (undergrad-level) introduction to general-purpose OS scheduling.
+  These documents also include a number of good references.
+
+  Here are the important points in these notes + analysis of mine:
+
+  - Some of the metrics in measuring schedulers include 'Turnaround time',
+    which is the time taken between registering a job for execution and
+    its completion/return/finish. Mainly:
+
+    T_{turnaround} = T_{finish} - T_{arrival}
+
+    Another metric, caring more about latency, is the 'response time'
+    which is the time the job waits in the ready queue till some CPU time
+    is provided:
+
+    T_{response} = T_{firstrun} - T_{arrival}
+
+  - The cost of context switching does not arise from the OS actions of
+    saving and restoring a few registers. For example, we do context
+    switching in our kernel using only 37 x86 opcodes: they are mainly
+    register moves and stack pops and pushes.
+
+    The real cost is that 'when programs run, they build up a great deal
+    of state in CPU caches, TLBs, branch predictors, and other on-chip
+    hardware. Switching to another job causes this state to be flushed
+    and new state relevant to the currently-running job to be brought in,
+    which may exact a noticeable performance cost.'
+
+  - Round-robin, the simplest practical scheduler possible, involves the
+    act of __cycling__ on the runqueue's list of processes, running each
+    job for a fixed time slice (unit). Assuming processes A, B, C, and D,
+    the scheduler run the jobs as follows
+
+    | A | B | C | D | A | B | C | D | A | B | C | D | A | B | C | ...
+
+    each for an equal amount of time. Advantages include implementation
+    simplicity, good average response times (see disadvantages though),
+    and being starvation-free by design.
+
+    Disadvantages include very bad behaviour on system saturation, cause
+    the system will swap-in and out programs for each (supposedly small)
+    time slice [*], and response-time rising linearly with the number of
+    active jobs in the system, even for highly-interactive processes.
+
+    [*] this is a point handled by the Corbato paper below
+
+  - In practice, most of processes will issue a number of blocking I/O
+    requests during their allocated time quanta, which leads to moving
+    them out of the runqueue altogether, and returning back to such queue
+    after I/O completion.
+
+    HOW are these jobs treated after returning back can be as simple as
+    considering them new processes (classical round-robin), or to perform
+    timing calculations and modify their priority (assuming 'priorities'
+    support in the scheduler, or a similar concept).
+
+  - Finally, there's a nice paragraph on the separation of mechanism and
+    policy in OS Design. For example, stuff like programming the system
+    ticks handler and context-switching code are scheduling mechanisms
+    (mechanically how the jobs get interleaved). Scheduling policies
+    (or disciplines) is what you're currently reading is about.
+
+    In real-time POSIX for example, there are several programmable
+    scheduling 'policies' that can be setup through sched_setscheduler().
+    Such policies include SCHED_FIFO, SCHED_RR, and SCHED_OTHER.
 
 
 * F.J. Corbato et al., 'An Experimental Time-Sharing System', 1962:
@@ -221,8 +293,8 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   and servicing HTML websites in Tor.
 
 
-* Bibliography from 'Operating System Concepts', by Sliberchatz et al.:
-  --------------------------------------------------------------------
+* Bibliography from 'Operating System Concepts', Sliberchatz et al., 2007:
+  ------------------------------------------------------------------------
 
   Feedback queues were originally implemented on the CTSS system described
   in Corbato et al.[1]. This feedback queue scheduling system was analyzed
