@@ -16,11 +16,12 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   - Corbato62, 'An Experimental Time-Sharing System', MIT
   - Corbato63, 'The Compatible Time-Sharing System - A Programmer's Guide'
   - Dingledine09, 'Performance Improvements on Tor'
+  - Arpaci00, OS Notes, 'Scheduling: The Multi-Level Feedback Queue'
   - Sliberchatz08, Bibliography from the 'Operating System Concepts' book
 
 
-* Remzi Arpaci-Dusseau, Operating Systems Notes, 2000:
-  ----------------------------------------------------
+* Remzi Arpaci-Dusseau, Operating Systems Notes, Introduction, 2000:
+  ------------------------------------------------------------------
 
   The included portion of Remzi's notes (ch. 6, 7, and 8) build a light-
   weight (undergrad-level) introduction to general-purpose OS scheduling.
@@ -96,7 +97,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   This is one of the earliest papers on time-sharing schedulers. The core
   of the paper (beside its overall historical importance) is the section
   'A Multi-Level Scheduling Algorithm', which is in modern terminology now
-  called the 'Multi-level Feedback Queue'. Important points:
+  called the 'Multi-level Feedback Queue' (MLFQ). Important points:
 
   - The core problem the algorithm tries to solve is system saturation:
     a) total size of active user programs exceed high-speed memory
@@ -150,6 +151,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
 
     By above design, the bigger the program, the bigger its allocated
     number of quanta, making the time-overhead of swapping negligible.
+    Thus, optimizing the turnaround time of CPU-bound processes.
 
   - The above point in scheduler design _tries_ to solve the first part of
     the problem the algorithm tackles: the stated point 'a) total size of
@@ -291,6 +293,52 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   out of quickly-needed resources. Examples of such latency-sensive
   apps include an editor or web-browser GUI scrolling in OS schedulers,
   and servicing HTML websites in Tor.
+
+
+* Remzi Arpaci-Dusseau, Operating Systems Notes, The MLFQ, 2000:
+  --------------------------------------------------------------
+
+  Here, the MLFQ algorithm we studied from __primary sources__ above is
+  re-discussed in modern terms. Important points:
+
+  - The hardest point in designing schedulers is to minimize response time
+    for interactive jobs, while also minimizing overall system turnround
+    time.
+
+  - As we know by now, MLFQ varies the priority of a job based on its
+    observational behaviour: learning from jobs as they run, and using
+    history to predict their future behaviour. Historical state is kept in
+    the scheduler priority queues.
+
+    This is an important systems design pattern of learning from history:
+    observing current trends and learning from the past to predict the
+    future. Such pattern is common in CPUs branch prediction, working set
+    rules, and in networking protocols congestion control mechanisms.
+
+    Remzi advises us though that 'such approaches work when jobs have
+    __phases of behavior__ and are thus predictable; of course, one must
+    be careful with such techniques, as they can easily be wrong and drive
+    a system to make worse decisions than they would have with no knowledge
+    at all.'
+
+  - There are two important problems in MLFQs:
+
+    a) Starvation: One of the possible ways to handle it is the well-known
+    'aging principle': increasing the priority as the process waits. Check
+    below parenthesized notes though; it's not that simple.
+
+    (Note1: The original paper theoretically 'solved' this issue by giving
+    bounds on starvation. These bounds can only work if we have a true
+    estimate of I/O response times _and_ of the jobs number in the system.
+    This is practically impossible for general-purpose scheduling.)
+
+    (Note2: There are several ways to __practically__ apply aging methods.
+    Some of these ways are discussed in David Black's paper 'Scheduling
+    support for concurrency and parallelism in the Mach Operating System.')
+
+    b) Gaming the system: A possible solution is to improve the algorithm
+    accounting of CPU time, making it less viable to gaming. Check the
+    notes for further details.
 
 
 * Bibliography from 'Operating System Concepts', Sliberchatz et al., 2007:
