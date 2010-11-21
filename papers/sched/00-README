@@ -17,6 +17,8 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   - Corbato63, 'The Compatible Time-Sharing System - A Programmer's Guide'
   - Dingledine09, 'Performance Improvements on Tor'
   - Arpaci00, OS Notes, 'Scheduling: The Multi-Level Feedback Queue'
+  - Arpaci98, 'Multilevel Feedback Queue Scheduling in Solaris'
+  - Oracle02, Man Pages Section 4: File Formats, ts_dptbl(4)
   - Sliberchatz08, Bibliography from the 'Operating System Concepts' book
 
 
@@ -87,7 +89,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     (or disciplines) is what you're currently reading is about.
 
     In real-time POSIX for example, there are several programmable
-    scheduling 'policies' that can be setup through sched_setscheduler().
+    scheduling 'policies' that can be setup through sched_setscheduler(2).
     Such policies include SCHED_FIFO, SCHED_RR, and SCHED_OTHER.
 
 
@@ -339,6 +341,100 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     b) Gaming the system: A possible solution is to improve the algorithm
     accounting of CPU time, making it less viable to gaming. Check the
     notes for further details.
+
+
+* Remzi Arpaci-Dusseau, 'Multilevel Feedback Queue Scheduling in Solaris',
+  1998  &&  Solaris, Man Pages Section 4: File Formats, ts_dptbl(4), 2002:
+  ------------------------------------------------------------------------
+
+  From now on, we check how various real-world kernels implement MLFQ
+  scheduling. Beginning with Solaris, here are the important points:
+
+  - For regular jobs, the kernel has 60 priority queues. A job begins in
+    the middle, at priority 29. As in classical MLFQ, CPU-bound jobs get
+    assigned smaller priorities over time (with bigger slices), and I/O
+    tasks move up, getting scheduled whenever they have jobs to do.
+
+    Now here is Solaris 'dispatcher parameter table' defaults:
+
+    Priority	q (ms)	tqexp	slpret	maxwait lwait
+    0		200	0	50	0	50
+    ...		vvv	v	vv	v	vv
+    9		vvv	v	vv	v	vv
+    10		160	v	51	v	51
+    11		vvv     1	vv	v	vv
+    12		vvv	2	vv	v	vv
+    13		vvv	3	vv	v	vv
+    14		vvv	4	vv	v	vv
+    15		vvv	5	vv	v	vv
+    16		vvv	6	vv	v	vv
+    17		vvv	7	vv	v	vv
+    18		vvv	8	vv	v	vv
+    19		vvv	9	vv	v	vv
+    20		120	10	52	v	52
+    21		vvv	11	vv	v	vv
+    22		vvv	12	vv	v	vv
+    23		vvv	13	vv	v	vv
+    24		vvv	14	vv	v	vv
+    25		vvv	15	vv	v	vv
+    26		vvv	16	vv	v	vv
+    27		vvv	17	vv	v	vv
+    28		vvv	18	vv	v	vv
+    29		vvv	19	vv	v	vv
+    30		80	20	53	v	53
+    31		vv	21	vv	v	vv
+    33		vv	22	vv	v	vv
+    33		vv	23	vv	v	vv
+    34		vv	24	vv	v	vv
+    35		vv	25	54	v	54
+    36		vv	26	vv	v	vv
+    37		vv	27	vv	v	vv
+    38		vv	28	vv	v	vv
+    39		vv	29	vv	v	vv
+    40		40	30	55	v	55
+    41		vv	31	vv	v	vv
+    42		vv	32	vv	v	vv
+    43		vv	33	vv	v	vv
+    44		vv	34	vv	v	vv
+    45		vv	35	56	v	56
+    46		vv	36	57	v	57
+    47		vv	37	58	v	58
+    48		vv	38	vv	v	vv
+    49		vv	39	vv	v	59
+    50		vv	40	vv	v	vv
+    51		vv	41	vv	v	vv
+    52		vv	42	vv	v	vv
+    53		vv	43	vv	v	vv
+    54		vv	44	vv	v	vv
+    55		vv	45	vv	v	vv
+    56		vv	46	vv	v	vv
+    57		vv	47	vv	v	vv
+    58		vv	48	vv	v	vv
+    59		20	49	59	32000	vv
+
+    tqexp: time quantum expired priority, the new priority the thread is set
+    to when it uses its entire time quantum. As you can see, any process
+    using its entire slice get its priority decreased by __10 levels__.
+
+    slpret: sleep return priority value, the new priority the thread is set
+    to after waking up (from a sleep event like network or disk I/O.)
+    The thread priority is increased to 50 or above after an I/O operation!
+
+    maxwait: a starvation avoidance mechanism to compensate threads waiting
+    for a relatively long time in the dispatcher queue. 'maxwait' is such
+    waiting time threshold. If a thread waited more than maxwait in the
+    queues, its priority is boosted up to the respective 'lwait' priority.
+
+    Each thread has a dispatcher_wait ('dispwait') counter, which is reset
+    when the thread is inserted into the dispatch queue (following a time-
+    quantum expiration, or cause of wakeup from I/O or locking). This
+    field is incremented once per second for all processes waiting in the
+    dispatcher queues. If such counter exceeded 'maxwait', then the thread
+    priority is incremented to 'lwait' -- a priority > 50 by default.
+
+    Note that the default 'maxwait' for Solaris is 0: just 1 second and
+    all the system processes priority will be boosted up above 50. This
+    avoids starving CPU-bound too much.
 
 
 * Bibliography from 'Operating System Concepts', Sliberchatz et al., 2007:
