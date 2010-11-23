@@ -19,6 +19,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   - Arpaci00, OS Notes, 'Scheduling: The Multi-Level Feedback Queue'
   - Arpaci98, 'Multilevel Feedback Queue Scheduling in Solaris'
   - Oracle02, Man Pages Section 4: File Formats, ts_dptbl(4)
+  - Black90, 'Concurrency and Parallelism in the Mach Operating System'
   - Sliberchatz08, Bibliography from the 'Operating System Concepts' book
 
 
@@ -435,6 +436,77 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     Note that the default 'maxwait' for Solaris is 0: just 1 second and
     all the system processes priority will be boosted up above 50. This
     avoids starving CPU-bound too much.
+
+    [Sol-*]:
+    (The values above have some very interesting details: Note that after
+    1-second, processes in the lowest (0-9) range will move to priority 50,
+    processes in the range (10-19) will move to 51, (20-29) to priority 52,
+    and so on. By this, high-priority processes response times will NOT be
+    affected because they will still run on queue 59 instantly.
+
+    Now, how can this prevent starvation? Can't processes keep going in
+    and out very quickly, starving queues < 59?. Indeed that was the
+    mathematically modeled worst case in the original CTSS paper.
+
+    Now comes the second important detail: even if the worst case above
+    occured (highly unlikely in practice, except if done maliciously),
+    you'll see that the 'lwait' field of the 50-59 priorites is 59. Thus,
+    in the second __starvation round__, all will move to 59 and execute
+    in a round-robin manner. This solves the starvation problem elegantly.
+
+    Summary: starvation can never exceed 2 seconds + waiting time in prio
+    queue 59. All while maintaining system responsiveness in the process.)
+
+
+* David L. Black, 'Concurrency and Parallelism in the Mach OS', 1990:
+  -------------------------------------------------------------------
+
+  This is a very interesting article, but we will concentrate on its MLFQ
+  deficiencies discussion for now (Note: always remember Black's point of
+  creating an idle thread per CPU, not to corrupt kernel stack on
+  multiprocessor systems). Important points:
+
+  - Multics used a decreasing priority MLFQ (as was exactly described in
+    its original paper) and discovered the major deficiency: on a heavily
+    loaded system with many short-lived jobs, the priority of a CPU-bound
+    job can decrease until little or no CPU-time is assigned to it. The
+    author notes that such problem (starvation) also existed on a number
+    of UNIX kernels.
+
+  - To handle this problem, it's necessary to elevate priorities in some
+    manner. VAX/VMS elevates a low application priority when it issues an
+    event like I/O completion.
+
+    The author states that this negatively affect interactive applications
+    which consume large amount of processor time, since they may not issue
+    priority-raising events to an effective degree.
+
+    (Nonetheless, this approach is effective, response-time wise, for
+    handling software with 'phases' of I/O and CPU-bound activity if the
+    CPU-bound activity is long but not dominant. This is a point the
+    original CTSS scheduler did not address: a job's transition from a
+    CPU-bound to an I/O-bound phase.)
+
+  - A (non-exclusive) second way to handle this is processor usage aging.
+    To compensate lower-priority jobs, we forget (decay) their past history
+    in some way, usually in an exponential decay manner.
+
+    (Exponential decay: N(t) = N(0) * (decay_factor)**t. Assuming a decay
+     factor of 0.5, and N(0)=10, then N(1)=5, and N(2) = (10/2)/2 = 0.25)
+
+  - Solaris, as we've seen, uses BOTH of the prevention methods above:
+    processes priorities get elevated after completion of an I/O event,
+    AND the kernel also forgets (age) __most__ of the current processes
+    usage history after one second (coalescing each 10 priorities to one,
+    while maintaining the relative difference between them).
+
+  - 4.3BSD: it solely uses the aging method to handle starvation, with a
+    CPU-usage decay factor that's based on system load. The bigger the
+    system load, the less usage decay, avoiding jobs from getting crammed
+    in high priority queues on high system load.
+
+    Priorites get calculated after every four clock ticks (40millis),
+    decreasing linearly with job's CPU usage.
 
 
 * Bibliography from 'Operating System Concepts', Sliberchatz et al., 2007:
