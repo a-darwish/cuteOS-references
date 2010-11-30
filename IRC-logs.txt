@@ -12,6 +12,7 @@ TOC:
 (3)  Geist great help on schedulers
 (4)  On PIT idiosyncrasies
 (5)  Virtual Memory in a long mode kernel
+(6)  @@ [INTERESTING] On Spinlocks and kernel preemption @@
 
 On Testing the Page allocator (01/01/2010!)
 ----------------------------------------------
@@ -39,6 +40,7 @@ On Testing the Page allocator (01/01/2010!)
 <darwish> That's my first time to code such memory algos as you know, so my mind
 	  was a bit uncomfortable on how to test those
 <darwish> Things look much brighter now; thanks a lot geist ;)
+
 
 On APIC Timers and calibration (April 2010):
 --------------------------------------------
@@ -151,6 +153,7 @@ On APIC Timers and calibration (April 2010):
 <bcos>	  darwish: Not sure - TSC can be useful
 <bcos>    G'nights! :-)
 
+
 Geist great help on schedulers (February 2010):
 -----------------------------------------------
 
@@ -226,6 +229,7 @@ Geist great help on schedulers (February 2010):
 <geist>   once you fully grokk it
 <darwish> geist, as always, thanks a lot :-)
 * darwish goes to schedulers land ..
+
 
 On PIT idiosyncrasies (April 2010):
 -----------------------------------
@@ -325,3 +329,91 @@ Virtual Memory in a long mode kernel (February 2010):
 <geist>   anyway, off to the store for a bit
 <darwish> mm, I'll add above discussion to the wiki ..
 <darwish> Thanks a lot geist!!
+
+
+* [INTERESTING] On Spinlocks and kernel preemption (30/11/2010):
+----------------------------------------------------------------
+
+<darwish> If a thread is holding a spinlock, but finished using its quantum,
+	  I should not preempt it till it releases such lock?
+<darwish> talking about kernel spinlocks, no userspace yet
+<bcos>	  In my opinion; if a thread is holding a spinlock, then any task
+	  switches should be postponed
+<bcos>	  (otherwise, beware of deadlocks)
+<Candy>   imo, if a thread is holding a mutex, you should give it a tiny bit of
+	  leeway to release it
+<Candy>   and subtract that leeway from its next slice
+<darwish> bcos, setting a time-limit on this wait should be better?
+<darwish> bcos, say a 10 ticks limit
+<bcos>    darwish: How long is the spinlock held???
+<Candy>   no time limit
+<Candy>   at least, not just a time limit
+<darwish> bcos, I always hold it for very short times ofcourse; I was just afraid
+	  of any bug here or there holding the lock more than usual
+<darwish> Candy, the substraction idea is interesting
+<Candy>   delay the switch until it releases all mutexes, or until a small amount
+	  of time has passed
+<bcos>    In that case, fix the bug (maybe consider a watchdog that uses NMI if
+	  you're that worried)
+<Candy>   ie, you wait until it releases the mutex to improve other threads'
+	  work completed and you basically let it borrow from its next slice
+<Candy>   for kernel space, let it keep the lock as long as it likes, and log
+	  those that take too long
+<darwish> yeah
+<bcos>    I've considered doing some sort of contention counter - e.g. the first
+	  time you attempt to acquire a spinlock and find it already locked,
+	  increase a counter
+<bcos>    so that I could find out which locks are causing contention
+<Candy>   works for optimizing
+<darwish> I guess I need something like that when lock usage increases in the
+	  kernel.
+<darwish> [19:36] bcos: (otherwise, beware of deadlocks)
+<darwish> bcos, I guess deadlocks can occur anyway whether or not a thread got
+	  preempted while holding a lock?
+<darwish> (I wont preempt such threads, just making a sure I didn't lose an
+	  important point in the middle)
+<bcos>    ThreadA acquires lock and gets preempted by ThreadB. ThreadB kills
+	  ThreadA. Now no-one can free the lock
+<darwish> oh; kernel threads killing each other?
+<darwish> bcos, you were talking about kernel threads for sure?
+<bcos>    threads, that happen to be running in kernel space
+<darwish> bcos, like a priviliged user-space program issuing a kill -9 signal?
+<darwish> (using  a system call)
+<bcos>    Multi-threaded process. One thread crashes all over the place. Do
+	  you kill the entire process?
+<bcos>    So, multi-threaded process. One of it's threads (running on a different
+	  CPU) crashes, and the other CPU kills the entire process, while some of
+	  the threads are holding kernel locks on other CPUs?
+<darwish> yeah; I got the picture
+<darwish> It's because I have no user-space support yet, that image of a
+	  user-space process issuing a system call and getting killed while in
+	  the system call path was not in my mind
+<darwish> that makes a perfect sense; you should either log all the taken kernel
+	  locks (impractical, inefficient), or just avoid preempting a thread
+	  holding a lock. Thus, getting rid of the resource-tracking problem
+<bcos>    When you acquire a lock, increment a "postpone task switches" counter.
+	  When you do a task switch, check this counter, and if it's non-zero
+	  you set a "task switch was postponed" flag. When you free the lock you
+	  decrease the "postpone task switches" counter, and it it becomes zero,
+	  check the "task switch was postponed flag", and it it's set, do the
+	  task switch then
+<bcos>    (which also means you leave interrupts enabled)
+<darwish> yay .. the second part is interesting (switching after free_lock)
+<bcos>    Need "per-CPU" counters/flags though
+<darwish> I might also check the 'task switch was postponed' part at the end of
+	  the ticks interrupt instead
+<darwish> I'm already building per-CPU runqueues anyway ;)
+<bcos>    "ticks interrupt"?
+<darwish> the timer interrupt; I program it to 'tick' for each 10 ms
+<bcos>    So, when a task switch is postponed, it may take an extra 10ms of
+	  latency before it actually happens?
+<darwish> I might change it period to tick each 1 ms instead .. but yes, it will
+	  be unfair I guess
+<darwish> s/it/its
+<bcos>    darwish: If it takes 1 us to send an EOI to the PIC, and you do that
+	  every 1 ms, how much CPU time is left to do anything else?
+<darwish> bcos, yeah. I think a tick every 1 ms is too much. doing the check at
+	  free_lock() sounds the best
+<darwish> and with no latency whatsoever.
+<darwish> bcos, can't believe how many times you've helped me throughout this
+	  project .. THANKS
