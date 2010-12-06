@@ -1,4 +1,5 @@
-Useful discussions and help I got from the great people at #osdev
+Useful discussions and help I got from the great people at #osdev and
+oftc.net #ck.
 
 Special thanks to:
 	- Brendan Trotter (bcos), the BCOS project, http://bcos.hopto.org/
@@ -13,6 +14,8 @@ TOC:
 (4)  On PIT idiosyncrasies
 (5)  Virtual Memory in a long mode kernel
 (6)  @@ [INTERESTING] On Spinlocks and kernel preemption @@
+(7)  Con's advice on schedulers
+
 
 On Testing the Page allocator (01/01/2010!)
 ----------------------------------------------
@@ -417,3 +420,91 @@ Virtual Memory in a long mode kernel (February 2010):
 <darwish> and with no latency whatsoever.
 <darwish> bcos, can't believe how many times you've helped me throughout this
 	  project .. THANKS
+
+
+* Con's advice on schedulers:
+_____________________________
+
+<darwish> ah ofcourse. I have a small hobby kernel I've been developing for a
+	  while .. I'm in the scheduling phase now
+<conman>  mhm
+<darwish> It's basically an MLFQ, with priorities boosting for starving threads
+	  every second ..
+<darwish> so I began testing it today with 200 100%-CPU-hogs ..
+<darwish> the disparity between the most lucky and least lucky thread is full 1.5
+	  seconds over a 2 minutes run
+<darwish> (seconds of runtime)
+<conman>  mhm
+<darwish> After plotting the runtimes over the two minutes, it seems the priority
+	  boosting messes up with fairness
+<conman>  correct
+<conman>  all heuristics have that effect
+<darwish> I wonder if MLFQs can be made a little bit fairer?
+<conman>  and what do you define as mlfq
+<darwish> several queues representing priorities, when a thread uses its entire
+	  slice, it's penalized by moving to a less priority, any higher-priority
+	  thread available can preempt a running less-priority one
+<conman>  problem with that design is always going to be batching of tasks at the
+	  lowest priority
+<conman>  it's intrinsically impossible to make it fair
+<conman>  when comparing cpu bound to occasionally sleeping tasks
+<darwish> indeed .. without the boosting, a good number of threads can starve up
+	  there if the right number of high-priority tasks were available
+<conman>  right
+<conman>  you're describing what was wrong with staircase
+<conman>  with enough frequently waking tasks, fully cpu bound tasks would starve
+<darwish> yeah
+<conman>  hence why staircase deadline evolved
+<conman>  staircase that is deadline based
+<conman>  and in essence that's what bfs does, but it's just terminology
+<conman>  it's an earliest virtual deadline first round robin design
+<conman>  so no real multi level queues, but same effect
+<conman>  it's the simplest I could possibly make a design that remains fair and
+	  low latency
+<darwish> I don't know what are deadline-based schedulers yet .. but I'll
+	  definitely check them soon: I'm not that happy about the currently
+	  implemented scheduler
+<conman>  it's only a virtual deadline
+<conman>  just who has waited the longest
+<conman>  that is all
+<darwish> ah
+<darwish> in the MLFQ currently implemented, the time-slices differ between
+	  priorities
+<darwish> i.e. the smallest priority ones have small time-slices, and the
+	  time-slice goes up with priority
+<darwish> you think that's good?
+<conman>  no
+<conman>  I use fixed time slices across all priorities
+<conman>  and vary the deadline across priorities
+<conman>  it means that the longest any two tasks of the *same* priority level
+	  wait is always the same
+<darwish> conman: the theory (which I've taken from a Solaris kernel book), was
+	  that higher priorities are usually CPU-bound ones, so they need to keep
+	  their hardware state as long as possible. That book argues that since
+	  the low-priority tasks can interrupt the higher-priority ones, it's
+	  not really a problem. Any experiences validating/invalidating this?
+<bh>      wtf?
+<conman>  by low they mean high
+<conman>  and by high they mean low
+<bh>      ok
+<bh>      makes more sense
+<conman>  it's neither here nor there in practice darwish
+<conman>  because we don't have hard set out priorities for most things
+<conman>  this goes fundamentally back to how we do or do not use nice
+<conman>  if nice was intrinsically coded into every application with some
+	  meaningful expectation of its behaviour
+<conman>  then we'd code nice to work within those constraints
+<conman>  but it's... not
+<conman>  and the applications are not
+<conman>  in fact that's precisely what I'm arguing with the implementation of
+	  something like latnice
+<darwish> In a sense, that scheduler assumes that it does its dynamic priority
+	  modification _right_ :)
+<conman>  (:
+<darwish> I'll check handling starvation with virtual deadlines then .. seems
+	  more theoretically consistent
+<darwish> conman, (sorry, that was a huge number of questions)
+<darwish> I was largely confused by the coded scheduler behavior .. but it seems
+	  that's a flaw in the classical MLFQ design itself
+<conman>  np
+<conman>  gotta go
