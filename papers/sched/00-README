@@ -20,6 +20,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   - Arpaci98, 'Multilevel Feedback Queue Scheduling in Solaris'
   - Oracle02, Man Pages Section 4: File Formats, ts_dptbl(4)
   - Black90, 'Concurrency and Parallelism in the Mach Operating System'
+  - Denham94, 'DEC OSF/1 Version 3.0 Symmetric Multiprocessing Implementation'
   - Sliberchatz08, Bibliography from the 'Operating System Concepts' book
 
 
@@ -94,8 +95,9 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     Such policies include SCHED_FIFO, SCHED_RR, and SCHED_OTHER.
 
 
-* F.J. Corbato et al., 'An Experimental Time-Sharing System', 1962:
-  -----------------------------------------------------------------
+* F.J. Corbato et al., 'An Experimental Time-Sharing System', AIEE-IRE
+  Proceedings of the May 1-3, 1962, Spring Joint Computer Conference, MIT:
+  ------------------------------------------------------------------------
 
   This is one of the earliest papers on time-sharing schedulers. The core
   of the paper (beside its overall historical importance) is the section
@@ -248,8 +250,9 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     the above point.
 
 
-* F.J. Corbato et al., 'The CTSS: A Programmer's Guide', 1963:
-  -------------------------------------------------------------
+* F.J. Corbato et al., "The Compatible Time-Sharing System: A Programmer's
+  Guide", The MIT Computation Center, MIT Press, 1963:
+  ------------------------------------------------------------------------
 
   This manual gives a very nice overview of the historical time-sharing
   hands-on experience. It's a worthwhile read while studying the CTSS
@@ -457,9 +460,54 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     Summary: starvation can never exceed 2 seconds + waiting time in prio
     queue 59. All while maintaining system responsiveness in the process.)
 
+  - NOTE: I've coded such scheduler in my kernel, and its disadvantages
+    began to appear directly after the first day of benchmarking: too much
+    heuristics and voo-doo constants!
 
-* David L. Black, 'Concurrency and Parallelism in the Mach OS', 1990:
-  -------------------------------------------------------------------
+    Scheduling 100% CPU-hog threads showed the ugly side of that algorithm:
+    the combination of a big number of dynamic priority levels with huge
+    and different slice lengthes per each priority kept starving the low
+    priority processes till the newly-queued CPU hogs moved up to their
+    equivalent low-priority level.
+
+    While the new CPU hogs were moving up, the older low-priority tasks
+    faced complete starvation for 1+ seconds. The algorithm thus boosted
+    these threads to high-priority levels, but this __starved__ the newer
+    threads that are now residing in relatively lower-priority queues. This
+    effectively made all system processes enter an infinite loop of
+    1+-second starvation and then boosting -- an upleasent situation.
+
+    Decreasing the number of priority levels and making the slices more fair
+    helped the situation, but kept introducing __new__ corner-cases. After
+    a number of days, I gave-up and went coding a more theoretically-sound
+    scheduling algorithm.
+
+    (The benchmark was simply plotting different kernel threads properties
+    over time. Such properties included threads total runtime, average
+    runtime per dispatch, total wait in runqueues, average wait in runqueues,
+    number of priority boosts [cause of starvation], number of preemptions
+    cause of a higher-priority thread becoming runnable, and number of
+    preemptions cause of a thread time-slice end:
+
+    (a) code version 1, 6 threads:
+        http://localf.googlepages.com/pub/mlfq/fairness.gif
+    (b) code version 1, 100 threads:
+        http://localf.googlepages.com/pub/mlfq/fairness100.gif
+    (c) code version 2 (after sanitizing the voo-doos), 6 threads:
+        http://localf.googlepages.com/pub/mlfq/fairness-improved.gif
+    (d) code version 2, 100 threads (things became good!!):
+        http://localf.googlepages.com/pub/mlfq/fairness-improved.gif
+    (e) unfortunately, the _new_ heuristics above had corner cases:
+        http://localf.googlepages.com/pub/mlfq/fairness-improved-pathological.gif
+
+    It seems I'm not the only one facing this though; I've found some refs
+    in academia on how SVR4-based schedulers [like Solaris] were very hard
+    to tweak and adapt to different workloads.)
+
+
+* David L. Black, 'Scheduling Support for Concurrency and Parallelism in
+  the Mach Operating System', IEEE Computer Journal, Carnegie Mellon, 1990:
+  -------------------------------------------------------------------------
 
   This is a very interesting article, but we will concentrate on its MLFQ
   deficiencies discussion for now (Note: always remember Black's point of
@@ -505,8 +553,209 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     system load, the less usage decay, avoiding jobs from getting crammed
     in high priority queues on high system load.
 
-    Priorites get calculated after every four clock ticks (40millis),
-    decreasing linearly with job's CPU usage.
+    Priority of the __currently running__ thread get re-calculated after
+    each 4 ticks of its runtime, decreasing linearly with job's CPU usage.
+    If a higher priority was discovered after this decrease, the thread
+    is preempted.
+
+    Routines responsible for waking up a thread or adding a new thread to
+    the runqueue check such thread priority against the currently running
+    thread. If it's higher, a reschedule operation is requested.
+
+    (XXX: Unix Internals discusses the problem of classical SVR2/3 decay,
+    its equations, and the new BSD decay method. Add these notes here as
+    a supplement to the original paper discussion.)
+
+
+* Jeffrey M. Denham et al., DEC OSF/1 Version 3.0 Symmetric Multiprocessing
+  Implementation, Digital Technical Journal, volume 6 number 3, Summer 1994:
+  --------------------------------------------------------------------------
+
+  This paper is gold, and is comparable in quality to the CTSS one. It
+  discusses a huge number of now-classical SMP features (a good number of
+  these were of a VAX/VMS origin):
+
+    + Accessing the 'current' thread state by masking the stack pointer,
+      regardless of the CPU we're currently running on.
+    + Per-CPU runqueues for thread scheduling!
+    + SMP scheduling soft affinity
+    + Interactions between spinlocks and kernel preemption
+    + Striking a balance between fine-grained locking and lockless algorithms
+
+  Important notes from that paper:
+
+  - The task of an SMP kernel is to improve system performance as CPUs are
+    added without compromising quality. DEC OSF/1 goal was to provide a
+    performant Unix SMP system over the Alpha architecture.
+
+    That hardware architecture provided shared memory, symmetric access to
+    system I/O busses, atomic read-and-set instructions, and interprocessor
+    interrupts (IPIs).
+
+    NOTE: This is very close to the Intel MultiProcessor (MP) architecture.
+
+  - As we know by now, classical Unix kernels insured its consistency by:
+     a] disabling interrupts in critical regions accessed by IRQ handlers
+        (and thus handling the concurrency of asynchronous IRQ handlers)
+     b] allowing only one process to be in kernel context at a time
+        (and thus handling the virtual concurrency provided by time-sharing)
+
+    These protections aren't enough in case of multicore systems, since
+    they provide real concurrent execution of kernel code paths.
+
+    An evolutionary solution to that problem was the use of 'funneling':
+    allowing certain kernel subsystems to be executed only in one CPU at
+    _any_ given time. These subsystems was then iteratively and slowly
+    moved to local fine-grained locking.
+
+    NOTE: Linux used that 'funneling' method in its early days using the
+    'Big Kernel Lock (BKL)'; FreeBSD did the same using a 'Global Mutex'.
+    Both kernels moved to fine-grained locking iteratively. By virtue of
+    being started in Winter of 2009, my kernel incorporates fine-grained
+    locking from the start.
+
+  - It's interesting to note that the first version of DEC OSF/1 provided
+    full kernel-mode preemption in its real-time version of the kernel.
+    Solaris was also made fully preemptive with fine-grained locking very
+    early on. Linux and FreeBSD caught on around 10 years later.
+
+  - The paper then discusses how kernel preemption should be disabled by the
+    entrance of spinlocks. It also discusses the now-very-common idea of
+    counting the depth of spin locks acquired using a reference count, and
+    preempting the kernel if and only if that reference count = 0.
+
+    NOTE 1: This is equivalent to Robert Love's Linux kernel preemption
+    patch. A google search reveals that this patch got merged in 2001.
+
+    NOTE 2: FreeBSD on the other hand completely disables local interrupts
+    upon spin lock entrance, automatically disabling preemption in the
+    process (at a slight performance cost). I do the same in my kernel.
+
+    NOTE 3: (cut-and-paste from my kernel comments) Disabling preemption
+    in spinlock-protected regions is a necessity because:
+     a) If a thread holding a spin lock got preempted, it will let a
+        possibly huge number of other threads consume their entire time
+        slice (which is in the order of milliseconds) just spinning!
+     b) If that preempted thread (which is now in the scheduler runqueue)
+        got killed, we can deadlock the entire system!
+     c) Classical race conditions may arise if the newly scheduled thread
+        accessed the same critical-region the older thread was accessing
+        while being preempted.
+        That's why spin locks are also needed in preemptive Uniprocessor
+        kernels: ignoring their spinning behavior, they act as atomic
+        critical region markers.
+
+    There's also a warning about accessing per-CPU variables while kernel
+    preemption is enabled. Modern kernels disable preemption in that state.
+
+    NOTE 4: (also from my kernel comments) Disabling preemption while
+    accessing a per-CPU variable is necessary:
+     a) We might get preempted and then rescheduled on a different CPU.
+     b) If the _preempting_ thread used the same per-CPU variable, that's
+        a classical race condition.
+
+    The paper notes that due to the complexities of kernel locking, a
+    "coherent locking architecture with automated debugging facilities
+    was needed to ship a reliable product on time."
+
+  - One problem faced by SMP is finding the descriptor of the current
+    process context. In a uniprocessor machine, that can be simply done
+    by a global memory variable that is changed before context switching.
+
+    On SMP, there's a "current" process descriptor for each CPU. This
+    descriptor can be located by finding the process number we're running
+    on, and then accessing an array of per-cpu data based on that number.
+
+    In Unix kernels, the current thread state is dereferenced a huge number
+    of times. Needing to know the current CPU number before each of these
+    dereferences (a costly hardware operation) was unacceptable.
+
+    NOTE 1: In contemporary x86 CPUs, this is costly since it needs reading
+    the APIC registers for each dereference. APIC registers accessors induce
+    higher latency than the usual general-purpose registers.
+
+    Even assuming that this operation wasn't costly from the hardware side,
+    we'll have to disable, then enable, kernel preemption each time we want
+    to access that thread state; also unacceptable.
+
+    DEC OSF/1 solved this by storing a pointer to the currently running
+    process descriptor at the very bottom of each thread stack. By simply
+    masking the stack pointer, they can instantly access that thread state,
+    __regardless__ of the CPU that thread is currently running on.
+
+    NOTE 2: The paper states that putting the 'current' thread state pointer
+    in the per-CPU area, and then setting it before each context switch,
+    would frequently trash other CPUs caches.  This is true in the regular
+    case, but aligning such per-CPU array elements on a cache-line boundary
+    (64 or 128 bytes in x86 CPUs) would solve that problem.  It's possible
+    that the Alpha architecture had different semantics though.
+
+    NOTE 3: Linux x86-32 used that stack-masking design for a long time. I
+    guess it was transfered to its developers by folklore.
+
+    NOTE 4: On the x86 kind of the equation, it's common to _permanently_
+    assign a segment register with the address of the relevant per-CPU area
+    (aligned on a cache-boundary) for each CPU. This avoids the inefficiency
+    of accessing the APIC for every per-CPU data dereference.
+
+      NOTE: Not all CPU architectures have the luxury of a such a register,
+      which is left _intact_ by the basic system ABI definition. The absence
+      of such register in the VAX architecture was the main reason of the
+      stack-masking idea in VMS. Explore the 'VMS Symmetric Multiprocessing'
+      paper, DTJ vol.1#7, for further historical context.
+
+      NOTE: Reading the historical (preliminary) AMD64 architecture document
+      (January 2001, Rev C), it seems that AMD kept the %fs and %gs registers
+      because Windows NT used %gs as a per-CPU area pointer. Interestingly,
+      NT is, afterall, a VMS-based kernel!
+
+  - Per-CPU runqueues: Paper begins by noting that "scheduling threads out of
+    a global runqueue is highly effective at keeping the N highest-priority
+    threads running". It then states the disadvantages of that method: lock
+    contention over the global runqueue and losing CPU cache state due to
+    uncontrolled bouncing of threads between CPUs.
+
+    NOTE: Having a global runqueue and taking CPU affinity in consideration
+    is not mutually exclusive. The Brainfuck Scheduler (BFS) is an example
+    of this.
+
+    The DEC designers thus added "soft affinity" to timeshare threads: these
+    threads are softly bound to the processor they last run on. Nevertheless,
+    if too much time passed since last run, they can get scheduled elsewhere:
+    the CPU state was probably lost anyway. It's more beneficial to directly
+    run that thread on another less-loaded CPU than wait for the current one.
+
+  - Load balancing: As a summary of the presented algorithm, let
+
+    TS(i): The estimated number of ticks available to time-sharing threads
+           by CPU #i in a scheduling period
+    TTS  : Total number of system ticks available to time-sharing threads
+    N    : Total number of runnable time-sharing threads in the system
+    D(i) : Ideal number of runnable time-sharing threads assigned to CPU #i
+    C(i) : Current number of time-sharing threads assigned to CPU #i
+
+    we have
+
+    TTS  = TS(1) + TS(2) + ... + TS(k), k = number of system CPUs
+    D(i) = (TS(i) / TTS) * N
+
+    Every second, the kernel calculates D(i) for each CPU. If a CPU had a
+    C(i) < D(i), and another one had C(i) > D(i), the former is marked as
+    "out of balance". When such unbalanced CPU reschedules, it "steals"
+    tasks from the overloaded CPU. Tasks get stolen only if they did not
+    run on their softly-bound CPU for a configurable amount of time, thus
+    preserving soft affinity usefulness as much as possible.
+
+  - The paper finishes by stating the software engineering tactics needed
+    to safely develop such an ambitious code base. Remember that this was
+    the 90s.  After studying that paper, it's clear that the two most
+    important tactics were:
+
+       - Code review, and
+       - Iterative development
+
+    So, well, things haven't changed a lot from the software engineering
+    side!
 
 
 * Bibliography from 'Operating System Concepts', Sliberchatz et al., 2007:
