@@ -21,6 +21,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   - Oracle02, Man Pages Section 4: File Formats, ts_dptbl(4)
   - Black90, 'Concurrency and Parallelism in the Mach Operating System'
   - Denham94, 'DEC OSF/1 Version 3.0 Symmetric Multiprocessing Implementation'
+  - Gamache88, 'VMS Symmetric Multiprocessing'
   - Sliberchatz08, Bibliography from the 'Operating System Concepts' book
 
 
@@ -572,8 +573,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   --------------------------------------------------------------------------
 
   This paper is gold, and is comparable in quality to the CTSS one. It
-  discusses a huge number of now-classical SMP features (a good number of
-  these were of a VAX/VMS origin):
+  discusses a huge number of now-classical SMP features:
 
     + Accessing the 'current' thread state by masking the stack pointer,
       regardless of the CPU we're currently running on.
@@ -582,7 +582,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     + Interactions between spinlocks and kernel preemption
     + Striking a balance between fine-grained locking and lockless algorithms
 
-  Important notes from that paper:
+  A good number of above ideas were of a VAX/VMS origin. Important notes:
 
   - The task of an SMP kernel is to improve system performance as CPUs are
     added without compromising quality. DEC OSF/1 goal was to provide a
@@ -716,8 +716,8 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     uncontrolled bouncing of threads between CPUs.
 
     NOTE: Having a global runqueue and taking CPU affinity in consideration
-    is not mutually exclusive. The Brainfuck Scheduler (BFS) is an example
-    of this.
+    is not mutually exclusive. Brainfuck Scheduler (BFS) and the Linux-2.4
+    epoch scheduler is an example of this.
 
     The DEC designers thus added "soft affinity" to timeshare threads: these
     threads are softly bound to the processor they last run on. Nevertheless,
@@ -756,6 +756,101 @@ Ahmed S. Darwish <darwish.07@gmail.com>
 
     So, well, things haven't changed a lot from the software engineering
     side!
+
+
+* Rodney N. Gamache && Kathleen D. Morse, 'VMS Symmetric Multiprocessing',
+  Digital Technical Journal, volume 1 number 7, pp. 57-73, August 1988:
+  ------------------------------------------------------------------------
+
+  NOTE: Below discussion assumes reading our notes on DEC OSF/1 v3.0 first.
+
+  "Systems software engineers must now design effective ways to utilize
+  systems with six, eight, or even more CPUs", begins this late 80s paper!
+
+  The SMP additions to VAX/VMS were motiviated by the, back then new, VAX
+  6200 architecture. From other papers in the _same_ journal issue, that
+  hardware design had:
+
+   + Symmetric shared memory
+   + Cache coherency in hardware (always a bless!)
+   + First-level cache for instructions, and a second-level write-through
+     one for both data and instructions
+   + Broadcast and single-destination inter-processor interrupts
+
+  This paper INTRODUCED a good number of now-classical SMP features:
+
+   + Spinlocks! (also _coined_ that term)
+   + Accessing the Per-CPU area (and thus the current thread state) by
+     masking the CPU stack pointer register.
+   + SMP scheduling hard affinity! (also _coined_ that term)
+
+  Having above context in mind, here were the important points:
+
+  - VMS engineers first considered using a global lock[*] to protect the
+    kernel in an SMP machine. They (rightfully) ditched the idea later and
+    moved directly to the ambitious goal of fine-grained locking.
+
+    NOTE: Compare this to the DEC OSF/1 method, where they first used a
+    global lock, and then fine-grained the system iteratively.
+
+    [*] Big Kernel Lock in Linux jargon, Global Mutex in the BSDs
+
+  - Inventing spinlocks: Regular VMS mutexes must be acquired in a process
+    context, but the kernel needed SMP protection in different other
+    contexts. That's why spinlocks were created; they can get acquired by
+    any CPU in any context (as long as certain sanity rules are held).
+
+    NOTE 1: A classical case is protecting the video-RAM and printf() buffers.
+    The kernel usually want to access such resource in all possible contexts,
+    including boot context, exception and even IRQ context, not just inside
+    process contexts.
+
+    Usually, a mutex is acquired or "owned" by a certain process; spinlocks
+    on the other hand are acquired by the CPU as a whole. Spinlocks was
+    implemented in VMS using an interlocked bit-test-and-set op.
+
+    NOTE 2: It's still implemented similarly these days, but it might be
+    faster to use an interlocked swap. A missing issue in that paper design
+    was making threads lock spinning time be finite (bound); that's an
+    important (third) condition in the theory of critical sections.
+
+      NOTE: That got handled in Linux using N.Piggin's ticket spinlocks.
+
+  - VMS added two important debugging aids to spin locks:
+
+    a) each spinlock was assigned a rank (order). All spinlocks must be
+       acquired in that order, eliminating any possible deadlocks.
+    b) each spinlock structure saved the last eight program counters (PC/
+       x86 %RIP) that acquired or released such lock.
+
+    NOTE: Can this ranking method dynamically work in my kernel? All my
+    locks are strictly local so far, but that might change once VFS and
+    file-systems are added (e.g. inode locks).
+
+  - Per-CPU Area: I _love_ how the authors state their thinking process in
+    that section. As in any SMP-capable kernel, VMS needed a per-CPU data
+    area to put things as the current thread state pointer and other per-
+    CPU bookkeeping.
+
+    The most effecient way to do that is to have a general-purpose register
+    _permanently_ set to the virtual address of the relevant per-CPU area.
+    Such a register did not exist in VAX, so instead of creating it in the
+    VAX hardware, they searched for a way to _overload_ a current register
+    with that purpose.
+
+    Since each CPU must have a unique stack to safely handle interrupts,
+    the current thread stack pointer can be safely overloaded with that
+    task. They put a pointer to the per-CPU area at the bottom of such
+    stacks, which can be reached by simply masking the stack pointer.
+
+    NOTE: See MUCH more details on this in our DEC OSF/1 discussion above.
+
+  - CPU Affinity: They maintained a mask inside each thread descriptor,
+    where each CPU is represented by a single bit. Setting only one bit in
+    that mask is equivilant to hard binding that thread to a single CPU.
+    Such affinity rules are naturally enforced by the scheduler.
+
+    NOTE: Solaris and Linux roughly use the same method for hard affinity.
 
 
 * Bibliography from 'Operating System Concepts', Sliberchatz et al., 2007:
