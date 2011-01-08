@@ -3,10 +3,49 @@
 				----------
 
 
-Study notes for a number of Scheduling-related papers; this serves as
-a preparation for building an SMP scheduler for our 'Cute' kernel.
+Study notes for a number of Scheduling-related papers, which served as
+a preparation for building an SMP scheduling base for my “Cute” kernel.
 
-Ahmed S. Darwish <darwish.07@gmail.com>
+The __primary sources__ (papers from the 60s, 80s, 90s, and 2000s) of
+the following topics are discussed:
+
+	- Multi-level Feedback Queues: that algorithm is the cornerstone
+	  of old & new schedulers like SVR2/3/4, the BSDs, Linux O(1), NT,
+	  Staircase, and Staircase Deadline algorithms.
+
+	- SVR4 and Solaris event-driven scheduling: including the
+	  disadvantages I faced while implementing it.
+
+	- Spinlocks: why was it badly-needed and invented by VMS engineers,
+	  and on missing an important condition of critical section theory
+	  in its original design.
+
+	- Per-CPU Data Areas: how VAX/VMS originally handled it, how the
+	  VMS-based NT kernel did it afterwards, and how the AMD x86-64
+	  architecture specifically kept the %fs and %gs segments cause
+	  of that original NT design.
+
+	- Finding the current thread state using stack masking: why was
+	  that design engineered by VMS on the VAX architecture, and how
+	  it was transfered to DEC OSF/1 and unnecessarily later to Linux.
+
+	- DEC OSF/1 and VAX/VMS symmetric multiprocessing: these kernels
+	  were the origin of now-classical ideas like spinlocks, per-CPU
+	  runqueues, interactions between spinlocks and kernel preemption,
+	  and thread scheduling soft and hard affinity!
+
+2010-2011, Ahmed S. Darwish <darwish.07@gmail.com>
+
+
+NOTE: To get things going at first, I start with a very basic overview of
+general-purpose thread scheduling using course notes by R. Arpaci-Dusseau.
+If you're familiar with the basics, move directly to the legendary F.J.
+Corbato's “An Experimental Time-Sharing System” paper.
+
+NOTE-2: You can find a cached copy of *all* the discussed papers at
+      http://gitorious.org/cute-os/references/trees/master/papers/sched
+
+NOTE-3: Turn UTF-8 on if you're reading this inside a web browser.
 
 
 * TOC:
@@ -25,8 +64,9 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   - Sliberchatz08, Bibliography from the 'Operating System Concepts' book
 
 
-* Remzi Arpaci-Dusseau, Operating Systems Notes, Introduction, 2000:
-  ------------------------------------------------------------------
+* Remzi Arpaci-Dusseau, Operating System Notes, “Scheduling:
+  Introduction”, University of Wisconsin-Madison, 2000:
+  ----------------------------------------------------------
 
   The included portion of Remzi's notes (ch. 6, 7, and 8) build a light-
   weight (undergrad-level) introduction to general-purpose OS scheduling.
@@ -51,11 +91,11 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     switching in our kernel using only 37 x86 opcodes: they are mainly
     register moves and stack pops and pushes.
 
-    The real cost is that 'when programs run, they build up a great deal
+    The real cost is that "when programs run, they build up a great deal
     of state in CPU caches, TLBs, branch predictors, and other on-chip
     hardware. Switching to another job causes this state to be flushed
     and new state relevant to the currently-running job to be brought in,
-    which may exact a noticeable performance cost.'
+    which may exact a noticeable performance cost."
 
   - Round-robin, the simplest practical scheduler possible, involves the
     act of __cycling__ on the runqueue's list of processes, running each
@@ -96,7 +136,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     Such policies include SCHED_FIFO, SCHED_RR, and SCHED_OTHER.
 
 
-* F.J. Corbato et al., 'An Experimental Time-Sharing System', AIEE-IRE
+* F.J. Corbato et al., “An Experimental Time-Sharing System”, AIEE-IRE
   Proceedings of the May 1-3, 1962, Spring Joint Computer Conference, MIT:
   ------------------------------------------------------------------------
 
@@ -105,23 +145,23 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   'A Multi-Level Scheduling Algorithm', which is in modern terminology now
   called the 'Multi-level Feedback Queue' (MLFQ). Important points:
 
-  - The core problem the algorithm tries to solve is system saturation:
+  - The main problem the algorithm tries to solve is system saturation:
     a) total size of active user programs exceed high-speed memory
     b) too  many active user programs to maintain an adequate response at
     each user console.
+    c) high performance cost of context switching
 
-    The paper assumes that a good design of the system to solve the
-    saturation problem is to have a 'saturation procedure' which gives
-    __graceful__ degradation of the response time and effective real-time
-    computation speed of the large and long-running users.
+    According to the authors, a good solution is to provide a procedure
+    which gives graceful degradation of the response time and effective
+    real-time computation speed of the *large and long-running users*.
 
   - The paper argues that a simple round-robin scheduler will not work in
     case of saturation cause it will cause an 'abrupt collapse of service'
     due to the sudden burden of time required to swap programs in-and-out
     of secondary memory such as a disk.
 
-    The multi-level scheduling algorithm is presented, which is claimed to
-    improve the __saturation performance__ of a time-sharing system.
+    The multi-level scheduling algorithm was thus presented to improve the
+    saturation performance of a time-sharing system.
 
   - We now delve into the scheduler algorithm details: from the very first,
     the scheduler partitions its runqueue to several priority queues
@@ -152,7 +192,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     ...								      @@@@@|-- 32
     _) if 63*w_q < w_p < 64*w_q: [w_p/w_q] = 63, runtime = 64 quanta
 
-    Note: at point 'a)', queue 'l' is equal to 0: the __highest__ possible
+    Note: at point 'a)', queue 'l' is equal to 0: the highest possible
     queue in priority.
 
     By above design, the bigger the program, the bigger its allocated
@@ -251,8 +291,8 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     the above point.
 
 
-* F.J. Corbato et al., "The Compatible Time-Sharing System: A Programmer's
-  Guide", The MIT Computation Center, MIT Press, 1963:
+* F.J. Corbato et al., “The Compatible Time-Sharing System: A Programmer's
+  Guide”, The MIT Computation Center, MIT Press, 1963:
   ------------------------------------------------------------------------
 
   This manual gives a very nice overview of the historical time-sharing
@@ -264,7 +304,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
   remember the original UNIX editor 'ed'.
 
 
-* Roger Dingledine, 'Performance Improvements on Tor', 2009:
+* Roger Dingledine, “Performance Improvements on Tor”, 2009:
   ----------------------------------------------------------
 
   Now why am I including a paper on Tor while we're dealing with
@@ -348,7 +388,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     notes for further details.
 
 
-* Remzi Arpaci-Dusseau, 'Multilevel Feedback Queue Scheduling in Solaris',
+* Remzi Arpaci-Dusseau, “Multilevel Feedback Queue Scheduling in Solaris”,
   1998  &&  Solaris, Man Pages Section 4: File Formats, ts_dptbl(4), 2002:
   ------------------------------------------------------------------------
 
@@ -506,8 +546,8 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     to tweak and adapt to different workloads.)
 
 
-* David L. Black, 'Scheduling Support for Concurrency and Parallelism in
-  the Mach Operating System', IEEE Computer Journal, Carnegie Mellon, 1990:
+* David L. Black, “Scheduling Support for Concurrency and Parallelism in
+  the Mach Operating System”, IEEE Computer Journal, Carnegie Mellon, 1990:
   -------------------------------------------------------------------------
 
   This is a very interesting article, but we will concentrate on its MLFQ
@@ -568,9 +608,9 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     a supplement to the original paper discussion.)
 
 
-* Jeffrey M. Denham et al., DEC OSF/1 Version 3.0 Symmetric Multiprocessing
-  Implementation, Digital Technical Journal, volume 6 number 3, Summer 1994:
-  --------------------------------------------------------------------------
+* Jeffrey M. Denham et al., “DEC OSF/1 Version 3.0 Symmetric Multiprocessing
+  Implementation”, Digital Technical Journal, volume 6 number 3, Summer 1994:
+  ---------------------------------------------------------------------------
 
   This paper is gold, and is comparable in quality to the CTSS one. It
   discusses a huge number of now-classical SMP features:
@@ -693,6 +733,8 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     NOTE 3: Linux x86-32 used that stack-masking design for a long time. I
     guess it was transfered to its developers by folklore.
 
+      NOTE: What about the risks, econet anyone?
+
     NOTE 4: On the x86 kind of the equation, it's common to _permanently_
     assign a segment register with the address of the relevant per-CPU area
     (aligned on a cache-boundary) for each CPU. This avoids the inefficiency
@@ -758,7 +800,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     side!
 
 
-* Rodney N. Gamache && Kathleen D. Morse, 'VMS Symmetric Multiprocessing',
+* Rodney N. Gamache && Kathleen D. Morse, “VMS Symmetric Multiprocessing”,
   Digital Technical Journal, volume 1 number 7, pp. 57-73, August 1988:
   ------------------------------------------------------------------------
 
@@ -853,7 +895,7 @@ Ahmed S. Darwish <darwish.07@gmail.com>
     NOTE: Solaris and Linux roughly use the same method for hard affinity.
 
 
-* Bibliography from 'Operating System Concepts', Sliberchatz et al., 2007:
+* Bibliography from “Operating System Concepts”, Sliberchatz et al., 2007:
   ------------------------------------------------------------------------
 
   Feedback queues were originally implemented on the CTSS system described
