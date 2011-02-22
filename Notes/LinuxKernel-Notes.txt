@@ -3,12 +3,12 @@
 My Notes about the Linux Kernel Gathered from books, Linux code, 
 my questions in LKML, Googling and several crazy months!.
 
-Written by: Ahmed S. Darwish <darwish.07 at gmail.com>
+2007-2008, Ahmed S. Darwish <darwish.07 at gmail.com>
 
 Edit: Changed to represent the new changes in kernel version 2.6.25
       including the new x86 stuff (std regparm(3), x64 unification, ...)
 
-      New!!: Some glibc clone() goodies.
+      New!! Some glibc clone() goodies.
 
 Topics Covered till now:
 1- Segmentation and paging internals (+ boot initialization)
@@ -16,7 +16,7 @@ Topics Covered till now:
 3- Interrupt and Exception handling internals (+ boot initialization)
 4- Softirqs, Tasklets and Workqueues internals
 5- Kernel preemption and Synchronization primitives
-6- preparing for GSoC: MM including buddy allocator and slab.
+6- A rough skim over MM, including the buddy allocator and slab.
 
 Introducion:
 ------------

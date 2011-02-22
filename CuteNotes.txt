@@ -1360,6 +1360,7 @@ On the C 'volatile' type qualifier:
     with various core developers thoughts copied from LKML.
   - ISO C99 Committee Draft - September 7, 2007
   - My OSDEV forums post: http://forum.osdev.org/viewtopic.php?t=21210&start=17
+  - My kernel souce code, include/percpu.h
 
 * As said by the C standard, "An object that has volatile-qualified type may be
   modified in ways unknown to the implementation or have other unknown side
