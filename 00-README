@@ -1,13 +1,28 @@
 				REFERENCES
 				~~~~~~~~~~
 
-Specifications, manuals, and academic papers used while developing
-the `Cute' kernel.
+Specifications, manuals, academic papers used, and notes written while
+developing the ‘Cute’ kernel.
 
-Some of the folders stated below include their own README files.
+Notes:
+------
 
 01-ProjectGoals.txt
 	- What all of this is about!
+
+CuteNotes.txt
+	- Important technical details, bugs, & experiences discovered
+	  while developing this project. That's the main “notes” doc.
+
+papers/sched/00-README
+	- Study notes for a number of SMP & thread scheduling papers;
+	  they form the bases of Cute's scheduler and SMP-safety ops.
+
+
+Folders:
+--------
+
+Some of the folders stated below include their own README files.
 
 Architecture/
 	- Old and new specs of Intel and AMD x86(-64) CPUs. Closely related

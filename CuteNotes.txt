@@ -19,7 +19,7 @@ TOC:
 (11) When %RIP-relativeness goes wrong
 (12) Testing libc()-like kernel code
 (13) On SMP Memory ordering models
-(14) On the C 'volatile' type qualifier
+(14) On the C 'volatile' type qualifier (with APPENDIX)
 (15) On the vaguely documented x86 16-bit protected mode
 (16) Using light debugging techniques
 (17) Musings on Memory Allocation
@@ -1455,6 +1455,69 @@ On the C 'volatile' type qualifier:
 * Finally, check attached LKML messages for extra cases and reasonings by Linus
   and Andi Kleen.
 
+    ----------------------------------------------------------------------
+    |					Appendix
+    |
+    | A good reason to hide 'volatile' as much as possible is its extreme
+    | fragility: you need to be quite comfortable with subtle C internals
+    | to use them correctly. Here are relevant snippets from C99's spec:
+    |
+    | Qualified types:
+    | 'volatile' is a type qualifier, as with 'const'. Such types “are
+    | only meaningful for expressions that are _lvalues_.” [1]
+    |
+    | Casting:
+    | “Preceding an expression by a parenthesized type name converts the
+    | _value_ of the expression to the named type.” [2a]
+    | “A cast does not yield an lvalue. Thus, a cast to a qualified type
+    | has the same effect as a cast to the unqualified version of the
+    | type.” [2b]
+    |
+    | (i.e. casting is an operator that only takes an rvalue as an input,
+    | and produce an explicitly-typed rvalue as output. It takes no
+    | lvalue as input, and never yields an lvalue as an output.)
+    |
+    | Grammar:
+    | “The type designated as 'float *' has type 'pointer to float'. Its
+    | type category is pointer, not a floating type. The const-qualified
+    | version of this type is designated as 'float * const' whereas the
+    | type designated as 'const float *' is _not_ a qualified type — its
+    | type is 'pointer to const-qualified float' and is a pointer to
+    | a qualified type.” Other type-qualifiers have z same semantics. [3]
+    |
+    | From all of the above, we can deduce that
+    |		float f = 42.2;
+    |		int i = (int)f;
+    | f is not read as an int; it's read as a float, then the resulting
+    | rvalue is re-typed/casted to an int.
+    |
+    | In below code
+    |		int y;
+    |		while ((volatile int)y == 0);
+    | the compiler can still optimize the loop out, why? As said by [2a],
+    | the cast will get applied on object ‘y’'s _value_. That value will
+    | get extracted using non-volatile semantics first, then it will get
+    | aimlessly casted to a volatile. That's why [2b] states that "a
+    | cast to a qualified type has the same effect as a cast to the
+    | unqualified version of the type."
+    |
+    | This code though
+    |		int y;
+    |		while (*(volatile int *)&y == 0);
+    | won't be optimized out. Our rvalue is the address ‘&y’ instead of
+    | ‘y’ object value. Such rvalue address is then typed by the cast
+    | operator to ‘pointer to volatile-qualified int’. That cast is NOT
+    | to a qualified type (meaningless type of casts as stated in [2b]):
+    | it's a cast to a plain __un-qualified__ pointer. ‘Pointers’ are,
+    | afterall, a standalone scalar type in the C language.
+    |
+    | (Best solution is obviously declaring y as 'volatile int y'.)
+    |
+    | A summary of volatile qualifiers & casts:
+    | the casts ‘(volatile int)x’ and ‘(int)x’ are equivalent [2b]
+    | the casts ‘(int * volatile)&x’ and ‘(int *)&x’ are equivalent [2b]
+    | the casts ‘(volatile int *)&x’ and ‘(int *)&x’ are different [3]
+    ----------------------------------------------------------------------
 
 On the vaguely documented x86 16-bit protected mode:
 ----------------------------------------------------
