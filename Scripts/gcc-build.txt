@@ -1,0 +1,42 @@
+* Instal those in order:
+  ----------------------
+
+  # MPFR library - Multiple precision floating point,
+  # with correct rounding ..
+  $ sudo apt-get install libmpfr-dev
+
+  # GMP - GNU Multiple Precision Library
+  $ sudo apt-get install libgmp3-dev
+
+  # Build and install the parma Polyhedra Library for
+  # old versions of Debian and Ubuntu. For newer
+  # versions, there are already pre-built packages:
+  $ sudo apt-get install libppl-dev
+
+  # If you have time, you can install Cloog ..
+
+* Prepare:
+  --------
+
+  # Completely outside of source directory (not even
+  # in a subdirectory):
+  $ mkdir objdir
+  $ cd objdir
+
+* Configure & make:
+  -----------------
+
+  #
+  # Make sure the build process detects above
+  # installed libraries
+  #
+  # NOTE! explicitly specify languages or gcc will
+  # build lots of unneeded things like g++ and Java!
+  #
+
+  $ $GCC_SRCDIR/configure		\
+	--prefix=/usr/local/gcc		\
+	--enable-langugauges=c
+
+  # 3-stage bootstrap native build
+  $ make

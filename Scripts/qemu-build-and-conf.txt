@@ -1,0 +1,44 @@
+
+* Build options:
+  --------------
+
+./configure --prefix=/usr/local/qemu	\
+	    --disable-kqemu		\
+	    --disable-linux-user	\
+	    --disable-bluez		\
+	    --disable-vnc-sasl		\
+	    --disable-vnc-tls		\
+	    --disable-xen		\
+	    --disable-nptl		\
+	    --disable-curses		\
+	    --disable-linux-user
+
+######################################################
+A small script to directly invoke Qemu from the kernel
+source tree:
+######################################################
+
+#!/bin/bash
+
+RAM=$1
+
+if [[ $RAM == "" ]]; then
+    RAM="100"
+fi
+
+echo "qemu: ram = $RAM"
+
+cat image > data/temp
+cat data/partition >> data/temp
+
+# Software emulation
+# qemu-system-x86_64	\
+
+# AMD-V or Intel VT
+qemu-kvm		\
+    -cpu core2duo	\
+    -smp 2		\
+    -hda data/temp	\
+    -m $RAM		\
+    -serial file:scripts/com1-output.txt \
+    -monitor stdio
