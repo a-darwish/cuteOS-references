@@ -1,0 +1,32 @@
+The classical "Unix Time-Sharing System" issue resides at:
+
+    Bell System Technical Journal, Volume 57, Issue 6, July-August 1978
+
+It can be entirely downloaded from:
+
+    http://www.alcatel-lucent.com/bstj/vol57-1978/bstj-vol57-issue06.html
+
+and includes the following list of gems:
+
+    UNIX Time-Sharing System: Preface  -  Crowley, T.H.
+    UNIX Time-Sharing System: Forward  -  McIlroy, M.D.; Pinson, E.N.; Tague, B.A.
+    The UNIX Time-Sharing System  -  Ritchie, D.M.; Thompson, K.
+    UNIX Time-Sharing System: UNIX Implementation  -  Thompson, K.
+    UNIX Time-Sharing System: A Retrospective  -  Ritchie, D.M.
+    UNIX Time-Sharing System: The UNIX Shell  -  Bourne, S.R.
+    UNIX Time-Sharing System: The C Programming Language  -  Ritchie, D.M.; Johnson, S.C.; Lesk, M.E.; Kernighan, B.W.
+    UNIX Time-Sharing System: Portability of C Programs and the UNIX System  -  Johnson, S.C.; Ritchie, D.M.
+    UNIX Time-Sharing System: The MERT Operating System  -  Lycklama, H.; Bayer, D.L.
+    UNIX Time-Sharing System: UNIX on a Microprocessor  -  Lycklama, H.
+    UNIX Time-Sharing System: A Minicomputer Satellite Processor System  -  Lycklama, H.; Christensen, C.
+    UNIX Time-Sharing System: Document Preparation  -  Kernighan, B.W.; Lesk, M.E.; Ossanna, J.F. Jr.
+    UNIX Time-Sharing System: Statistical Text Processing  -  McMahon, L.E.; Cherry, L.L.; Morris, R.
+    UNIX Time-Sharing System: Language Development Tools  -  Johnson, S.C.; Lesk, M.E.
+    UNIX Time-Sharing System: The Programmer's Workbench  -  Dolotta, T.A.; Haight, R.C.; Mashey, J.R.
+    UNIX Time-Sharing System: The UNIX Operating System as a Base for Applications  -  Luderer, G.W.R.; Maranzano, J.F.; Tague, B.A.
+    UNIX Time-Sharing System: Microcomputer Control of Apparatus, Machinery, and Experiments  -  Wonsiewicz, B.C.; Storm, A.R.; Sieber, J.D.
+    UNIX Time-Sharing System: Circuit Design Aids  -  Fraser, A.G.
+    UNIX Time-Sharing System: A Support Environment for MAC-8 Systems  -  Rovegno, H.D.
+    UNIX Time-Sharing System: No. 4 ESS Diagnostic Environment  -  Pekarich, S.P.
+    UNIX Time-Sharing System: RBCS/RCMAS - Converting to the MERT Operating System  -  Nagelberg, E.R.; Pilla, M.A.
+    UNIX Time-Sharing System: The Network Operations Center System  -  Cohen, H.; Kaufeld, J.C. Jr.
