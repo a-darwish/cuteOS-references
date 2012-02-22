@@ -1,0 +1,362 @@
+.docBookTitle, .docPartTitle
+
+	{ font-family:Arial,Helvetica,sans-serif; color:#354278; font-size:x-large; font-weight:bold; }
+
+.docPrefaceTitle, .docAppendixTitle, .docChapterTitle, .docBibliographyTitle, .docArticleTitle, .docGlossaryTitle
+
+	{ font-family:Arial,Helvetica,sans-serif; color:#354278; font-size:x-large; }
+
+.docSidebarTitle
+
+	{ font-family:Arial,Helvetica,sans-serif; color:#354278; font-size:x-large; text-align:center; }
+
+.docSection1Title, .docBibliodivTitle, .docBridgehead
+
+	{ font-family:Arial,Helvetica,sans-serif; color:#354278; font-size:large; }
+
+.docSection2Title, .docBibliosetTitle
+
+	{ font-family:Arial,Helvetica,sans-serif; color:#354278; font-size:medium; }
+
+.docSection3Title, .docSection4Title, .docSection5Title
+
+	{ font-family:Arial,Helvetica,sans-serif; color:#354278; font-size:small; font-weight:bold; }
+
+
+
+.docFigureTitle, .docTableTitle, .docExampleTitle, .docTocTitle, .docAbstractTitle, .docQandasetTitle,
+
+ .docProcTitle, .docRefsectTitle
+
+	{ font-family:Arial,Helvetica,sans-serif; color:#354278; font-size:small; font-weight:bold; }
+
+
+
+
+
+.docText, .docList
+
+	{ font-family:'Times New Roman',Times,serif; color:black; font-size:small; font-weight: normal; }
+
+
+
+.docMonofont
+
+	{ font-family:Courier New,Courier,monospace; }
+
+
+
+.docTableHeader, .docTableCell
+
+	{ font-family:'Times New Roman',Times,serif; color:black; font-size:small; }
+
+.docTableFooter
+
+	{ font-family:'Times New Roman',Times,serif; color:black; font-size:xx-small; }
+
+
+
+.docRefCell
+
+	{ font-family:Arial,Helvetica,sans-serif; color:black; font-size:medium; }
+
+
+
+.docTextHighlight
+
+	{ background-color:#EEEEEE; color:#CC0000; }
+
+.docIndexterm
+
+	{ color:#A0A0A0; font-size:x-small; }
+
+.docFootnote, .docItemizedlist
+
+	{ font-family:'Times New Roman',Times,serif; color:#000000; font-size:x-small; }
+
+
+
+
+
+.docNote
+
+	{ blockquote margin-top:2em; margin-right:2em; margin-bottom:2em; margin-left:2em; }
+
+
+
+
+
+.docNoteTitle
+
+	{ font-family:Arial,Helvetica,sans-serif; color:black; font-size:small; font-weight:bold; }
+
+.docNormalTitle, .docTipTitle
+
+	{ font-family:Arial,Helvetica,sans-serif; color:#354278; font-size:small; font-weight:bold; }
+
+.docCautionsTitle
+
+	{ font-family:Arial,Helvetica,sans-serif; color:#CC0000; font-size:small; font-weight:bold; }
+
+
+
+
+
+.docLink
+
+	{ color:#003399; text-decoration:none; }
+
+.docLink:visited
+
+	{ color:#3366CC; text-decoration:none; }
+
+.docLink:hover
+
+	{ color:#000033; text-decoration:underline; }
+
+
+
+
+
+.docEmphasis
+
+	{ font-style:italic; }
+
+.docEmphBold, .docEmphStrong
+
+	{ font-weight:bold; }
+
+.docEmphGray
+
+	{ color:#C0C0C0; }
+
+.docEmphMark
+
+	{ background-color:#C0C0C0; }
+
+.docEmphRev
+
+	{ color:silver; background-color:black; }
+
+.docEmphStrike
+
+	{ text-decoration:line-through; }
+
+.docEmphUl, .docEmphCursor
+
+	{ text-decoration:underline; }
+
+.docEmphBoldItalic
+
+	{ font-style:italic; font-weight:bold; }
+
+.docEmphRoman
+
+	{ font-style:normal; text-decoration:none; text-transform:none; font-weight:normal; font-variant:normal; }
+
+.docEmphSmaller
+
+	{ color:#354278; font-size:75%; }
+
+.docEmphHyperlink
+
+	{ color:black; }
+
+
+
+
+
+.docCaps
+
+	{ text-transform:uppercase; }
+
+
+
+.docStructname
+
+	{ font-variant:small-caps; }
+
+
+
+.docPubcolor
+
+	{ color:#354278; }
+
+
+
+
+
+
+
+
+
+h1, h2, h3, h4, h5, h6 { color:#354278; }
+
+
+ 
+
+pre { color:#000066; font-family:Courier New,Courier,monospace; font-size:small;}
+
+tt { color:#000066; font-family:Courier New,Courier,monospace;}
+
+
+
+
+.SSNtext {
+         font-family:'Times New Roman',Times,serif; 
+         color: #000000; 
+         font-size: 10pt;
+         font-weight: normal; 
+         }
+         
+
+
+
+.SSNhdr {
+     font-family: Verdana, Arial, Helvetica, sans-serif;	
+     font-size: 10pt;	
+     color : #000000;	
+     font-weight: bold;
+     text-decoration : none;
+     }
+     
+
+
+
+
+
+.contentMargins {                 
+	padding-top: 0px;
+	padding-right: 15px;
+	padding-bottom: 0px;
+	padding-left: 15px;
+}
+
+.dotted-line {
+	border-top: 1px dotted #A52C0B;
+}
+
+.hdrSSN { font-family: Verdana, Arial, Helvetica, sans-serif;
+          font-size: 10pt;
+          color : #000099;
+          font-weight: bold;
+          /*line-height: 16px;*/
+          text-decoration : none;
+        }
+
+.header {
+        font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-weight: bold;
+	color: #993300;
+	text-align: left;
+	vertical-align: middle;
+	padding-left: 15px;
+	font-size: 11pt;
+}
+
+.headerWht {
+        font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-weight: bold;
+	color: #FFFFFF;
+	text-align: left;
+	vertical-align: middle;
+	padding-left: 15px;
+	font-size: 11pt;
+}
+
+.imageMargins {
+        display: block;
+        margin: 0px 15px;
+        text-align: left;
+}
+
+ul.tools {
+	list-style-position: outside;
+	list-style-type: square;
+	font-family:'Times New Roman',Times,serif;
+	font-size: 12px;
+	color: #993300;
+	line-height: 16px;
+	margin: 0;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	padding-left: 25px;
+}
+
+ul.news {
+	list-style-position: outside;
+	list-style-type: square;
+	font-family:'Times New Roman',Times,serif;
+	font-size: 12px;
+	color: #993300;
+	line-height: 16px;
+}
+
+.verticalBlueLine {
+	border-left-width: 1px;
+	border-left-style: solid;
+	border-left-color: #A3B8C6;
+	border-right-width: 1px;
+	border-right-color: #A3B8C6;
+	border-right-style: solid;
+}
+
+.horizBlueLine {
+	border-top: 1px solid #A3B8C6;
+}
+
+.horizBrownLine {
+	border-top: 1px solid #A52C0B;
+}
+
+.morebox {
+         background-color:#990000;
+         color:#FFFFFF;
+         font-family: verdana, sans-serif;
+         font-size:10px;
+         font-weight: normal;
+         text-align:center;
+}
+
+.more {
+      font-family: verdana, sans-serif;
+      font-size:10px;
+}
+
+
+.address {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	font-weight: normal;
+	color: #000000;
+	text-align: center;
+	padding: 2px;
+}
+
+.bucketHdr {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10.5pt;
+	font-weight: bold;
+	color: #455F79;
+	text-align: left;
+	vertical-align: top;
+	/*padding-right: 15px;*/
+	/*padding-left: 15px;*/
+	line-height: normal;
+	padding-top: 10px;
+}
+
+.Custfooter {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	line-height: 16px;
+	color: #FFFFFF;
+	text-decoration: none;
+	text-align: left;
+	padding-right: 15px;
+	padding-left: 15px;
+	background-color: #A3B8C6;
+}
+
+
+

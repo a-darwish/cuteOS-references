@@ -1,0 +1,74 @@
+/*Amazon styles */
+.aTopMenu
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 7pt;
+	color : #4B4B4B;
+	text-decoration : none;
+}
+.aTopMenu:hover
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 7pt;
+	color : #4B4B4B;
+	text-decoration : underline;
+}
+
+.aBottomBoxesLink
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	font-weight:700;
+	color : black;
+	text-decoration : underline;
+}
+.aBottomBoxesLink:link
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	font-weight:700;
+	color : black;
+	text-decoration : underline;
+}
+.aBottomBoxesLink:visited
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	font-weight:700;
+	color : black;
+	text-decoration : underline;
+}
+.aCells {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	color : #303030;
+	text-decoration : none;
+}
+
+.aCells:link {
+	text-decoration : none;
+	color : #303030;
+}
+
+.aAuthor
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	color : #303030;
+	text-decoration : underline;
+
+}
+.aCategories
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	color : #423E5C;
+	background-color:#EEF2F6;
+	font-style: italic
+}
+
+BODY{  background-color: white;  color: black;}.hdr {	font-family: Verdana, Arial, Helvetica, sans-serif;	font-size: 10pt;	color : #000000;	font-weight: bold;	line-height: 16px;	text-decoration : none;}.hdr1 {	font-family: Arial, Helvetica, sans-serif;	font-size: 8pt;	padding-left: 2px;	text-align: center;	border-top-width: 1px;	border-right-width: 0px;	border-bottom-width: 0px;	border-left-width: 1px;	border-top-style: solid;	border-right-style: solid;	border-bottom-style: solid;	border-left-style: solid;	border-top-color: #FFFFFF;	border-left-color: #FFFFFF;	color: #0A0A0A;	vertical-align: middle;	line-height: 12px;}.hdr2 {	font-family: Verdana, Arial, Helvetica, sans-serif;	font-size: 11pt;	color : #000000;	font-weight: bold;	line-height: 16px;	text-decoration : none;}.v1 {	font-family: Verdana, Arial, Helvetica, sans-serif;	font-size: 8pt;	color : #0000CC;	text-decoration : none;}.v1:link {	text-decoration : none;	color : #0000CC;}.v2 {	font-family: Verdana, Arial, Helvetica, sans-serif;	font-size: 8pt;	color : #000000;	line-height: 16px;	text-decoration : none;}.v2:link {	text-decoration : none;	color : #000000;}.v3 {	font-family: Verdana, Arial, Helvetica, sans-serif;	font-size: 10px;	text-decoration : none;	color : #4B4B4B;}.v3:link {	text-decoration : none;	color : #303030;}.v4 {	font-family: Verdana, Arial, Helvetica, sans-serif;	font-size: 8pt;  font-weight: bold;	color : #303030;	line-height: 16px;	text-decoration : none;}.v4:link {  font-weight: bold;	text-decoration : none;	color : #303030;}.a1 {	font-family: Arial, Helvetica, sans-serif;	font-size: 7.5pt;	color : #4B4B4B;	text-decoration : underline;}.a1:link {	text-decoration : underline;	color : #4B4B4B;}.a2 {	font-family: Arial, Helvetica, sans-serif;	font-size: 8pt;	color : #4B4B4B;	text-decoration : none;}.a2:link {	text-decoration : underline;	color : #4B4B4B;}.a3 {	font-family: Arial, Helvetica, sans-serif;	font-size: 7.5pt;	color : #4B4B4B;	text-decoration : none;}.a3:link {	text-decoration : underline;	color : #4B4B4B;}.a4 {	font-family: Arial, Helvetica, sans-serif;	font-size: 10pt;	color : #222222;	line-height: 18px;	}.entrybox1 {	border: 1px solid #E7D68E;	font-family: Arial, Helvetica, sans-serif;	font-size: 12px;}.navbtn {	font-family: Verdana, Arial, Helvetica, sans-serif;	font-size: 10px;	font-weight : bold;	color : #333333;	text-decoration : none;  background-color: #FAF9E7;}.navbtnSel {	font-family: Verdana, Arial, Helvetica, sans-serif;	font-size: 10px;	font-weight : bold;	color : #000000;	text-decoration : none;  background-color: #FFCC33;}.logout {	font-family: Verdana, Arial, Helvetica, sans-serif;	font-size: 10px;	color : #333333;	text-decoration : none;  background-color: #FAF9E7;}.n1 {	font-family: Verdana, Arial, Helvetica, sans-serif;	font-size: 8pt;	color : #303030;	line-height: 16px;	text-decoration : none;	padding: 7px;}.t1 { 	font-family: Arial, Helvetica, sans-serif; 	font-size: 12pt; color : #000000; ; 	font-weight: bold;	}	.t2 { 	font-family: Verdana, Arial, Helvetica, sans-serif; 	font-size: 9pt; 	font-weight : bold; 	text-decoration : none; 	}.t3 { 	font-family: Verdana, Arial, Helvetica, sans-serif; 	font-size: 8.5pt; 	font-weight : bold; 	text-decoration : none;   background-color: #9D3036;  color: #FFFFFF;	}	.t3b { 	font-family: Verdana, Arial, Helvetica, sans-serif; 	font-size: 8.5pt; 	font-weight : bold; 	text-decoration : none;   background-color: #EFE0AF;  color: #000000;	}	.mm { 	font-family: Verdana, Arial, Helvetica, sans-serif; 	font-size: 11pt; 	font-weight : normal; 	text-decoration : none;   background-color: #354278;  color: #FFFFFF;	}				.t4 {  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 8pt; font-weight : bold; text-decoration : none; }.t4w { 	font-family: Verdana, Arial, Helvetica, sans-serif;	font-size: 8pt;	font-weight : bold;	color : #FFFFFF;	text-decoration : none;	background-color: #333366;}.t5{  font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 8pt; font-weight : bold; text-decoration : none;  color: #990000; background-color: #f3e7bd;}.dlg{  background-color: #faf9e7;}.menuborder {	background-color: #F1E5B5;}.bg{  background-color: #ffffff;}.menuRight{  background-color: #faf9e7;}.toplogo{  background-color: #990000;}.topmenu{  background-color: #990000;}.toc{  background-color: #FAF9E7;}.menuLeft{  background-color: #faf9e7;}.Top5Border {  background-color: #000066;}	.Top5EvenRows {  background-color: #ffffff;}.Top5OddRows { background-color: #F5F8FD;}.Top5TableHeading {}.NewThisWeekBorder {  background-color: #006666;}.NewThisWeekEvenRows {  background-color: #ffffff;}.NewThisWeekOddRows { background-color: #F5F8FD;}.NewThisWeekTableHeading {}.MyRecentPagesBorder {	background-color: #330066;}.MyRecentPagesEvenRows {  background-color: #ffffff;}.MyRecentPagesOddRows {  background-color: #F5F8FD;}.MyRecentPagesTableHeading {	background-color: #eeeeee;}.RecommendedTitlesBorder {  background-color: #000066;}.RecommendedTitlesEvenRows {  background-color: #ffffff;}.RecommendedTitlesOddRows { background-color: #F5F8FD;}.RecommendedTitlesTableHeading {}.MyDownloadsBorder {	background-color:#009999;}.MyDownloadsEvenRows {  background-color: #ffffff;}.MyDownloadsOddRows { background-color: #F5F8FD;}.MyDownloadsTableHeading {	background-color: #eeeeee;}.MyTokensBorder {	background-color:#339933;}.MyTokensEvenRows {  background-color: #ffffff;	background-color: #F1EFF5;}.MyTokensOddRows { background-color: #F5F8FD;}.MyTokensTableHeading {	background-color: #eeeeee;}.MyBookshelfBorder {  background-color: #990000;}.MyBookshelfSpacer {  background-color: #EDDFDF;}.MyBookshelfEvenRows {  background-color: #ffffff;}.MyBookshelfOddRows { background-color: #F5F8FD;}
+.MyBookshelfTableHeading 
+{
+}
+.MyRecentSearchesBorder {	background-color: #990066;}.MyRecentSearchesEvenRows {  background-color: #ffffff;}.MyRecentSearchesOddRows { background-color: #F5F8FD;}.MyRecentSearchesTableHeading {	background-color: #eeeeee;}.MyBookmarksBorder {	background-color:#000099;}.MyBookmarksEvenRows {  background-color: #ffffff;	}.MyBookmarksOddRows { background-color: #F5F8FD;}.MyBookmarksTableHeading {	background-color: #eeeeee;}.GroupNotesBorder {	background-color: #009999;}.GroupNotesEvenRows {  background-color: #ffffff;}.GroupNotesOddRows { background-color: #F5F8FD;}.GroupNotesTableHeading {	background-color: #eeeeee;}.PublicNotesBorder {	background-color: #660099;}.PublicNotesEvenRows {  background-color: #ffffff;}.PublicNotesOddRows { background-color: #F5F8FD;}.PublicNotesTableHeading {	background-color: #eeeeee;}.MyNotesBorder {	background-color: #FF6600;}.MyNotesEvenRows {  background-color: #ffffff;}.MyNotesOddRows { background-color: #F5F8FD;}.MyNotesTableHeading {	background-color: #eeeeee;}.ListByCatBorder {	background-color: #FAF9E7;}.ListByCatEvenRows {  background-color: #ffffff;	font-size: 8pt;}.ListByCatOddRows { background-color: #F5F8FD;}.ListByCatTableHeading {	background-color: #F1E5B5;}.SearchResultBorder {	background-color:#BCCEDC;}.SearchResultEvenRows {  background-color: #ffffff;  background-color: #ffffff;}.SearchResultOddRows {  background-color: #F5F8FD;}.SearchResultTableHeading {	background-color: #DDE6ED;	font-family: Arial, Helvetica, sans-serif;	font-size: 8pt;	padding-left: 2px;	text-align: center;	border-top-width: 1px;	border-right-width: 0px;	border-bottom-width: 0px;	border-left-width: 1px;	border-top-style: solid;	border-right-style: solid;	border-bottom-style: solid;	border-left-style: solid;	border-top-color: #FFFFFF;	border-left-color: #FFFFFF;	color: #0A0A0A;	vertical-align: middle;	line-height: 12px;}.SectionSearchResultBorder {	background-color:#B4C8C9;}.SectionSearchResultEvenRows {	background-color: #ffffff;}.SectionSearchResultOddRows {	background-color: #F1F6F2;}.SectionSearchResultTableHeading {	background-color: #DFEAE4;	font-family: Arial, Helvetica, sans-serif;	font-size: 8pt;	padding-left: 2px;	text-align: center;	border-top-width: 1px;	border-right-width: 0px;	border-bottom-width: 0px;	border-left-width: 1px;	border-top-style: solid;	border-right-style: solid;	border-bottom-style: solid;	border-left-style: solid;	border-top-color: #FFFFFF;	border-left-color: #FFFFFF;	color: #0A0A0A;	vertical-align: middle;	line-height: 12px;}.TextFrame {	background-color: #D1C8A1;}.printhdr{  font-family: Verdana, Arial, Helvetica, sans-serif;  font-size: 12pt;}.AdvancedSearchTextHighlight {	background-color: #f7e583;}.PricesMax {	background-color: #eeeeee;}.PricesMaxOutline {	background-color: #990000;}.PricesBasic {	background-color: #eeeeee;}.PricesBasicOutline {	background-color: #999999;}.tToolsTable{font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 8pt; font-weight : bold; text-decoration : none;  color: #990000; background-color: #f3e7bd;}

@@ -1,0 +1,700 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0096)http://pages.cs.wisc.edu/~swift/classes/cs736-sp07/blog/2007/03/a_fast_file_system_for_unix.html -->
+<html xmlns="http://www.w3.org/1999/xhtml" id="sixapart-standard"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+   
+   <meta name="generator" content="Movable Type 3.2">
+
+   <link rel="stylesheet" href="Wisconsin07%20-%20Paper%20Discussion,%20A%20Fast%20File%20System%20for%20UNIX_files/styles-site.css" type="text/css">
+   <link rel="alternate" type="application/atom+xml" title="Atom" href="http://www.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/atom.xml">
+   <link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="http://www.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/index.xml">
+
+   <title>CS 736 - Spring 2007 - Paper Discussion: A Fast File System for UNIX</title>
+
+   <link rel="start" href="http://www.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/" title="Home">
+   <link rel="prev" href="http://www.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/the_design_and_implementation.html" title="The Design and Implementation of a Log-Structured File System">
+   <link rel="next" href="http://www.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/design_and_implementation_of_t.html" title="Design and Implementation of the Sun Network Filesystem">
+
+   
+
+   
+
+   <script type="text/javascript" src="Wisconsin07%20-%20Paper%20Discussion,%20A%20Fast%20File%20System%20for%20UNIX_files/mt-site.js"></script>
+</head>
+<body class="layout-one-column" onload="individualArchivesOnLoad(commenter_name)">
+   <div id="container">
+      <div id="container-inner" class="pkg">
+
+         <div id="banner">
+            <div id="banner-inner" class="pkg">
+               <h1 id="banner-header"><a href="http://www.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/" accesskey="1">CS 736 - Spring 2007 - Paper Discussion</a></h1>
+               <h2 id="banner-description"></h2>
+            </div>
+         </div>
+
+         <div id="pagebody">
+            <div id="pagebody-inner" class="pkg">
+               <div id="alpha">
+                  <div id="alpha-inner" class="pkg">
+
+                     <p class="content-nav">
+                        <a href="http://www.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/the_design_and_implementation.html">« The Design and Implementation of a Log-Structured File System</a> |
+                        <a href="http://www.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/">Main</a>
+                        | <a href="http://www.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/design_and_implementation_of_t.html">Design and Implementation of the Sun Network Filesystem »</a>
+                     </p>
+
+                     <a id="a000090"></a>
+                     <div class="entry" id="entry-90">
+                        <h3 class="entry-header">A Fast File System for UNIX</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                              <p>Marshall K. McKusick, William N. Joy, Samuel J. Leffler, and Robert S. Fabry.  <a href="http://www.cs.wisc.edu/%7Ecs736-1/papers/ffs.pdf"> A Fast File System for UNIX</a>. ACM Trans. on Computer Systems 2(3), August 1984, pp. 181-197.</p>
+
+<p>Reviews due Thursday, 3/22</p>
+                           </div>
+                           <div id="more" class="entry-more">
+                              
+                           </div>
+                        </div>
+                        <p class="entry-footer">
+                           <span class="post-footers">Posted by Michael Swift on March 21, 2007 09:35 PM</span> <span class="separator">|</span> <a class="permalink" href="http://www.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/a_fast_file_system_for_unix.html">Permalink</a>
+                        </p>
+                     </div>
+
+                     
+
+                                          <div id="comments" class="comments">
+                        <div class="comments-content">
+                                                      <h3 class="comments-header">Comments</h3>
+                           <a id="c001340"></a>
+                           <div class="comment" id="comment-1340">
+                              <div class="comment-content">
+                                 <p>Summary:</p>
+
+<p>The paper presents a faster reimplementation of the traditional file 
+system (circa 4.2 BSD) which offers a magnitude order of improvement due
+ to flexible allocation policies that allow better locality of reference
+ and adapt to peripheral and processor characteristics. Certain features
+ like advisory locks, long file names, quotas etc are added.</p>
+
+<p>Problem:</p>
+
+<p>The original 512-byte Unix file system offered very poor performance 
+(2% of the disk throughput) due to the small block size, limited 
+read-ahead and mostly non-consecutive (essentially random) allocation of
+ blocks for files and directories. There was a need for a faster file 
+system which could atleast saturate the disk capacity.</p>
+
+<p>Contributions:</p>
+
+<p>Essentially the first working implementation of a file system that 
+closed in on the hardware limits by intelligent block allocation 
+policies. The authors used specialized knowledge about the hardware to 
+improve performance.<br>
+The knowledge of the disk geometry was used to guide the design of the 
+block allocation policy for both performance and resilience. The 
+superblock was replicated across platters and cylinders. <br>
+Rotational layout tables were a clever way to allocate blocks so that 
+the seek time was closely co-ordinated with processor capacity.<br>
+The upper bound on getting all the inodes for a particular cylinder 
+group is very attractive and the clever design made it possible. <br>
+The increase in block size offered better performance but it was offset 
+by the wastage in the small files case. The new idea here was fragments -
+ basically variable block sizes. (Fragments present in ext2/ext3).</p>
+
+<p>Flaws:</p>
+
+<p>File system parameterizations are very hardware specific and 
+evolution in hardware may prompt design changes. Disks with rotationally
+ independent platters etc. They also briefly touch upon DMA which may 
+potentially make some of the optimizations useless.</p>
+
+<p>The preallocation of a few blocks at a time is discussed but not 
+implemented. Also, the kernel buffers chaining for contiguous reads. 
+(The authors point this out).</p>
+
+<p>Performance:</p>
+
+<p>The paper is on the vastly improved performance benefits of this file
+ system over the traditional Unix file system. It is amazing that better
+ algorithms improved the performance over 10 fold! The users of the time
+ would have aggressively shifted to this file system. The contributions 
+outlined are the primary reasons for the improved performance. </p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                 Archit Gupta  |
+                                 <a href="http://pages.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/a_fast_file_system_for_unix.html#comment-1340">March 22, 2007 11:03 AM</a>
+                              </p>
+                           </div>
+                                                      
+                           <a id="c001339"></a>
+                           <div class="comment" id="comment-1339">
+                              <div class="comment-content">
+                                 <p>Paper Review: A Fast File System for UNIX [McKusick, et. al.]</p>
+
+<p><b>Summary:</b></p>
+
+<p>This paper presents the 4.2 BSD UNIX Fast File System, which includes<br>
+many improvemnts on its predecessor, the 512-byte block UNIX file system.</p>
+
+<p><b>Problem:</b></p>
+
+<p>The problem was that the "old" file system performed poorly, especially<br>
+as the files and directories that resided on it became very fragmented<br>
+over time because of the small block size combined with the lack of a<br>
+disk-aware layout policy, nor any reserve space set aside for locality<br>
+in the face of future allocations.</p>
+
+<p><b>Contributions:</b></p>
+
+<p>* FFS includes a number of performance improvements by locality; it uses<br>
+  cylinder groups to keep file metadata (inodes) and data near each<br>
+  other.  It also attempts to keep inodes referred to in the same<br>
+  directory near to each other.</p>
+
+<p>* By setting aside a percentage (typically something like 5-20%) to<br>
+  leave working space for future allocations, FFS maintains better<br>
+  locality by reducing file fragmentation.</p>
+
+<p>* FFS' increased block size had a number of benefits: dramatically<br>
+  increased read performance on large by making much more of the file's<br>
+  content contiguous, increased disk size support, and decreased amount<br>
+  of work necessary to find all of a file's blocks.</p>
+
+<p><b>Flaws:</b></p>
+
+<p>* The optimizations are tuned to some characterisitics of hard disks<br>
+  at the time, such as multiple platters with multiple arms and heads<br>
+  positioned over each other.</p>
+
+<p>* The increased block size is fixed and so big (8KB) that it<br>
+  practically necessitated the introduction of a complication: the use<br>
+  of "fragments" (block sub-allocations) to keep from wasting too much<br>
+  space.</p>
+
+<p><b>Performance Relevance:</b></p>
+
+<p>The FFS improvements are suitable for improving read latencies for many<br>
+applications.  Directories and file blocks can both be read at rates<br>
+closer to hardware capacity and more predictably over time by not<br>
+degrading as much because of fragmentation.  It's primary competitor is<br>
+ext2, which lacks only the block sub-allocations, presumably because<br>
+ext2's varying initial block size and increased disk size (adn reduced<br>
+cost) were a reasonable, simpler alternative, some 8-10 years later.<br>
+</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                 <a href="http://net.doit.wisc.edu/%7Eplonka/" rel="nofollow">Dave Plonka</a>  |
+                                 <a href="http://pages.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/a_fast_file_system_for_unix.html#comment-1339">March 22, 2007 09:56 AM</a>
+                              </p>
+                           </div>
+                                                      
+                           <a id="c001338"></a>
+                           <div class="comment" id="comment-1338">
+                              <div class="comment-content">
+                                 <p>SUMMARY<br>
+"A Fast File System for UNIX" Marshall et al. discuss the implementation
+ of the "traditional" UNIX file system, its shortcomings, and how those 
+were addressed in Fast FS.</p>
+
+<p><br>
+PROBLEM<br>
+What features should a file system provide. How to make a file system<br>
+efficient.</p>
+
+<p><br>
+CONTRIBUTIONS<br>
+* Description of the structure of traditional UNIX file system</p>
+
+<p>* Identification of flaws in design and implementation of traditional UNIX FS</p>
+
+<p>* Taking into account hardware specifics for when designing new FS. 
+Offsetting cylinder group bookkeeping information to avoid storage on 
+one platter is an especially insightful mechanism</p>
+
+<p>* Taking into account typical FS usage in organization. E.g. putting files in the same directory on the same cylinder group</p>
+
+<p>* New features: long file names, file locking, symbolic links that<br>
+(potentially) cross volumes, atomic rename, quotas</p>
+
+<p>* Enormous performance improvement</p>
+
+<p><br>
+FLAWS<br>
+* Some new features, like locking, were not convincingly motivated</p>
+
+<p>* FFS still delivers only 50% of disk bandwidth</p>
+
+<p>* Strives to produce a jack-of-all-trades FS. E.g. argument for improving<br>
+traditional FS performance because it doesn't work well for swapping 
+doesn't sit well with me. Clearly a dedicated FS would be optimal for 
+that (hindsight 20/20)</p>
+
+<p>* FFS seems to alter the user interface, thus its deployment may not be<br>
+transparent</p>
+
+<p>* The authors did not seem to identify the "common case". It seems 
+that their data of typical FS usage came from a single machine.</p>
+
+<p>* FS parameterization, while a cool idea, may not be that useful in 
+practice. It would also be nice if parameter optimization would happen 
+automatically.</p>
+
+<p>* I find it very weird that CPU and memory are the bottleneck for disk<br>
+transfers.</p>
+
+<p><br>
+PERFORMANCE<br>
+Storage efficiency, performance overhead, access time, read, write<br>
+performance.<br>
+</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                 Vladimir Brik  |
+                                 <a href="http://pages.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/a_fast_file_system_for_unix.html#comment-1338">March 22, 2007 09:17 AM</a>
+                              </p>
+                           </div>
+                                                      
+                           <a id="c001337"></a>
+                           <div class="comment" id="comment-1337">
+                              <div class="comment-content">
+                                 <p>Summary:<br>
+The paper talks mainly about changes made to the original unix file 
+system in 4.2BSD version to improve throughput and reliability. It also 
+talk about some features such as file locks, quotas, symbolic links etc 
+that were introduced with the new file system.</p>
+
+<p>Problem:<br>
+The original unix file system used a single superblock per partition, 
+and used 512-bytes disk blocks for allocation. The storage layout used 
+is superblock followed by inode area followed by data area. These design
+ constraints mean 1) corruption on one superblock destroys the file 
+system 2) data read size per transaction is not optimal 3) extreme 
+fragmentation could result in inode and data area as files are created 
+and deleted, resulting in unnecessory long jumps and hence less 
+throughput. New file system was mainly aimed at solving these problems.</p>
+
+<p>Contributions:<br>
+- Improved throughput by use of larger block size and intelligent 
+storage allocation. Use of global data (including processor speed, 
+controller capabilities) to make storage allocation decisions<br>
+- Improved reliability by replication of superblock in multiple cylinder
+ groups. This improves the chance of recovery in the event of a drive 
+failure<br>
+- Use of fragments to reduce the impact of wastage of disk space due to bigger block size for smaller files</p>
+
+<p>Flaws:<br>
+These may not really be flaws, I may just havent understood them well.<br>
+- There hasnt been much of an explantion for choosing 4096 as the block 
+size. Paper mentions it allows storing 2^32-byte file with 2 levels of 
+indirection. Where did that number come from?<br>
+- There hasnt been much explanation about the decision 1 inode per 2048 
+bytes. Shouldnt this be based on block size and fragment size?<br>
+- 16 times performance improvement over current file system - these 
+experiments were done with different bus types. But then it may  be OK, 
+because the old file system does not take into account the hardware 
+capabilities.<br>
+- Book keeping information is stored at varying offsets from the 
+beginning of cylinder group and the gap between them is used for data 
+storage. Is it guaranteed to be multiple of block size? Or will it be a 
+wasted space?</p>
+
+<p>Relevance:<br>
+I think the paper describes simple but very efficient ways of improving 
+file system throughput and reliability. The fact that most of the 
+concepts are still used in file systems 20+ years later says something. 
+The only concept that probably is not so relevant today is the use of 
+fragments - with the disk space costing nothing, savings provided by 
+fragments isnt worth the complications it introduces.<br>
+</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                 Base Paul  |
+                                 <a href="http://pages.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/a_fast_file_system_for_unix.html#comment-1337">March 22, 2007 08:58 AM</a>
+                              </p>
+                           </div>
+                                                      
+                           <a id="c001336"></a>
+                           <div class="comment" id="comment-1336">
+                              <div class="comment-content">
+                                 <p><b>Summary</b><br>
+The paper presents several improvements to the UNIX filesystem that were
+ released with BSD 4.2. These modifications change the implementation 
+without changing the underlying abstraction presented to the user. The 
+changes are such that the physical properties of disks are taken into 
+account when creating files and when laying out the file system on disk.</p>
+
+<p><b>Problem</b><br>
+The main problem here is that because of the previous policy of ignoring
+ disk performance issues in the filesystem design, the UNIX  filesystem 
+was generally only able to provide about 2% of a disk's maximum transfer
+ speed to applications.</p>
+
+<p><b>Contributions</b><br>
+ * Use of larger block size with performance justification as well as 
+the ability to split a block into several fragments when their are 
+several smaller files in order to avoid lots of wasted space due to the 
+larger block size.<br>
+ * Exploiting the physical properties of the disk so that blocks in the 
+same file are stored on the same cylinder and are stored in a 
+rotationally optimal order in terms of the spacing between blocks.<br>
+ * Techniques for both exploiting localization and for spreading out 
+unrelated data so that localization continues to be available.</p>
+
+<p><b>Flaws</b><br>
+This paper was difficult to have serious problems. Even if they didn't 
+fully solve all the problems they took an existing system and provided 
+substantial improvements with few drawbacks.</p>
+
+<p><b>Performance and Relevance</b><br>
+The performance tests that were performed show substantial justified 
+performance. Disk access performance is still a relevant topic today and
+ the popularity of "flash-drives" raises questions as to how best to 
+exploit newer storage technology.</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                 Aaron Bryden  |
+                                 <a href="http://pages.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/a_fast_file_system_for_unix.html#comment-1336">March 22, 2007 08:55 AM</a>
+                              </p>
+                           </div>
+                                                      
+                           <a id="c001335"></a>
+                           <div class="comment" id="comment-1335">
+                              <div class="comment-content">
+                                 <p><b>Summary</b><br>
+This work presents several extensions to the original UNIX file system 
+that improve the overall performance of the system and add a few new 
+properties such as symbolic links and long file names. </p>
+
+<p><b>Problems Addressed</b><br>
+Using the original file system the disk interface was highly under 
+utilized and high throughput was unachievable due to long seek times and
+ data fragmentation. The file system also had no knowledge of the 
+physical properties of the underlying hardware resulting in mismatches 
+between the requested data and the most efficient way of accessing it 
+from disk. A major concern of the authors was that of compatibility with
+ old software and thus the new extensions had to support all the same 
+functionality but with better performance. </p>
+
+<p><b>Contributions</b><br>
+To increase the performance of accessing large files the minimum block 
+size was increased to 4KB however a mechanism for allowing files to use 
+as little as the sector size was also implemented to reduce the amount 
+of wasted space in a system with a bunch of small files. To reduce the 
+amount of seeking from an i-node to the data, cylinder groups were 
+created and the i-nodes for the data contained in the cylinder group 
+were also stored within the group. The traditional free block list was 
+replaced by a bitmap that eliminated the problem of the free list 
+becoming very unordered resulting in many seeks to access a large file. 
+To improve sequential performance the cylinder group would also store 
+information about how fast the disk spins and would use that information
+ to determine how many blocks need to be skipped in order to provide 
+fast sequential access. Two physically sequential blocks on disk can not
+ always be accessed sequentially because by the time the request arrives
+ for the next block the head has already passed over the block and the 
+disk must make a full revolution. </p>
+
+<p><b>Flaw</b><br>
+Though a performance analysis was done there was not a lot of hard data 
+to back up their claims. It would be nice to see a few graphs or charts.
+ </p>
+
+<p><b>Performance</b><br>
+Throughput for large files and latency for small files seemed to be the 
+main aspects of performance the authors were concerned about. These 
+objectives were achieved by studying the problems with the original UNIX
+ file system and modifying the parts that appeared to have the largest 
+bottleneck. <br>
+</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                 Nuri Eady  |
+                                 <a href="http://pages.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/a_fast_file_system_for_unix.html#comment-1335">March 22, 2007 08:13 AM</a>
+                              </p>
+                           </div>
+                                                      
+                           <a id="c001334"></a>
+                           <div class="comment" id="comment-1334">
+                              <div class="comment-content">
+                                 <p><b>Summary</b><br>
+This paper is an implementation of a Unix file system that attempts to 
+address several well-known flaws of the existing Unix file system. 
+(Personally), the paper was particularly interesting due to its thorough
+ concern for acting in harmony with available hardware.</p>
+
+<p><b>Problem</b><br>
+The "main" problem that this paper addresses was that the existing Unix 
+file system could only deliver ~2% of the maximum disk bandwidth. The 
+authors attribute this poor performance to three implementation 
+problems: there was no real concept of "disk locality," the block size 
+(512 bytes) was simply too small, and the free list would eventually 
+become randomly ordered.</p>
+
+<p><b>Contributions</b><br>
+Cylinder groups are a pretty nice idea. Each cylinder group contains a 
+list of the available blocks in a certain number of consecutive 
+cylinders. This leads to easy ways to exploit disk locality and limits 
+the number of disk seeks while accessing a file. A nice feature of this 
+implementation is the way redundant superblock copies are stored. 
+Instead of storing everything at the beginning of each cylinder group, 
+the superblock/bookkeeping is stored one track further away from the 
+previous superblock/bookkeeping information. The data is effectively 
+"spiraled" in the disk and makes the loss of any tracks, cylinders, or 
+platters not as catastrophic.</p>
+
+<p>The introduction of file fragments. Since it is easy to observe that 
+disk throughput increases with block size, the obvious thought is to 
+have large blocks. However, most files are quite small, leading to 
+increasing amounts of wasted space as the block size increases. 
+Fragments attempt to solve this problem by allowing small files to 
+occupy portions of a block.</p>
+
+<p>File system parameterization are also a pretty interesting idea. 
+Informing the FS of hardware capabilities allows for different 
+techniques or algorithms which suit the physical characteristics of a 
+disk to be specified. </p>
+
+<p>The idea behind global layout policies is also neat; attempt to 
+spread unrelated data into different cylinder groups while attempting to
+ localize similar/concurrently accessed data. The authors say that they 
+accomplished this by placing inodes for all the files in a directory 
+into the same cylinder group. The global layout routines call local 
+allocation routines to provide free blocks that try to satisfy as much 
+of the global policies as possible.</p>
+
+<p><b>Flaws</b><br>
+I'm having a pretty hard time finding flaws in this paper! There is the 
+problem that the authors admit to (expanding a file one fragment at a 
+time), but other than that, I can't think of anything besides the fact 
+that while this FS is a nice improvement, it still doesn't mitigate 
+fragmentation. </p>
+
+<p><b>Performance/Relevance</b><br>
+The performance numbers pretty much speak for themselves. The new file 
+system was able to realize at least twice the reading and writing rates 
+of the old file system. CPU utilization shot up, though.</p>
+
+<p>Another nice thing about this file system were the functional 
+enhancements. While perhaps along the lines of syntactic sugar, the 
+enhancements make the new file system seem as though it's not too 
+terribly different from modern Unix and its derivatives.<br>
+</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                 Jon Beavers  |
+                                 <a href="http://pages.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/a_fast_file_system_for_unix.html#comment-1334">March 22, 2007 08:03 AM</a>
+                              </p>
+                           </div>
+                                                      
+                           <a id="c001333"></a>
+                           <div class="comment" id="comment-1333">
+                              <div class="comment-content">
+                                 <p><b>Summary</b><br>
+The authors introduce a file system that trades CPU overhead for 
+increasing disk transfer rates by improving locality of similar data on 
+the disk. A block fragmentation scheme is used to keep the file system 
+disk overhead low.</p>
+
+<p><b>Problem</b><br>
+The current file system used a free block list, which causes performance
+ to decrease after time, because adjacent blocks in the free list are 
+not adjacent on disk. </p>
+
+<p><b>Contributions</b><br>
+ The major improvement of the article was to increase the spatial 
+locality of similar blocks on disk. This was accomplished by introducing
+ the idea of a cylinder group. Summary information about the state of 
+the cylinder group is kept and when possible cylinder groups are left 
+with space to allow files within the cylinder group to grow. Bitmaps 
+instead of free lists are used to indicate the free space in a cylinder 
+group. The paper discusses the tradeoff of keeping similar objects in 
+the same location, but spreading dissimilar objects over the disk. For 
+example, inodes of files within a directory are stored in the same 
+cylinder group, but new directories are stored in separate cylinder 
+groups to allow them to grow.</p>
+
+<p>The paper also introduced the idea of fragmenting a block in order to
+ reduce file system internal fragmentation. A file uses as many full 
+blocks as possible, but uses a partial block to hold the information 
+that did not fit in the full blocks. The cylinder groups� bitmap 
+allocation is at the granularity of fragments to allow for allocation. </p>
+
+<p>A number of other improvements were also added to the file system: 
+long file names, file locking, symbolic links, easy renames, disk 
+quotas.</p>
+
+<p><b>Possible Improvements</b><br>
+With the popularity of multi-taking today, it would have been nice to 
+see the results of the system if more than one process is contending for
+ the disk. The system gets its benefits from locality, but when multiple
+ processes are contending for the disk the locality will decrease. It 
+would be nice to see how much of the improvements remain in a contention
+ situation.</p>
+
+<p>I see increased CPU overhead as a cost of the new file system, 
+because now the file system must search bitmaps and compute hashes to 
+determine where to write pages as opposed to simply taking the first 
+pages from a free list. The articles analysis of CPU simply counts the 
+overall utilization. This is not sufficient to capture the overhead, 
+because it is expected that utilization CPU increases as disk bandwidth 
+increases. The processor spends less time blocked waiting for disk so 
+utilization is bound to increase. A more precise analysis of file system
+ CPU overhead would help me better understand the costs of the 
+improvements.</p>
+
+<p><b>Performance</b><br>
+Disk throughput was the major concern of the article. By increasing throughput the system responsiveness is also increased.<br>
+</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                 Kevin Springborn  |
+                                 <a href="http://pages.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/a_fast_file_system_for_unix.html#comment-1333">March 22, 2007 07:48 AM</a>
+                              </p>
+                           </div>
+                                                      
+                           <a id="c001330"></a>
+                           <div class="comment" id="comment-1330">
+                              <div class="comment-content">
+                                 <p><b>Summary</b>:<br>
+This paper describes a replacement for the traditional Unix file system 
+that takes into account the disk access and file creation properties in 
+order to get increased performance and recoverability.</p>
+
+<p><b>Problem</b>:<br>
+The main problem that they were trying to solve was that the "old file 
+system" was very slow. The reason was that it didn't do very intelligent
+ allocation; it just put new data in the first block that it knew was 
+available. Over time, this led to a very fragmented file system which 
+mean lots of seek time. (A secondary goal was to design the system for 
+easier recovery, and a third was to introduce a couple new features. For
+ instance, I was extremely surprised to find that the existing system --
+ built for a time sharing system -- didn't support quotas. To me this 
+seems like an incredibly glaring omission.) </p>
+
+<p><b>Contributions</b>:<br>
+* FFS became part of many Unixes, and I believe is still the "native" 
+file system for Free/Open/NetBSD. Wikipedia says that it was adopted by 
+commercial Unixes too.<br>
+* Again, it's hard to know which ideas were originally theirs, but it 
+would be almost unthinkable to design a new file system without taking 
+into consideration properties of the disk and file accesses, how to 
+reduce fragmentation, etc. <br>
+* Ideas on how to group related data (file + inode in the same cluster group as the directory that file is in)<br>
+* The idea to try to keep cluster groups so that they have free space by
+ spilling files to other cluster groups while the one they start in are 
+still far from full<br>
+* Nowadays it would also be rare to design a filesystem that didn't try 
+to be recoverable. There's been a lot of development since FFS in this 
+area (journaling for instance), but it's clear that they gave this some 
+thought with, for instance, the redundant superblock copies that are 
+deliberately placed on separate platters or the rename system call<br>
+* Implementations of other important features such as long file names and FS locks<br>
+* Some other ideas, like having fragments, are still used by some 
+filesystems to reduce internal fragmentation. (Even if they don't take 
+the same approach, other still, such as NTFS, take other approaches to 
+avoid allocating whole blocks for small files.)</p>
+
+<p><b>Flaws</b><br>
+* There's still a philosophical question here as to whether the Unix 
+bag-of-bytes model for a file is "correct". Even if it isn't though, 
+it's still hard to get away from historical issues like this.<br>
+* There's also a philosophical question about whether advisory locks are
+ the right choice. They claim that they chose them instead of mandatory 
+locks because they didn't want to either introduce a new security model 
+or provide locks that programs running as the superuser would ignore. 
+But if that's their only reason, it's not hard to imagine other 
+implementations; for instance when you lock a file specify if it's a 
+hard or advisory lock, but just have root ignore the flag that says it's
+ a hard lock. Now it's not clear that mandatory locks are actually 
+better than advisory locks either, so there could be more here.</p>
+
+<p><b>Performance</b><br>
+There were a couple things they were interested in. The main one was 
+throughput; this is what their key measurement statistics were. They 
+increased bandwidth by two methods. First, they read in larger blocks; 
+up to 8KB instead of 1K. Second, they grouped related together in 
+physically close areas of the disk platters. This second method also 
+leads to another benefit, which is decreased latency for some 
+operations. Finally, they were also concerned with the overhead that 
+their filesystem imposed on the contents of the disk. They addressed 
+this by allocating more than one file to a given block with their 
+fragment mechanism.</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                 Evan Driscoll  |
+                                 <a href="http://pages.cs.wisc.edu/%7Eswift/classes/cs736-sp07/blog/2007/03/a_fast_file_system_for_unix.html#comment-1330">March 21, 2007 11:47 PM</a>
+                              </p>
+                           </div>
+                           
+                        </div>
+
+                         
+                        <form method="post" action="http://www.cs.wisc.edu/~swift/mt/mt-comments.cgi" name="comments_form" onsubmit="if (this.bakecookie.checked) rememberMe(this)">
+                           <input name="static" value="1" type="hidden">
+                           <input name="entry_id" value="90" type="hidden">
+                           
+                           <div class="comments-open" id="comments-open" style="display: none; ">
+                              <h2 class="comments-open-header">Post a comment</h2>
+                              
+                              <div class="comments-open-content">
+                                 <script type="text/javascript">
+                                 <!--
+                                 writeTypeKeyGreeting(commenter_name, 90);
+                                 //-->
+                                 </script>
+                              
+                                 
+
+                                 <div id="comments-open-data">
+                                    <div id="name-email">
+                                       <p>
+                                          <label for="comment-author">Name:</label>
+                                          <input id="comment-author" name="author" size="30">
+                                       </p>
+                                       <p>
+                                          <label for="comment-email">Email Address:</label>
+                                          <input id="comment-email" name="email" size="30">
+                                       </p>
+                                    </div>
+
+                                    <p>
+                                       <label for="comment-url">URL:</label>
+                                       <input id="comment-url" name="url" size="30">
+                                    </p>
+                                    <p>
+                                       <label for="comment-bake-cookie"><input id="comment-bake-cookie" name="bakecookie" onclick="if (!this.checked) forgetMe(document.comments_form)" value="1" type="checkbox">
+                                          Remember personal info?</label>
+                                    </p>
+                                 </div>
+
+                                 <p id="comments-open-text">
+                                    <label for="comment-text">Comments: (you may use HTML tags for style)</label>
+                                    <textarea id="comment-text" name="text" rows="10" cols="30"></textarea>
+                                 </p>
+                                 <div id="comments-open-footer" class="comments-open-footer">
+                                    <input accesskey="v" name="preview" id="comment-preview" value="Preview" type="submit">
+                                    <input accesskey="s" name="post" id="comment-post" value="Post" type="submit">
+                                 </div>
+                              </div>
+                           </div>
+                        </form>
+                        
+                     </div>
+                     
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+
+
+</body></html>

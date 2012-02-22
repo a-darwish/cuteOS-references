@@ -20,7 +20,7 @@ debugger on us. Default to Xlib instead, and use the great bochs
 command-line debugger.
 
 $ autoconf
-$ ./configure --prefix /usr/local/bochs		\
+$ ./configure --prefix /usr/local/bochs-2.5	\
             --enable-a20-pin			\
             --enable-x86-64			\
             --enable-smp			\

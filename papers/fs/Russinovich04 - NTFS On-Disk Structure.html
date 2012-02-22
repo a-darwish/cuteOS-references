@@ -1,0 +1,1375 @@
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>NTFS On-Disk Structure</title>
+<link rel="STYLESHEET" type="text/css" href="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/style.css">
+<link rel="STYLESHEET" type="text/css" href="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/docsafari.css">
+</head>
+<body>
+<table border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr><td valign="top"><a name="ch12lev1sec6"></a>
+
+<h3 class="docSection1Title">NTFS On-Disk Structure</h3>
+
+<p class="docText"><a name="ind4961"></a><a name="ind4958"></a><a name="ind4955"></a><a name="ind9229"></a><a name="ind9140"></a><a name="ind4837"></a><a name="ind4809"></a><a name="ind1464"></a><a name="ind1002"></a><a name="ind0806"></a><a name="ind0517"></a>This
+ section describes the on-disk structure of an NTFS volume, including 
+how disk space is divided and organized into clusters, how files are 
+organized into directories, how the actual file data and attribute 
+information is stored on disk, and finally, how NTFS data compression 
+works.</p>
+
+<a name="ch12lev2sec13"></a>
+
+<h4 class="docSection2Title">Volumes</h4>
+
+<p class="docText">The structure of NTFS begins with a volume. A <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_332">volume</a></i>
+ corresponds to a logical partition on a disk, and it is created when 
+you format a disk or part of a disk for NTFS. You can also create a RAID
+ volume that spans multiple disks by using the Windows Disk Management 
+MMC snap-in.</p>
+
+<p class="docText">A disk can have one volume or several. NTFS handles 
+each volume independently of the others. Three sample disk 
+configurations for a 150-MB hard disk are illustrated in <a class="docLink" href="#ch12fig23">Figure 12-23</a>.</p>
+
+<a name="ch12fig23"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-23. Sample disk configurations</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig23.gif" height="124" border="0" width="499"></p>
+
+</center><p></p><br>
+
+<p class="docText">A volume consists of a series of files plus any 
+additional unallocated space remaining on the disk partition. In the FAT
+ file system, a volume also contains areas specially formatted for use 
+by the file system. An NTFS volume, however, stores all file system 
+data, such as bitmaps and directories, and even the system bootstrap, as
+ ordinary files.</p>
+
+<a name="ch12note05"></a><div class="docNote"><p class="docNoteTitle">Note</p><p><table border="0" cellpadding="1" cellspacing="0" width="90%"><tbody><tr><td valign="top" width="60"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/note.gif" height="40" align="LEFT" border="0" width="40">The
+ on-disk format of NTFS volumes on Windows 2000 is version 3.0, and 
+because of minor changes to the format, it is version 3.1 on Windows XP 
+and Windows Server 2003. The version number of a volume is stored in its
+ $Volume metadata file.<p></p></td></tr></tbody></table></p></div><br>
+
+<a name="ch12lev2sec14"></a>
+
+<h4 class="docSection2Title">Clusters</h4>
+
+<p class="docText">The cluster size on an NTFS volume, or the <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_038">cluster factor</a></i>, is established when a user formats the volume with either the <span class="docEmphasis">format</span>
+ command or the Disk Management MMC snap-in. The default cluster factor 
+varies with the size of the volume, but it is an integral number of 
+physical sectors, always a power of 2 (1 sector, 2 sectors, 4 sectors, 8
+ sectors, and so on). The cluster factor is expressed as the number of 
+bytes in the cluster, such as 512 bytes, 1 KB, or 2 KB.</p>
+
+<p class="docText"><a name="ind4967"></a><a name="ind4888"></a><a name="ind2702"></a><a name="ind2522"></a><a name="ind2434"></a><a name="ind2327"></a><a name="ind1422"></a><a name="ind1351"></a><a name="ind1065"></a><a name="ind0002"></a>Internally,
+ NTFS refers only to clusters. (However, NTFS forms low-level volume I/O
+ operations such that it is sector-aligned and its length is a multiple 
+of the sector size.) NTFS uses the cluster as its unit of allocation to 
+maintain its independence from physical sector sizes. This independence 
+allows NTFS to efficiently support very large disks by using a larger 
+cluster factor or to support nonstandard disks that have a sector size 
+other than 512 bytes. On a larger volume, use of a larger cluster factor
+ can reduce fragmentation and speed allocation, at a small cost in terms
+ of wasted disk space. Both the <span class="docEmphasis">format</span> 
+command available from the Windows Command Prompt and the Format menu 
+option under the All Tasks option on the Action menu in the Disk 
+Management MMC snap-in choose a default cluster factor based on the 
+volume size, but you can override this size.</p>
+
+<p class="docText">NTFS refers to physical locations on a disk by means of <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_165">logical cluster numbers (LCNs)</a></i>.
+ LCNs are simply the numbering of all clusters from the beginning of the
+ volume to the end. To convert an LCN to a physical disk address, NTFS 
+multiplies the LCN by the cluster factor to get the physical byte offset
+ on the volume, as the disk driver interface requires. NTFS refers to 
+the data within a file by means of <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_329">virtual cluster numbers (VCNs)</a></i>. VCNs number the clusters belonging to a particular file from 0 through <span class="docEmphasis">m</span>. VCNs aren't necessarily physically contiguous, however; they can be mapped to any number of LCNs on the volume.</p>
+
+<a name="ch12lev2sec15"></a>
+
+<h4 class="docSection2Title">Master File Table</h4>
+
+<p class="docText">In NTFS, all data stored on a volume is contained in 
+files, including the data structures used to locate and retrieve files, 
+the bootstrap data, and the bitmap that records the allocation state of 
+the entire volume (the NTFS metadata). Storing everything in files 
+allows the file system to easily locate and maintain the data, and each 
+separate file can be protected by a security descriptor. In addition, if
+ a particular part of the disk goes bad, NTFS can relocate the metadata 
+files to prevent the disk from becoming inaccessible.</p>
+
+<p class="docText">The MFT is the heart of the NTFS volume structure. 
+The MFT is implemented as an array of file records. The size of each 
+file record is fixed at 1 KB, regardless of cluster size. (The structure
+ of a file record is described in the "<a class="docLink" href="#ch12lev2sec17">File Records</a>"
+ section later in this chapter.) Logically, the MFT contains one record 
+for each file on the volume, including a record for the MFT itself. In 
+addition to the MFT, each NTFS volume includes a set of metadata files 
+containing the information that's used to implement the file system 
+structure. Each of these NTFS metadata files has a name that begins with
+ a dollar sign ($), although the signs are hidden. For example, the 
+filename of the MFT is $Mft. The rest of the files on an NTFS volume are
+ normal user files and directories, as shown in <a class="docLink" href="#ch12fig24">Figure 12-24</a>.</p>
+
+<a name="ch12fig24"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-24. File records for NTFS metadata files in the MFT</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig24.gif" height="481" border="0" width="465"></p>
+
+</center><p></p><br>
+
+<p class="docText"><a name="ind3020"></a><a name="ind2801"></a><a name="ind0259"></a>Usually,
+ each MFT record corresponds to a different file. If a file has a large 
+number of attributes or becomes highly fragmented, however, more than 
+one record might be needed for a single file. In such cases, the MFT 
+first record, which stores the locations of the others, is called the <span class="docEmphasis">base file record</span>.</p>
+
+<a name="ch12sb07"></a><p><table border="1" cellpadding="5" cellspacing="0" width="90%"><tbody><tr><td><p><table border="0" cellpadding="1" cellspacing="0" width="90%"><tbody><tr><td valign="top" width="60"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/sidebar.gif" height="40" border="0" width="40">support.microsoft.com/support/kb/articles/Q253/0/66.asp)
+ allows you to dump the contents of an NTFS volume's MFT as well as to 
+translate a volume cluster number or physical-disk sector number (on 
+non-RAID volumes only) to the file that contains it, if it's part of a 
+file. The first 16 entries of the MFT are reserved for metadata files, 
+but optional metadata files (which are present only if a volume uses an 
+associated feature) fall outside this area: \$Extend\$Quota, 
+\$Extend\$ObjId, \$Extend\$UsnJrnl, and \$Extend\$Reparse. The following
+ dump was performed on a volume that uses reparse points ($Reparse), 
+quotas ($Quota), and object IDs ($ObjId):<p></p><pre>C:\&gt;nfi G:\
+
+NTFS File Sector Information Utility.
+
+Copyright (C) Microsoft Corporation 1999. All rights reserved.
+
+
+
+File 0
+
+Master  File  Table($Mft)
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $DATA (nonresident)
+
+        logical  sectors32-52447 (0x20-0xccdf)
+
+    $BITMAP (nonresident)
+
+        logical  sectors  16-23 (0x10-0x17)
+
+
+
+File 1
+
+Master  File Table Mirror ($MftMirr)
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $DATA (nonresident)
+
+        logical sectors 2048728-2048735 (0x1f42d8-0x1f42df)
+
+
+
+File 2
+
+Log File ($LogFile)
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $DATA (nonresident)
+
+        logical  sectors 2048736-2073343 (0x1f42e0-0x1fa2ff)
+
+File 3
+
+DASD  ($Volume)
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $OBJECT_ID (resident)
+
+    $SECURITY_DESCRIPTOR (resident)
+
+    $VOLUME_NAME (resident)
+
+    $VOLUME_INFORMATION (resident)
+
+    $DATA (resident)
+
+
+
+File 4
+
+Attribute Definition Table ($AttrDef)
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $SECURITY_DESCRIPTOR (resident)
+
+    $DATA (nonresident)
+
+        logical sectors 512256-512263 (0x7d100-0x7d107)
+
+
+
+File 5
+
+Root Directory
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $SECURITY_DESCRIPTOR (resident)
+
+    $INDEX_ROOT $I30 (resident)
+
+    $INDEX_ALLOCATION $I30 (nonresident)
+
+        logical sectors 2073416-2073423 (0x1fa348-0x1fa34f)
+
+    $BITMAP $I30 (resident)
+
+
+
+File 6
+
+Volume Bitmap ($BitMap)
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $DATA (nonresident)
+
+        logical sectors 2073424-2073675 (0x1fa350-0x1fa44b)
+
+
+
+File 7
+
+Boot Sectors ($Boot)
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $SECURITY_DESCRIPTOR (resident)
+
+    $DATA (nonresident)
+
+        logical sectors 0-15 (0x0-0xf)
+
+File 8
+
+Bad ClusterList ($BadClus)
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $DATA (resident)
+
+    $DATA $Bad (nonresident)
+
+
+
+File 9
+
+Security ($Secure)
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $DATA $SDS (nonresident)
+
+        logical sectors 2073932-2074447 (0x1fa54c-0x1fa74f)
+
+        logical sectors 523160-523163 (0x7fb98-0x7fb9b)
+
+    $INDEX_ROOT $SDH (resident)
+
+    $INDEX_ROOT $SII (resident)
+
+    $INDEX_ALLOCATION $SDH (nonresident)
+
+        logical sectors 1876152-1876159 (0x1ca0b8-0x1ca0bf)
+
+    $INDEX_ALLOCATION $SII (nonresident)
+
+        logical sectors 24-31 (0x18-0x1f)
+
+    $BITMAP $SDH (resident)
+
+    $BITMAP $SII (resident)
+
+
+
+File 10
+
+Upcase Table ($UpCase)
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $DATA (nonresident)
+
+        logical sectors 2073676-2073931 (0x1fa44c-0x1fa54b)
+
+
+
+File 11
+
+Extend Table ($Extend)
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $INDEX_ROOT $I30 (resident)
+
+
+
+File 12
+
+(unknown/unnamed)
+
+    $STANDARD_INFORMATION (resident)
+
+    $SECURITY_DESCRIPTOR (resident)
+
+    $DATA (resident)
+
+File 13
+
+(unknown/unnamed)
+
+    $STANDARD_INFORMATION (resident)
+
+    $SECURITY_DESCRIPTOR (resident)<a name="ind4800"></a><a name="ind3875"></a><a name="ind2594"></a><a name="ind2526"></a><a name="ind0346"></a>
+
+    $DATA (resident)
+
+
+
+File 14
+
+(unknown/unnamed)
+
+    $STANDARD_INFORMATION (resident)
+
+    $SECURITY_DESCRIPTOR (resident)
+
+    $DATA (resident)
+
+
+
+File 15
+
+(unknown/unnamed)
+
+    $STANDARD_INFORMATION (resident)
+
+    $SECURITY_DESCRIPTOR (resident)
+
+    $DATA (resident)
+
+
+
+File 24
+
+\$Extend\$Quota
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $INDEX_ROOT $O (resident)
+
+    $INDEX_ROOT $Q (resident)
+
+
+
+File 25
+
+\$Extend\$ObjId
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $INDEX_ROOT $O (resident)
+
+
+
+File 26 \$Extend\$Reparse
+
+    $STANDARD_INFORMATION (resident)
+
+    $FILE_NAME (resident)
+
+    $INDEX_ROOT $R (resident)</pre><br>
+
+</td></tr></tbody></table></p></td></tr></tbody></table></p><br>
+
+<p class="docText">When it first accesses a volume, NTFS must <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_182">mount</a></i>
+ it&#8212;that is, read metadata from the disk and construct internal data 
+structures so that it can process application file system accesses. To 
+mount the volume, NTFS looks in the boot sector to find the physical 
+disk address of the MFT. The MFT's own file record is the first entry in
+ the table; the second file record points to a file located in the 
+middle of the disk called the <span class="docEmphasis">MFT mirror</span>
+ (filename $MftMirr) that contains a copy of the first few rows of the 
+MFT. This partial copy of the MFT is used to locate metadata files if 
+part of the MFT file can't be read for some reason.</p>
+
+<p class="docText">Once NTFS finds the file record for the MFT, it 
+obtains the VCN-to-LCN mapping information in the file record's data 
+attribute and stores it in memory. Each run has a VCN-to-LCN mapping and
+ a run length because that's all the information necessary to locate an 
+LCN for any VCN. This mapping information tells NTFS where the runs 
+composing the MFT are located on the disk. (Runs are explained later in 
+this chapter in the section "<a class="docLink" href="#ch12lev2sec19">Resident and Nonresident Attributes</a>.")
+ NTFS then processes the MFT records for several more metadata files and
+ opens the files. Next, NTFS performs its file system recovery operation
+ (described in the section "<a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/ch12lev1sec7.html#ch12lev2sec29">Recovery</a>"), and finally, it opens its remaining metadata files. The volume is now ready for user access.</p>
+
+<a name="ch12note06"></a><div class="docNote"><p class="docNoteTitle">Note</p><p><table border="0" cellpadding="1" cellspacing="0" width="90%"><tbody><tr><td valign="top" width="60"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/note.gif" height="40" align="LEFT" border="0" width="40">For
+ the sake of clarity, the text and diagrams in this chapter depict a run
+ as including a VCN, LCN, and run length. NTFS actually compresses this 
+information on disk into an LCN/ next-VCN pair. Given a starting VCN, 
+NTFS can determine the length of a run by subtracting the starting VCN 
+from the next VCN.<p></p></td></tr></tbody></table></p></div><br>
+
+<p class="docText">As the system runs, NTFS writes to another important metadata file, the <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_162">log file</a></i>
+ (filename $LogFile). NTFS uses the log file to record all operations 
+that affect the NTFS volume structure, including file creation or any 
+commands, such as <span class="docEmphasis">Copy</span>, that alter the 
+directory structure. The log file is used to recover an NTFS volume 
+after a system failure, and is also described in the "<a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/ch12lev1sec7.html#ch12lev2sec29">Recovery</a>" section later in this chapter.</p>
+
+<p class="docText">Another entry in the MFT is reserved for the <span class="docEmphasis">root directory</span>
+ (also known as "\"). Its file record contains an index of the files and
+ directories stored in the root of the NTFS directory structure. When 
+NTFS is first asked to open a file, it begins its search for the file in
+ the root directory's file record. After opening a file, NTFS stores the
+ file's MFT file reference so that it can directly access the file's MFT
+ record when it reads and writes the file later.</p>
+
+<p class="docText">NTFS records the allocation state of the volume in the <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_022">bitmap file</a></i>
+ (filename $Bitmap). The data attribute for the bitmap file contains a 
+bitmap, each of whose bits represents a cluster on the volume, 
+identifying whether the cluster is free or has been allocated to a file.</p>
+
+<p class="docText">The <span class="docEmphasis">security file</span> 
+(filename $Secure) stores the volume-wide security descriptor database. 
+NTFS files and directories have individually settable security 
+descriptors, but to conserve space, NTFS stores the settings in a common
+ file, which allows files and directories that have the same security 
+settings to reference the same security descriptor. In most 
+environments, entire directory trees have the same security settings, so
+ this optimization provides a significant savings.</p>
+
+<p class="docText">Another system file, the <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_025">boot file</a></i>
+ (filename $Boot), stores the Windows bootstrap code. For the system to 
+boot, the bootstrap code must be located at a specific disk address. 
+During formatting, however, the <span class="docEmphasis">format</span> 
+command defines this area as a file by creating a file record for it. 
+Creating the boot file allows NTFS to adhere to its rule of making 
+everything on the disk a file. The boot file as well as NTFS metadata 
+files can be individually protected by means of the security descriptors
+ that are applied to all Windows objects. Using this "everything on the 
+disk is a file" model also means that the bootstrap can be modified by 
+normal file I/O, although the boot file is protected from editing.</p>
+
+<p class="docText">NTFS also maintains a <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_019">bad-cluster file</a></i> (filename $BadClus) for recording any bad spots on the disk volume and a file known as the <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_333">volume file</a></i>
+ (filename $Volume), which contains the volume name, the version of NTFS
+ for which the volume is formatted, and a bit that when set signifies 
+that a disk corruption has occurred and must be repaired by the Chkdsk 
+utility. (The Chkdsk utility is covered in more detail later in the 
+chapter.) The <span class="docEmphasis">uppercase file</span> (filename 
+$UpCase) includes a translation table between lowercase and uppercase 
+characters. NTFS maintains a file containing an <span class="docEmphasis">attribute definition table</span>
+ (filename $AttrDef) that defines the attribute types supported on the 
+volume and indicates whether they can be indexed, recovered during a 
+system recovery operation, and so on.</p>
+
+<p class="docText"><a name="ind4975"></a><a name="ind4964"></a><a name="ind4367"></a><a name="ind3807"></a><a name="ind3804"></a><a name="ind3583"></a><a name="ind2948"></a><a name="ind2883"></a><a name="ind1483"></a><a name="ind1353"></a><a name="ind1291"></a><a name="ind0965"></a><a name="ind0458"></a>NTFS stores several metadata files in the <span class="docEmphasis">extensions</span> (directory name $Extend) metadata directory, including the <span class="docEmphasis">object identifier file</span> (filename $ObjId), the <span class="docEmphasis">quota file</span> (filename $Quota), the <span class="docEmphasis">change journal file</span> (filename $UsnJrnl), and the <span class="docEmphasis">reparse point file</span>
+ (filename $Reparse). These files store information related to optional 
+features of NTFS. The object identifier file stores file object IDs, the
+ quota file stores quota limit and behavior information on volumes that 
+have quotas enabled, the change journal file records file and directory 
+changes, and the reparse point file stores information about which files
+ and directories on the volume include reparse point data.</p>
+
+<a name="ch12sb08"></a><p><table border="1" cellpadding="5" cellspacing="0" width="90%"><tbody><tr><td><p><table border="0" cellpadding="1" cellspacing="0" width="90%"><tbody><tr><td valign="top" width="60"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/sidebar.gif" height="40" border="0" width="40">http://www.sysinternals.com
+ to view information about an NTFS volume, including the placement and 
+size of the MFT and MFT zone; and in Windows XP and Windows Server 2003,
+ you can use the built-in Fsutil.exe command-line program:<p></p><pre>C:\Windows\System32&gt;fsutil fsinfo ntfsinfo c:
+
+NTFS Volume Serial Number :       0xe82828e72828b68a
+
+Version :                         3.1
+
+Number Sectors :                  0x0000000001e461b7
+
+Total Clusters :                  0x00000000003c8c36
+
+Free Clusters  :                  0x00000000000164c8
+
+Total Reserved :                  0x00000000000001b0
+
+Bytes PerSector :                 512
+
+Bytes Per Cluster :               4096
+
+Bytes Per FileRecord Segment    : 1024
+
+Clusters Per FileRecord Segment : 0
+
+Mft Valid Data  Length :          0x0000000006413800
+
+Mft Start Lcn   :                 0x00000000000c5294
+
+Mft2 Start Lcn  :                 0x000000000002f427
+
+Mft Zone Start  :                 0x00000000003bf7e0
+
+Mft Zone End    :                 0x00000000003bf800</pre><br>
+
+</td></tr></tbody></table></p></td></tr></tbody></table></p><br>
+
+<a name="ch12lev2sec16"></a>
+
+<h4 class="docSection2Title">File Reference Numbers</h4>
+
+<p class="docText">A file on an NTFS volume is identified by a 64-bit value called a <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_095">file reference</a></i>.
+ The file reference consists of a file number and a sequence number. The
+ file number corresponds to the position of the file's file record in 
+the MFT minus 1 (or to the position of the base file record minus 1 if 
+the file has more than one file record). The file reference sequence 
+number, which is incremented each time an MFT file record position is 
+reused, enables NTFS to perform internal consistency checks. A file 
+reference is illustrated in <a class="docLink" href="#ch12fig25">Figure 12-25</a>.</p>
+
+<a name="ch12fig25"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-25. File reference</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig25.gif" height="63" border="0" width="241"></p>
+
+</center><p></p><br>
+
+<a name="ch12lev2sec17"></a>
+
+<h4 class="docSection2Title">File Records</h4>
+
+<p class="docText"><a name="ind4963"></a><a name="ind3624"></a><a name="ind1352"></a><a name="ind0212"></a>Instead
+ of viewing a file as just a repository for textual or binary data, NTFS
+ stores files as a collection of attribute/value pairs, one of which is 
+the data it contains (called the <span class="docEmphasis">unnamed data attribute</span>).
+ Other attributes that comprise a file include the filename, time stamp 
+information, and possibly additional named data attributes. <a class="docLink" href="#ch12fig26">Figure 12-26</a> illustrates an MFT record for a small file.</p>
+
+<a name="ch12fig26"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-26. MFT record for a small file</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig26.gif" height="364" border="0" width="490"></p>
+
+</center><p></p><br>
+
+<p class="docText">Each file attribute is stored as a separate stream of
+ bytes within a file. Strictly speaking, NTFS doesn't read and write 
+files&#8212;it reads and writes attribute streams. NTFS supplies these 
+attribute operations: create, delete, read (byte range), and write (byte
+ range). The read and write services normally operate on the file's 
+unnamed data attribute. However, a caller can specify a different data 
+attribute by using the named data stream syntax.</p>
+
+<p class="docText"><a class="docLink" href="#ch12table04">Table 12-4</a> lists the attributes for files on an NTFS volume. (Not all attributes are present for every file.)</p>
+
+<a name="ch12table04"></a><p><table class="allBorders" rules="none" border="1" cellpadding="5" cellspacing="0"><caption><h5 class="docTableTitle">Table 12-4. Attributes for NTFS Files</h5></caption><colgroup><col width="100"><col width="100"><col width="300"></colgroup><thead><tr><th class="thead" scope="col" align="left" valign="top"><p class="docText">Attribute</p></th><th class="thead" scope="col" align="left" valign="top"><p class="docText">Attribute Name</p></th><th class="thead" scope="col" align="left" valign="top"><p class="docText">Description</p></th></tr></thead><tbody><tr><td class="docTableCell" align="left" valign="top"><p class="docText">Volume information</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">$VOLUME_INFORMATION,$VOLUME_NAME</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">These attributes are present only in the $Volume metadata file. They store volume version and label information.</p></td></tr><tr><td class="docTableCell" align="left" valign="top"><p class="docText">Standard information</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">$STANDARD_INFORMATION</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">File
+ attributes such as read-only, archive, and so on; time stamps, 
+including when the file was created or last modified; and how many 
+directories point to the file (its <span class="docEmphasis">hard link count</span>).</p></td></tr><tr><td class="docTableCell" align="left" valign="top"><p class="docText">Filename</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">$FILE_NAME</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">The
+ file's name in Unicode characters. A file can have multiple filename 
+attributes, as it does when a hard link to a file exists or when a file 
+with a long name has an automatically generated "short name" for access 
+by MS-DOS and 16bit Microsoft Windows applications.</p></td></tr><tr><td class="docTableCell" align="left" valign="top"><p class="docText">Security descriptor</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">$SECURITY_DESCRIPTOR</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">This
+ attribute is present for backward compatibility with previous versions 
+of NTFS. The Windows version of NTFS stores all security descriptors in 
+the $Secure metadata file, sharing descriptors among files and 
+directories that have the same settings. Previous versions of NTFS 
+stored private security descriptor information with each file and 
+directory.</p></td></tr><tr><td class="docTableCell" align="left" valign="top"><p class="docText">Data</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">$DATA</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">The
+ contents of the file. In NTFS, a file has one default unnamed data 
+attribute and can have additional named data attributes&#8212;that is, a file 
+can have multiple data streams. A directory has no default data 
+attribute but can have optional named data attributes.</p></td></tr><tr><td class="docTableCell" align="left" valign="top"><p class="docText">Index root, index allocation, and index bitmap</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">$INDEX_ROOT, $INDEX_ALLOCATION, $BITMAP</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">Three attributes used to implement filename allocation and bitmap indexes for large directories (directories only).</p></td></tr><tr><td class="docTableCell" align="left" valign="top"><p class="docText">Attribute list</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">$ATTRIBUTE_LIST</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">A
+ list of the attributes that make up the file and the file reference of 
+the MFT file record in which each attribute is located. This seldom-used
+ attribute is present when a file requires more than one MFT file 
+record.</p></td></tr><tr><td class="docTableCell" align="left" valign="top"><p class="docText">Object ID</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">$OBJECT_ID</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">A
+ 64-byte identifier for a file or directory, with the lowest 16 bytes 
+(128 bits) unique to the volume. The link-tracking service assigns 
+object IDs to shell shortcut and OLE link source files. NTFS provides 
+APIs so that files and directories can be opened with their object ID 
+rather than their filename.</p></td></tr><tr><td class="docTableCell" align="left" valign="top"><p class="docText">Reparse information</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">$REPARSE_POINT</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">This attribute stores a file's reparse point data.NTFS junctions and mount points include this attribute.</p></td></tr><tr><td class="docTableCell" align="left" valign="top"><p class="docText">Extended attributes</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">$EA, $EA_INFORMATION</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">Extended attributes aren't actively used but are provided for backward compatibility with OS/2 applications.</p></td></tr><tr><td class="docTableCell" align="left" valign="top"><p class="docText">EFS information</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">$EFS</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">EFS
+ stores data in this attribute that's used to manage a file's 
+encryption, such as the encrypted version of the key needed to decrypt 
+the file and a list of users that are authorized to access the file.</p></td></tr></tbody></table></p><br>
+
+<p class="docText"><a name="ind4965"></a><a name="ind4713"></a><a name="ind3311"></a><a name="ind2701"></a><a name="ind2699"></a><a name="ind2692"></a><a name="ind2612"></a><a name="ind1421"></a><a class="docLink" href="#ch12table04">Table 12-4</a>
+ shows attribute names; however, attributes actually correspond to 
+numeric type codes, which NTFS uses to order the attributes within a 
+file record. The file attributes in an MFT record are ordered by these 
+type codes (numerically in ascending order), with some attribute types 
+appearing more than once&#8212;if a file has multiple data attributes, for 
+example, or multiple filenames.</p>
+
+<p class="docText">Each attribute in a file record is identified with 
+its attribute type code and has a value and an optional name. An 
+attribute's value is the byte stream composing the attribute. For 
+example, the value of the $FILE_NAME attribute is the file's name; the 
+value of the $DATA attribute is whatever bytes the user stored in the 
+file.</p>
+
+<p class="docText">Most attributes never have names, though the 
+index-related attributes and the $DATA attribute often do. Names 
+distinguish among multiple attributes of the same type that a file can 
+include. For example, a file that has a named data stream has two $DATA 
+attributes: an unnamed $DATA attribute storing the default unnamed data 
+stream and a named $DATA attribute having the name of the alternate 
+stream and storing the named stream's data.</p>
+
+<a name="ch12lev2sec18"></a>
+
+<h4 class="docSection2Title">Filenames</h4>
+
+<p class="docText">Both NTFS and FAT allow each filename in a path to be
+ as many as 255 characters long. Filenames can contain Unicode 
+characters as well as multiple periods and embedded spaces. However, the
+ FAT file system supplied with MS-DOS is limited to 8 (non-Unicode) 
+characters for its filenames, followed by a period and a 3-character 
+extension. <a class="docLink" href="#ch12fig27">Figure 12-27</a> provides a visual representation of the different file namespaces Windows supports and shows how they intersect.</p>
+
+<a name="ch12fig27"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-27. Windows file namespaces</h5>
+
+<p class="docText"></p><div class="v1"><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig27_alt.gif"><p></p></a></div></center><p></p><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig27_alt.gif"><br>
+
+<p class="docText">The POSIX subsystem requires the biggest namespace of
+ all the application execution environments that Windows supports, and 
+therefore the NTFS namespace is equivalent to the POSIX namespace. The 
+POSIX subsystem can create names that aren't visible to Windows and 
+MS-DOS applications, including names with trailing periods and trailing 
+spaces. Ordinarily, creating a file using the large POSIX namespace 
+isn't a problem because you would do that only if you intended the POSIX
+ subsystem or POSIX client systems to use that file.</p>
+
+</a><p class="docText"><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig27_alt.gif"></a><a name="ind4170"></a><a name="ind1627"></a>The
+ relationship between 32-bit Windows (Windows) applications and MS-DOS 
+Windows applications is a much closer one, however. The Windows area in <a class="docLink" href="#ch12fig26">Figure 12-26</a>
+ represents filenames that the Windows subsystem can create on an NTFS 
+volume but that MS-DOS and 16-bit Windows applications can't see. This 
+group includes filenames longer than the 8.3 format of MS-DOS names, 
+those containing Unicode (international) characters, those with multiple
+ period characters or a beginning period, and those with embedded 
+spaces. When a file is created with such a name, NTFS automatically 
+generates an alternate, MS-DOS-style filename for the file. Windows 
+displays these short names when you use the <span class="docEmphasis">/x</span> option with the <span class="docEmphasis">dir</span> command.</p>
+
+<p class="docText">The MS-DOS filenames are fully functional aliases for
+ the NTFS files and are stored in the same directory as the long 
+filenames. The MFT record for a file with an autogenerated MSDOS 
+filename is shown in <a class="docLink" href="#ch12fig28">Figure 12-28</a>.</p>
+
+<a name="ch12fig28"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-28. MFT file record with an MS-DOS filename attribute</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig28.gif" height="141" border="0" width="424"></p>
+
+</center><p></p><br>
+
+<p class="docText">The NTFS name and the generated MS-DOS name are 
+stored in the same file record and therefore refer to the same file. The
+ MS-DOS name can be used to open, read from, write to, or copy the file.
+ If a user renames the file using either the long filename or the short 
+filename, the new name replaces both the existing names. If the new name
+ isn't a valid MS-DOS name, NTFS generates another MS-DOS name for the 
+file.</p>
+
+<a name="ch12note07"></a><div class="docNote"><p class="docNoteTitle">Note</p><p><table border="0" cellpadding="1" cellspacing="0" width="90%"><tbody><tr><td valign="top" width="60"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/note.gif" height="40" align="LEFT" border="0" width="40">POSIX
+ hard links are implemented in a similar way. When a hard link to a 
+POSIX file is created, NTFS adds another filename attribute to the 
+file's MFT file record. The two situations differ in one regard, 
+however. When a user deletes a POSIX file that has multiple names (hard 
+links), the file record and the file remain in place. The file and its 
+record are deleted only when the last filename (hard link) is deleted. 
+If a file has both an NTFS name and an autogenerated MS-DOS name, 
+however, a user can delete the file using either name.<p></p></td></tr></tbody></table></p></div><br>
+
+<p class="docText">Here's the algorithm NTFS uses to generate an MS-DOS name from a long filename:</p>
+
+<div style="font-weight:bold"><ol class="docList" type="1"><li><div style="font-weight:normal"><p class="docList">Remove
+ from the long name any characters that are illegal in MS-DOS names, 
+including spaces and Unicode characters. Remove preceding and trailing 
+periods. Remove all other embedded periods, except the last one.</p></div></li><li><div style="font-weight:normal"><p class="docList">Truncate the string before the period (if present) to six characters, and append the string "<img src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/u02dc.gif" border="0"><span class="docEmphasis">n</span>" (where <span class="docEmphasis">n</span>
+ is a number, starting with 1, that is used to distinguish different 
+files that truncate to the same name). Truncate the string after the 
+period (if present) to three characters.<a name="ind4973"></a><a name="ind3814"></a><a name="ind3722"></a><a name="ind2812"></a><a name="ind0213"></a></p></div></li><li><div style="font-weight:normal"><p class="docList">Put
+ the result in uppercase letters. MS-DOS is case-insensitive, and this 
+step guarantees that NTFS won't generate a new name that differs from 
+the old only in case.</p></div></li><li><div style="font-weight:normal"><p class="docList">If the generated name duplicates an existing name in the directory, increment the <img src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/u02dc.gif" border="0"><span class="docEmphasis">n</span> string.</p></div></li></ol></div>
+
+<p class="docText"><a class="docLink" href="#ch12table05">Table 12-5</a> shows the long Windows filenames from <a class="docLink" href="#ch12fig26">Figure 12-26</a> and their NTFS-generated MS-DOS versions. The current algorithm and the examples in <a class="docLink" href="#ch12fig26">Figure 12-26</a> should give you an idea of what NTFS-generated MS-DOS&#8211;style filenames look like.</p>
+
+<a name="ch12table05"></a><p><table class="allBorders" rules="none" border="1" cellpadding="5" cellspacing="0"><caption><h5 class="docTableTitle">Table 12-5. NTFS-Generated Filenames</h5></caption><colgroup><col width="250"><col width="250"></colgroup><thead><tr><th class="thead" scope="col" align="left" valign="top"><p class="docText">Windows Long Name</p></th><th class="thead" scope="col" align="left" valign="top"><p class="docText">NTFS-Generated Short Name</p></th></tr></thead><tbody><tr><td class="docTableCell" align="left" valign="top"><p class="docText">LongFileName</p></td><td class="docTableCell" align="left" valign="top"><p class="docText">LONGFI<img src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/u02dc.gif" border="0">1</p></td></tr><tr><td class="docTableCell" align="left" valign="top"><p class="docText">UnicodeName.<img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/figu744_1.gif" height="19" border="0" width="74">BEGINN<img src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/u02dc.gif" border="0">1</p></td></tr></tbody></table></p><br>
+
+<a name="ch12note08"></a><div class="docNote"><p class="docNoteTitle">Note</p><p><table border="0" cellpadding="1" cellspacing="0" width="90%"><tbody><tr><td valign="top" width="60"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/note.gif" height="40" align="LEFT" border="0" width="40">Although
+ not generally recommended because it can cause incompatibilities with 
+applications that rely on them, you can disable short name generation by
+ setting 
+HKLM\System\CurrentControlSet\Control\FileSystem\NtfsDisable8dot3NameCreation
+ in the registry to a DWORD value of 1.<p></p></td></tr></tbody></table></p></div><br>
+
+<a name="ch12lev2sec19"></a>
+
+<h4 class="docSection2Title">Resident and Nonresident Attributes</h4>
+
+<p class="docText">If a file is small, all its attributes and their 
+values (its data, for example) fit in the file record. When the value of
+ an attribute is stored directly in the MFT, the attribute is called a <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_253">resident attribute</a></i>. (In <a class="docLink" href="#ch12fig27">Figure 12-27</a>,
+ for example, all attributes are resident.) Several attributes are 
+defined as always being resident so that NTFS can locate nonresident 
+attributes. The standard information and index root attributes are 
+always resident, for example.</p>
+
+<p class="docText">Each attribute begins with a standard header 
+containing information about the attribute, information that NTFS uses 
+to manage the attributes in a generic way. The header, which is always 
+resident, records whether the attribute's value is resident or 
+nonresident. For resident attributes, the header also contains the 
+offset from the header to the attribute's value and the length of the 
+attribute's value, as <a class="docLink" href="#ch12fig29">Figure 12-29</a> illustrates for the filename attribute.</p>
+
+<a name="ch12fig29"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-29. Resident attribute header and value</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig29.gif" height="186" border="0" width="482"></p>
+
+</center><p></p><br>
+
+<p class="docText"><a name="ind3876"></a>When an attribute's value is 
+stored directly in the MFT, the time it takes NTFS to access the value 
+is greatly reduced. Instead of looking up a file in a table and then 
+reading a succession of allocation units to find the file's data (as the
+ FAT file system does, for example), NTFS accesses the disk once and 
+retrieves the data immediately.</p>
+
+<p class="docText">The attributes for a small directory, as well as for a small file, can be resident in the MFT, as <a class="docLink" href="#ch12fig30">Figure 12-30</a>
+ shows. For a small directory, the index root attribute contains an 
+index of file references for the files and the subdirectories in the 
+directory.</p>
+
+<a name="ch12fig30"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-30. MFT file record for a small directory</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig30.gif" height="102" border="0" width="389"></p>
+
+</center><p></p><br>
+
+<p class="docText">Of course, many files and directories can't be 
+squeezed into a 1-KB fixed-size MFT record. If a particular attribute, 
+such as a file's data attribute, is too large to be contained in an MFT 
+file record, NTFS allocates clusters for the attribute's data separate 
+from the MFT. This area is called a <span class="docEmphasis">run</span> (or an <span class="docEmphasis">extent</span>).
+ If the attribute's value later grows (if a user appends data to the 
+file, for example), NTFS allocates another run for the additional data. 
+Attributes whose values are stored in runs rather than in the MFT are 
+called <span class="docEmphasis">nonresident attributes</span>. The file
+ system decides whether a particular attribute is resident or 
+nonresident; the location of the data is transparent to the process 
+accessing it.</p>
+
+<p class="docText">When an attribute is nonresident, as the data 
+attribute for a large file might be, its header contains the information
+ NTFS needs to locate the attribute's value on the disk. <a class="docLink" href="#ch12fig31">Figure 12-31</a> shows a nonresident data attribute stored in two runs.</p>
+
+<a name="ch12fig31"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-31. MFT file record for a large file with two data runs</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig31.gif" height="162" border="0" width="424"></p>
+
+</center><p></p><br>
+
+<p class="docText"><a name="ind4801"></a><a name="ind1772"></a>Among the
+ standard attributes, only those that can grow can be nonresident. For 
+files, the attributes that can grow are the data and the attribute list 
+(not shown in <a class="docLink" href="#ch12fig31">Figure 12-31</a>). The standard information and filename attributes are always resident.</p>
+
+<p class="docText">A large directory can also have nonresident attributes (or parts of attributes), as <a class="docLink" href="#ch12fig32">Figure 12-32</a>
+ shows. In this example, the MFT file record doesn't have enough room to
+ store the index of files that make up this large directory. A part of 
+the index is stored in the index root attribute, and the rest of the 
+index is stored in nonresident runs called <span class="docEmphasis">index buffers</span>.
+ The index root, index allocation, and bitmap attributes are shown here 
+in a simplified form. They are described in more detail in the next 
+section. The standard information and filename attributes are always 
+resident. The header and at least part of the value of the index root 
+attribute are also resident for directories.</p>
+
+<a name="ch12fig32"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-32. MFT file record for a large directory with a nonresident filename index</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig32.gif" height="181" border="0" width="457"></p>
+
+</center><p></p><br>
+
+<p class="docText">When a file's (or a directory's) attributes can't fit
+ in an MFT file record and separate allocations are needed, NTFS keeps 
+track of the runs by means of VCN-to-LCN mapping pairs. LCNs represent 
+the sequence of clusters on an entire volume from 0 through <span class="docEmphasis">n</span>. VCNs number the clusters belonging to a particular file from 0 through <span class="docEmphasis">m</span>. For example, the clusters in the runs of a nonresident data attribute are numbered as shown in <a class="docLink" href="#ch12fig33">Figure 12-33</a>.</p>
+
+<a name="ch12fig33"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-33. VCNs for a nonresident data attribute</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig33.gif" height="199" border="0" width="492"></p>
+
+</center><p></p><br>
+
+<p class="docText"><a name="ind4960"></a><a name="ind1538"></a><a name="ind1522"></a><a name="ind0742"></a><a name="ind9940"></a>If this file had more than two runs, the numbering of the third run would start with VCN 8. As <a class="docLink" href="#ch12fig34">Figure 12-34</a>
+ shows, the data attribute header contains VCN-to-LCN mappings for the 
+two runs here, which allows NTFS to easily find the allocations on the 
+disk.</p>
+
+<a name="ch12fig34"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-34. VCN-to-LCN mappings for a nonresident data attribute</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig34.gif" height="276" border="0" width="496"></p>
+
+</center><p></p><br>
+
+<p class="docText">Although <a class="docLink" href="#ch12fig33">Figure 12-33</a>
+ shows just data runs, other attributes can be stored in runs if there 
+isn't enough room in the MFT file record to contain them. And if a 
+particular file has too many attributes to fit in the MFT record, a 
+second MFT record is used to contain the additional attributes (or 
+attribute headers for nonresident attributes). In this case, an 
+attribute called the <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_016">attribute list</a></i>
+ is added. The attribute list attribute contains the name and type code 
+of each of the file's attributes and the file reference of the MFT 
+record where the attribute is located. The attribute list attribute is 
+provided for those cases in which a file grows so large or so fragmented
+ that a single MFT record can't contain the multitude of VCN-to-LCN 
+mappings needed to find all its runs. Files with more than 200 runs 
+typically require an attribute list.</p>
+
+<a name="ch12lev2sec20"></a>
+
+<h4 class="docSection2Title">Data Compression and Sparse Files</h4>
+
+<p class="docText">NTFS supports compression on a per-file, 
+per-directory, or per-volume basis. (NTFS compression is performed only 
+on user data, not file system metadata.) You can tell whether a volume 
+is compressed by using the Windows <span class="docEmphasis">GetVolumeInformation</span> function. To retrieve the actual compressed size of a file, use the Windows <span class="docEmphasis">GetCompressedFileSize</span> function. Finally, to <a name="ind4226"></a><a name="ind0931"></a><a name="ind0744"></a>examine or change the compression setting for a file or directory, use the Windows <span class="docEmphasis">DeviceIoControl</span>
+ function. (See the FSCTL_GET_COMPRESSION and FSCTL_SET_COMPRESSION file
+ system control codes.) Keep in mind that although setting a file's 
+compression state compresses (or decompresses) the file right away, 
+setting a directory's or volume's compression state doesn't cause any 
+immediate compression or decompression. Instead, setting a directory's 
+or volume's compression state sets a default compression state that will
+ be given to all newly created files and subdirectories within that 
+directory or volume.</p>
+
+<p class="docText">The following section introduces NTFS compression by 
+examining the simple case of compressing sparse data. The subsequent 
+sections extend the discussion to the compression of ordinary files and 
+sparse files.</p>
+
+<a name="ch12lev3sec24"></a>
+
+<h5 class="docSection3Title">Compressing Sparse Data</h5>
+
+<p class="docText"><span class="docEmphasis">Sparse data</span> is often
+ large but contains only a small amount of nonzero data relative to its 
+size. A sparse matrix is one example of sparse data. As described 
+earlier, NTFS uses VCNs, from 0 through <span class="docEmphasis">m</span>, to enumerate the clusters of a file. Each VCN maps to a corresponding LCN, which identifies the disk location of the cluster. <a class="docLink" href="#ch12fig35">Figure 12-35</a> illustrates the runs (disk allocations) of a normal, noncompressed file, including its VCNs and the LCNs they map to.</p>
+
+<a name="ch12fig35"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-35. Runs of a noncompressed file</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig35.gif" height="62" border="0" width="498"></p>
+
+</center><p></p><br>
+
+<p class="docText">This file is stored in 3 runs, each of which is 4 clusters long, for a total of 12 clusters. <a class="docLink" href="#ch12fig36">Figure 12-36</a>
+ shows the MFT record for this file. As described earlier, to save 
+space, the MFT record's data attribute, which contains VCN-to-LCN 
+mappings, records only one mapping for each run, rather than one for 
+each cluster. Notice, however, that each VCN from 0 through 11 has a 
+corresponding LCN associated with it. The first entry starts at VCN 0 
+and covers 4 clusters, the second entry starts at VCN 4 and covers 4 
+clusters, and so on. This entry format is typical for a noncompressed 
+file.</p>
+
+<a name="ch12fig36"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-36. MFT record for a noncompressed file</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig36.gif" height="156" border="0" width="392"></p>
+
+</center><p></p><br>
+
+<p class="docText">When a user selects a file on an NTFS volume for 
+compression, one NTFS compression technique is to remove long strings of
+ zeros from the file. If the file's data is sparse, it typically shrinks
+ to occupy a fraction of the disk space it would otherwise require. On 
+subsequent writes to the file, NTFS allocates space only for runs that 
+contain nonzero data.</p>
+
+<p class="docText"><a class="docLink" href="#ch12fig37">Figure 12-37</a>
+ depicts the runs of a compressed file containing sparse data. Notice 
+that certain ranges of the file's VCNs (16&#8211;31 and 64&#8211;127) have no disk 
+allocations.</p>
+
+<a name="ch12fig37"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-37. Runs of a compressed file containing sparse data</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig37.gif" height="270" border="0" width="486"></p>
+
+</center><p></p><br>
+
+<p class="docText">The MFT record for this compressed file omits blocks 
+of VCNs that contain zeros and therefore have no physical storage 
+allocated to them. The first data entry in <a class="docLink" href="#ch12fig38">Figure 12-38</a>, for example, starts at VCN 0 and covers 16 clusters. The second entry jumps to VCN 32 and covers 16 clusters.</p>
+
+<a name="ch12fig38"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-38. MFT record for a compressed file containing sparse data</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig38.gif" height="182" border="0" width="392"></p>
+
+</center><p></p><br>
+
+<p class="docText">When a program reads data from a compressed file, 
+NTFS checks the MFT record to determine whether a VCN-to-LCN mapping 
+covers the location being read. If the program is reading from an 
+unallocated "hole" in the file, it means that the data in that part of 
+the file consists of zeros, so NTFS returns zeros without accessing the 
+disk. If a program writes nonzero data to a "hole," NTFS quietly 
+allocates disk space and then writes the data. This technique is very 
+efficient for sparse file data that contains a lot of zero data.</p>
+
+<a name="ch12lev3sec25"></a>
+
+<h5 class="docSection3Title">Compressing Nonsparse Data</h5>
+
+<p class="docText"><a name="ind2814"></a><a name="ind0743"></a><a name="ind0554"></a>The
+ preceding example of compressing a sparse file is somewhat contrived. 
+It describes "compression" for a case in which whole sections of a file 
+were filled with zeros but the remaining data in the file wasn't 
+affected by the compression. The data in most files isn't sparse, but it
+ can still be compressed by the application of a compression algorithm.</p>
+
+<p class="docText">In NTFS, users can specify compression for individual
+ files or for all the files in a directory. (New files created in a 
+directory marked compressed are automatically compressed&#8212;existing files 
+must be compressed individually.) When it compresses a file, NTFS 
+divides the file's unprocessed data into <span class="docEmphasis">compression units</span>
+ 16 clusters long (equal to 8 KB for a 512-byte cluster, for example). 
+Certain sequences of data in a file might not compress much, if at all; 
+so for each compression unit in the file, NTFS determines whether 
+compressing the unit will save at least 1 cluster of storage. If 
+compressing the unit won't free up at least 1 cluster, NTFS allocates a 
+16-cluster run and writes the data in that unit to disk without 
+compressing it. If the data in a 16-cluster unit will compress to 15 or 
+fewer clusters, NTFS allocates only the number of clusters needed to 
+contain the compressed data and then writes it to disk. <a class="docLink" href="#ch12fig39">Figure 12-39</a>
+ illustrates the compression of a file with four runs. The unshaded 
+areas in this figure represent the actual storage locations that the 
+file occupies after compression. The first, second, and fourth runs were
+ compressed; the third run wasn't. Even with one noncompressed run, 
+compressing this file saved 26 clusters of disk space, or 41 percent.</p>
+
+<a name="ch12fig39"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-39. Data runs of a compressed file</h5>
+
+<p class="docText"></p><div class="v1"><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig39_alt.gif"><p></p></a></div></center><p></p><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig39_alt.gif"><br>
+
+</a><a name="ch12note09"></a><div class="docNote"><p class="docNoteTitle">Note</p><p><table border="0" cellpadding="1" cellspacing="0" width="90%"><tbody><tr><td valign="top" width="60"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/note.gif" height="40" align="LEFT" border="0" width="40">Figure 12-39.<p></p></td></tr></tbody></table></p></div><br>
+
+<p class="docText">When it writes data to a compressed file, NTFS 
+ensures that each run begins on a virtual 16cluster boundary. Thus the 
+starting VCN of each run is a multiple of 16, and the runs are no longer
+ than 16 clusters. NTFS reads and writes at least one compression unit 
+at a time when it accesses compressed files. When it writes compressed 
+data, however, NTFS tries to store compression units in physically 
+contiguous locations so that it can read them all in a single I/O 
+operation. The 16-cluster size of the NTFS compression unit was chosen 
+to reduce internal fragmentation: the larger the compression unit, the 
+less the overall disk space needed to store the data. This 16-cluster 
+compression unit size represents a trade-off between producing smaller 
+compressed files and slowing read operations for programs that randomly 
+access files. The equivalent of 16 clusters must be decompressed for 
+each cache miss. (A cache miss is more likely to occur during random 
+file access.) <a class="docLink" href="#ch12fig40">Figure 12-40</a> shows the MFT record for the compressed file shown in <a class="docLink" href="#ch12fig39">Figure 12-39</a>.</p>
+
+<a name="ch12fig40"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-40. MFT record for a compressed file</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig40.gif" height="213" border="0" width="457"></p>
+
+</center><p></p><br>
+
+<p class="docText">One difference between this compressed file and the 
+earlier example of a compressed file containing sparse data is that 
+three of the compressed runs in this file are less than 16 clusters 
+long. Reading this information from a file's MFT file record enables 
+NTFS to know whether data in the file is compressed. Any run shorter 
+than 16 clusters contains compressed data that NTFS must decompress when
+ it first reads the data into the cache. A run that is exactly 16 
+clusters long doesn't contain compressed data and therefore requires no 
+decompression.</p>
+
+<p class="docText">If the data in a run has been compressed, NTFS 
+decompresses the data into a scratch buffer and then copies it to the 
+caller's buffer. NTFS also loads the decompressed data into the cache, 
+which makes subsequent reads from the same run as fast as any other 
+cached read. NTFS writes any updates to the file to the cache, leaving 
+the lazy writer to compress and write the modified data to disk 
+asynchronously. This strategy ensures that writing to a compressed file 
+produces no more significant delay than writing to a noncompressed file 
+would.</p>
+
+<p class="docText">NTFS keeps disk allocations for a compressed file 
+contiguous whenever possible. As the LCNs indicate, the first two runs 
+of the compressed file shown in <a class="docLink" href="#ch12fig38">Figure 12-38</a>
+ are physically contiguous, as are the last two. When two or more runs 
+are contiguous, NTFS performs disk readahead, as it does with the data 
+in other files. Because the reading and decompression of contiguous file
+ data take place asynchronously before the program requests the data, 
+subsequent read operations obtain the data directly from the cache, 
+which greatly enhances read performance.</p>
+
+<a name="ch12lev3sec26"></a>
+
+<h5 class="docSection3Title">Sparse Files</h5>
+
+<p class="docText"><a name="ind4956"></a><a name="ind4228"></a><a name="ind1423"></a><a name="ind1419"></a><a name="ind0746"></a><a name="ind0459"></a>Sparse
+ files (the NTFS file type, as opposed to files that consist of sparse 
+data, described earlier) are essentially compressed files for which NTFS
+ doesn't apply compression to the file's nonsparse data. However, NTFS 
+manages the run data of a sparse file's MFT record the same way it does 
+for compressed files that consist of sparse and nonsparse data.</p>
+
+<a name="ch12lev2sec21"></a>
+
+<h4 class="docSection2Title">The Change Journal File</h4>
+
+<p class="docText">The change journal file, \$Extend\$UsnJrnl, is a 
+sparse file that NTFS creates only when an application enables change 
+logging. The journal stores change entries in the $J data stream. 
+Entries include the following information about a file or directory 
+change:</p>
+
+<ul><li><p class="docList">The time of the change</p></li><li><p class="docList">The change type (delete, rename, size extend, and so on)</p></li><li><p class="docList">The file or directory's attributes</p></li><li><p class="docList">The file or directory's name</p></li><li><p class="docList">The file or directory's file reference number</p></li><li><p class="docList">The file reference number of the file's parent directory</p></li></ul>
+
+<p class="docText">The journal is sparse so that it never overflows; 
+when the journal's on-disk size exceeds the maximum defined for the 
+file, NTFS simply begins zeroing the file data that precedes the window 
+of change information having a size equal to the maximum journal size, 
+as shown in <a class="docLink" href="#ch12fig41">Figure 12-41</a>. To 
+prevent constant resizing when an application is continuously exceeding 
+the journal's size, NTFS shrinks the journal only when its size is twice
+ an application-defined value over the maximum configured size.</p>
+
+<a name="ch12fig41"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-41. Change journal ($UsnJrnl) space allocation</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig41.gif" height="380" border="0" width="498"></p>
+
+</center><p></p><br>
+
+<a name="ch12lev2sec22"></a>
+
+<h4 class="docSection2Title">Indexing</h4>
+
+<p class="docText"><a name="ind4966"></a><a name="ind1773"></a>In NTFS, a
+ file directory is simply an index of filenames&#8212;that is, a collection of
+ filenames (along with their file references) organized in a particular 
+way for quick access. To create a directory, NTFS indexes the filename 
+attributes of the files in the directory. The MFT record for the root 
+directory of a volume is shown in <a class="docLink" href="#ch12fig42">Figure 12-42</a>.</p>
+
+<a name="ch12fig42"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-42. Filename index for a volume's root directory</h5>
+
+<p class="docText"></p><div class="v1"><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig42_alt.gif"><p></p></a></div></center><p></p><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig42_alt.gif"><br>
+
+<p class="docText">Conceptually, an MFT entry for a directory contains 
+in its index root attribute a sorted list of the files in the directory.
+ For large directories, however, the filenames are actually stored in 
+4-KB fixed-size index buffers that contain and organize the filenames. 
+Index buffers implement a <span class="docEmphasis">b+ tree</span> data 
+structure, which minimizes the number of disk accesses needed to find a 
+particular file, especially for large directories. The index root 
+attribute contains the first level of the b+ tree (root subdirectories) 
+and points to index buffers containing the next level (more 
+subdirectories, perhaps, or files).</p>
+
+</a><p class="docText"><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig42_alt.gif"></a><a class="docLink" href="#ch12fig42">Figure 12-42</a> shows only filenames in the index root attribute and the index buffers (<span class="docEmphasis">file6</span>,
+ for example), but each entry in an index also contains the file 
+reference in the MFT where the file is described and time stamp and file
+ size information for the file. NTFS duplicates the time stamp and file 
+size information from the file's MFT record. This technique, which is 
+used by FAT and NTFS, requires updated information to be written in two 
+places. Even so, it's a significant speed optimization for directory 
+browsing because it enables the file system to display each file's time 
+stamps and size without opening every file in the directory.</p>
+
+<p class="docText"><a name="ind4969"></a><a name="ind2950"></a>The index
+ allocation attribute maps the VCNs of the index buffer runs to the LCNs
+ that indicate where the index buffers reside on the disk, and the 
+bitmap attribute keeps track of which VCNs in the index buffers are in 
+use and which are free. <a class="docLink" href="#ch12fig42">Figure 12-42</a>
+ shows one file entry per VCN (that is, per cluster), but filename 
+entries are actually packed into each cluster. Each 4-KB index buffer 
+can contain about 20 to 30 filename entries.</p>
+
+<p class="docText">The b+ tree data structure is a type of balanced tree
+ that is ideal for organizing sorted data stored on a disk because it 
+minimizes the number of disk accesses needed to find an entry. In the 
+MFT, a directory's index root attribute contains several filenames that 
+act as indexes into the second level of the b+ tree. Each filename in 
+the index root attribute has an optional pointer associated with it that
+ points to an index buffer. The index buffer it points to contains 
+filenames with lexicographic values less than its own. In <a class="docLink" href="#ch12fig42">Figure 12-42</a>, for example, <span class="docEmphasis">file4</span>
+ is a first-level entry in the b+ tree. It points to an index buffer 
+containing filenames that are (lexicographically) less than itself&#8212;the 
+filenames <span class="docEmphasis">file0</span>, <span class="docEmphasis">file1</span>, and <span class="docEmphasis">file3</span>. Note that the names <span class="docEmphasis">file1</span>, <span class="docEmphasis">file2</span>,
+ and so on that are used in this example are not literal filenames but 
+names intended to show the relative placement of files that are 
+lexicographically ordered according to the displayed sequence.</p>
+
+<p class="docText">Storing the filenames in b+ trees provides several 
+benefits. Directory lookups are fast because the filenames are stored in
+ a sorted order. And when higher-level software enumerates the files in a
+ directory, NTFS returns already-sorted names. Finally, because b+ trees
+ tend to grow wide rather than deep, NTFS's fast lookup times don't 
+degrade as directories grow.</p>
+
+<p class="docText">NTFS also provides general support for indexing data 
+besides filenames, and several NTFS features&#8212;including object IDs, quota
+ tracking, and consolidated security&#8212;use indexing to manage internal 
+data.</p>
+
+<a name="ch12lev2sec23"></a>
+
+<h4 class="docSection2Title">Object IDs</h4>
+
+<p class="docText">In addition to storing the object ID assigned to a 
+file or directory in the $OBJECT_ID attribute of its MFT record, NTFS 
+also keeps the correspondence between object IDs and their file 
+reference numbers in the $O index of the \$Extend\$ObjId metadata file. 
+The index collates entries by object ID, making it easy for NTFS to 
+quickly locate a file based on its ID. This feature allows applications,
+ using undocumented native API functionality, to open a file or 
+directory using its object ID. <a class="docLink" href="#ch12fig43">Figure 12-43</a> demonstrates the correspondence of the $Objid metadata file and $OBJECT_ID attributes in MFT records.</p>
+
+<a name="ch12fig43"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-43. $Objid and $OBJECT_ID relationships</h5>
+
+<p class="docText"></p><div class="v1"><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig43_alt.gif"><p></p></a></div></center><p></p><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig43_alt.gif"><br>
+
+</a><a name="ch12lev2sec24"></a>
+
+<h4 class="docSection2Title">Quota Tracking</h4>
+
+<p class="docText"><a name="ind4971"></a><a name="ind3586"></a>NTFS stores quota information in the \$Extend\$Quota metadata file, which consists of the indexes $O and $Q. <a class="docLink" href="#ch12fig44">Figure 12-44</a>
+ shows the organization of these indexes. Just as NTFS assigns each 
+security descriptor a unique internal security ID, NTFS assigns each 
+user a unique user ID. When an administrator defines quota information 
+for a user, NTFS allocates a user ID that corresponds to the user's SID.
+ In the $O index, NTFS creates an entry that maps a SID to a user ID and
+ sorts the index by user ID; in the $Q index, NTFS creates a quota 
+control entry. A quota control entry contains the value of the user's 
+quota limits, as well as the amount of disk space the user consumes on 
+the volume.</p>
+
+<a name="ch12fig44"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-44. $Quota indexing</h5>
+
+<p class="docText"><img alt="" src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/12fig44.gif" height="268" border="0" width="368"></p>
+
+</center><p></p><br>
+
+<p class="docText"><a name="ind4959"></a><a name="ind4006"></a><a name="ind3971"></a><a name="ind0594"></a>When
+ an application creates a file or directory, NTFS obtains the 
+application user's SID and looks up the associated user ID in the $O 
+index. NTFS records the user ID in the new file or directory's 
+$STANDARD_INFORMATION attribute, which counts all disk space allocated 
+to the file or directory against that user's quota. Then NTFS looks up 
+the quota entry in the $Q index and determines whether the new 
+allocation causes the user to exceed his or her warning or limit 
+threshold. When a new allocation causes the user to exceed a threshold, 
+NTFS takes appropriate steps, such as logging an event to the System 
+event log or not letting the user create the file or directory. As a 
+file or directory changes size, NTFS updates the quota control entry 
+associated with the user ID stored in the $STANDARD_INFORMATION 
+attribute. NTFS uses general indexing to efficiently correlate user IDs 
+with account SIDs, and, given a user ID, to efficiently look up a user's
+ quota control information.</p>
+
+<a name="ch12lev2sec25"></a>
+
+<h4 class="docSection2Title">Consolidated Security</h4>
+
+<p class="docText">NTFS has always supported security, which lets an 
+administrator specify which users can and can't access individual files 
+and directories. In pre&#8211;Windows 2000 NTFS, every file and directory 
+stores its security descriptor in its own security attribute. In most 
+cases, administrators apply the same security settings to an entire 
+directory tree, which results in duplication of security descriptors 
+across all the files and subdirectories to which the settings apply. 
+This duplication can intensively utilize disk space in multiuser 
+environments, such as Windows 2000 Server Terminal Services, in which 
+security descriptors might contain entries for multiple accounts. NTFS 
+in Windows 2000 and later optimizes disk utilization for security 
+descriptors by using a central metadata file named $Secure to store only
+ one instance of each security descriptor on a volume.</p>
+
+<p class="docText">The $Secure file contains two index attributes&#8212;$SDH and $SII&#8212;and a data-stream attribute named $SDS, as <a class="docLink" href="#ch12fig45">Figure 12-45</a>
+ shows. NTFS assigns every unique security descriptor on a volume an 
+internal NTFS security ID (not to be confused with a SID, which uniquely
+ identifies computers and user accounts) and hashes the security 
+descriptor according to a simple hash algorithm. A hash is a potentially
+ nonunique shorthand representation of a descriptor. Entries in the $SDH
+ index map the security descriptor hashes to the security descriptor's 
+storage location within the $SDS data attribute, and the $SII index 
+entries map NTFS security IDs to the security descriptor's location in 
+the $SDS data attribute.</p>
+
+<a name="ch12fig45"></a><p></p><center>
+
+<h5 class="docFigureTitle">Figure 12-45. $Secure indexing</h5>
+
+<p class="docText"></p><div class="v1"><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig45_alt.gif"><p></p></a></div></center><p></p><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig45_alt.gif"><br>
+
+<p class="docText">When you apply a security descriptor to a file or 
+directory, NTFS obtains a hash of the descriptor and looks through the 
+$SDH index for a match. NTFS sorts the $SDH index entries according to 
+the hash of their corresponding security descriptor and stores the 
+entries in a b+ tree. If NTFS finds a match for the descriptor in the 
+$SDH index, NTFS locates the offset of the entry's security descriptor 
+from the entry's offset value and reads the security descriptor from the
+ $SDS attribute. If the hashes match but the security descriptors don't,
+ NTFS looks for another matching entry in the $SDH index. When NTFS 
+finds a precise match, the file or directory to which you're applying 
+the security descriptor can reference the existing security descriptor 
+in the $SDS attribute. NTFS makes the reference by reading the NTFS 
+security identifier from the $SDH entry and storing it in the file or 
+directory's $STANDARD_INFORMATION attribute. The NTFS 
+$STANDARD_INFORMATION attribute, which all files and directories have, 
+stores basic information about a file, including its attributes, 
+timestamp information, and file's security identifier.</p>
+
+<p class="docText">If NTFS doesn't find in the $SDH index an entry that 
+has a security descriptor that matches the descriptor you're applying, 
+the descriptor you're applying is unique to the volume and NTFS assigns 
+the descriptor a new internal security ID. NTFS internal security IDs 
+are 32-bit values, whereas SIDs are typically several times larger, so 
+representing SIDs with NTFS security IDs saves space in the $STANDARD_ 
+INFORMATION attribute. NTFS then adds the security descriptor to the 
+$SDS attribute, which is sorted in a b+ tree by the NTFS security ID, 
+and it adds to the $SDH and $SII indexes entries that reference the 
+descriptor's offset in the $SDS data.</p>
+
+</a><p class="docText"><a target="_blank" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/images/0735619174/graphics/12fig45_alt.gif">When
+ an application attempts to open a file or directory, NTFS uses the $SII
+ index to look up the file or directory's security descriptor. NTFS 
+reads the file or directory's internal security ID from the MFT entry's 
+$STANDARD_INFORMATION attribute. It then uses the $Secure file's </a><a name="ind4972"></a><a name="ind3808"></a><a name="ind3630"></a><a name="ind9230"></a><a name="ind9141"></a><a name="ind9956"></a><a name="ind9936"></a><a name="ind0738"></a><a name="ind0468"></a>$SII
+ index to locate the ID's entry in the $SDS attribute. The offset into 
+the $SDS attribute lets NTFS read the security descriptor and complete 
+the security check. NTFS stores the 32 most recently accessed security 
+descriptors with their $SII indices in a cache so that it will access 
+only the $Secure file when the $SII isn't cached.</p>
+
+<p class="docText">NTFS doesn't delete entries in the $Secure file, even
+ if no file or directory on a volume references the entry. Not deleting 
+these entries doesn't significantly decrease disk space because most 
+volumes, even those used for long periods, have relatively few unique 
+security descriptors.</p>
+
+<p class="docText">NTFS's use of general indexing lets files and 
+directories that have the same security settings efficiently share 
+security descriptors. The $SII index lets NTFS quickly look up a 
+security descriptor in the $Secure file while performing security 
+checks, and the $SDH index lets NTFS quickly determine whether a 
+security descriptor being applied to a file or directory is already 
+stored in the $Secure file and can be shared.</p>
+
+<a name="ch12lev2sec26"></a>
+
+<h4 class="docSection2Title">Reparse Points</h4>
+
+<p class="docText">As described earlier in the chapter, a <i><a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/gloss.html#gloss00_251">reparse point</a></i>
+ is a block of up to 16 KB of applicationdefined reparse data and a 
+32-bit reparse tag that are stored in the $REPARSE_POINT attribute of a 
+file or directory. Whenever an application creates or deletes a reparse 
+point, NTFS updates the \$Extend\$Reparse metadata file, in which NTFS 
+stores entries that identify the file record numbers of files and 
+directories that contain reparse points. Storing the records in a 
+central location enables NTFS to provide interfaces for applications to 
+enumerate all a volume's reparse points or just specific types of 
+reparse points, such as mount points. (See <a class="docLink" href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/ch10.html#ch10">Chapter 10</a>
+ for more information on mount points.) The \$Extend\$Reparse file uses 
+the general indexing facility of NTFS by collating the file's entries 
+(in an index named $R) by reparse point tags.</p>
+
+<ul></ul></td></tr></tbody></table>
+<table bgcolor="#e6e6e6" border="0" cellpadding="0" cellspacing="0" width="100%">
+<tbody><tr style="background-image: url(&quot;images/tile_back.gif&quot;);">
+<td class="v2" align="left" width="30%">
+<a href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/ch12lev1sec5.html"><img src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/previous.gif" alt="Previous Section" height="19" align="absmiddle" border="0" width="70"></a>
+</td>
+<td class="v2" align="center" width="40%">
+<a href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/main.html" style="color: white; text-decoration: none;">&nbsp;&lt;&nbsp;Day Day Up&nbsp;&gt;&nbsp;</a>
+</td>
+<td class="v2" align="right" width="30%">
+<a href="file:///home/darwish/books/os/Russinovich:%20Windows%20Internals%204e/0735619174/ch12lev1sec7.html"><img src="Russinovich04%20-%20NTFS%20On-Disk%20Structure_files/next.gif" alt="Next Section" height="19" align="absmiddle" border="0" width="70"></a>
+</td>
+</tr>
+</tbody></table>
+
+
+</body></html>

@@ -1,0 +1,93 @@
+/* Multics web site common styles.  */
+
+BODY {background-color: #ffffff; color: #000000;} 
+H1, H2, H3, H4 {font-family: helvetica,arial,sans-serif; font-weight: bold;}
+h1 {font-size: 125%;}
+h2 {font-size: 110%;}
+h3 {font-size: 100%;}
+h4 {font-size: 97%;}
+.attribution {font-size: 70%;}
+.boxed {font-family: helvetica,arial,sans-serif; font-size: 9pt; background-color: #e0e0f0;}
+.clr {clear: both;}
+.cmd {font-family: monospace; font-size: 97%; font-weight: bold;}
+.code {font-family: monospace; font-size: 97%; font-weight: bold;}
+.copyright {font-size: 80%;}
+.deadlink {font-weight: bold;}
+.disclaimer {font-size: 80%;}
+.dochist {font-size: 80%;}
+.fineprint {font-size: 80%;}
+.glossterm {}
+.glossdef {}
+.glossttyex {font-family: monospace; font-size: 97%; margin: 0px 0px 0px 5em;}
+.headingtitle {background-color: #000000; color: #fefefe; font-family: helvetica,arial,sans-serif;}
+.headingdate {background-color: #000000; color: #fefefe; font-family: helvetica,arial,sans-serif; font-weight: bold; font-size: 9pt; text-decoration: none; line-height: 1.2;}
+.headingword {background-color: #000000; color: #fefefe; font-family: helvetica,arial,sans-serif; text-decoration: none; font-size: 9pt;}
+.headingtiny {background-color: #000000; color: #fefefe; font-family: helvetica,arial,sans-serif; text-decoration: none; font-size: 7pt;}
+.helv {font-family: helvetica,arial,sans-serif;}
+.ixtable {padding: 10px; margin: 0px;}
+.lfpic {float: left; margin: 0px 10px 10px 0px;}
+.lfpic1 {float: left; margin: 10px 10px 10px 0px;}
+.mf {display: inline; font-size: x-small;}
+.mfaddr {font-size: 9pt; font-family: helvetica,arial,sans-serif; background-color: #aaaaff; color: #000000;}
+.mfed {font-size: 9pt; font-family: serif;}
+.mirrorinfo {font-size: 7pt; font-family: helvetica,arial,sans-serif;}
+.newsgroup {font-family: monospace; font-size: 97%; font-weight: bold;}
+.notes {font-style: italic; font-size: 80%;}
+.pathname {font-family: monospace; font-size: 97%; font-weight: bold;}
+.pl1 {font-family: monospace; font-size: 97%;}
+.quoteblock {font-family: Helvetica,Arial,Sans-Serif; font-size: small; margin: 1em 3em 1em 1em;}
+.regtitle {font-family: helvetica,arial,sans-serif; font-weight: bold;}
+.rtpic {float: right; margin: 0px 0px 10px 10px;}
+.rtpic1 {float: right; margin: 10px 0px 10px 10px;}
+.toc {font-family: helvetica,arial,sans-serif; font-size: 70%;}
+.tty {font-family: monospace; font-size: 97%;}
+.unixcmd {font-family: monospace; font-size: 97%; font-weight: bold;}
+.vol {font-weight: bold;}
+.url {font-family: monospace; font-size: 97%; font-weight: bold;}
+.nobullet {list-style: none;}
+.txtsh {text-shadow: 5px 5px 3px #999999;}
+.boxsh {-webkit-box-shadow: 10px 10px 5px #666666; -moz-box-shadow: 10px 10px 5px #666666; box-shadow: 10px 10px 5px #666666;}
+
+.headbar {text-align: center; margin: 0px 0px 0px 0px; background-color: black;}
+ .headbar a {color: #fefefe; text-decoration: none; background-color: black;}
+ .headbar a:link {color: #fefefe;}
+ .headbar a:visited {background-color: black; color: #fefefe;}
+ .headbar a:hover {background-color: black;  color: #fefefe; text-decoration: underline;}
+ .headbar a:active {background-color: black; color: #fefefe;}
+ .headbar2 {background-color: black; margin: 0px 0px 3px 0px;}
+  .headinglogo { float: left; margin: 5px 0px 0px 5px;}
+  .headingmult { font-family: helvetica,arial,sans-serif; font-weight: bold; font-size: 12pt; float: left;  margin: 11px 0px 3px 7px;  color: #fefefe; line-height: 1.2;}
+  .headingmult a {color: red; text-decoration: none; background-color: black;}
+  .headbar .headingdate { font-family: helvetica,arial,sans-serif; font-weight: bold; font-size: 7pt; float: right; margin: 6px 10px 0px 0px;}
+  .headbar .headingdate a {color: #fefefe; text-decoration: none; background-color: black;}
+  .headbar h1 {font-family: helvetica,arial,sans-serif; font-weight: bold; font-size: 12pt; color: #fefefe; display: inline; line-height: 33px; margin: 5px 0px 0px 0px; font-style: italic;}
+  .h1holder {height: 35px;}
+ .redbar {background-color: red; margin: 0px 0px 0px 0px; line-height: 1px; font-size: 2pt;}
+ .headbar3 {width:100%;}
+ .navbar {color: red; text-align: center; margin: 5px 0px 0px 0px;}
+  .textnav {font-family: verdana,helvetica,arial,sans-serif; font-size: 8pt;}
+ .textnavbar {background-color: #ffffff; padding: 3px; margin: 0px; border-width: 0px;}
+ .blacktable {background-color: #000000; padding: 0px; margin: 0px; border-width: 0px;}
+ .glospagehead {background-color: #000000; padding: 0px; margin: 0px; border-width: 0px; border-collapse: collapse;}
+ .tailnavbar {color: red; text-align: center; margin: 0px 0px 10px 0px;}
+
+.searchbox {float: right; padding: 8px 15px 0px 0px; z-index: 10;}
+
+P.small {font-size: small;}
+P.announce {font-family: helvetica,arial,sans-serif; font-size: small;}
+ADDRESS {font-family: monospace; font-size: 97%; font-style: italic;}
+.award {font-size: 9pt; font-weight: bold; font-family: helvetica,arial,sans-serif; background-color: #00ffff; color: #000000;}
+.mfx {display: none;}
+.author {font-style: italic; font-size: 80%;}
+.caption {font-family: helvetica,arial,sans-serif; font-style: italic; font-size: 80%;}
+.click {font-size: 90%;}
+.datemod {font-style: italic;}
+.newflag {font-size: 9pt; font-weight: bold; font-family: helvetica,arial,sans-serif; background-color: #ffff00; color: #000000;}
+.nm {margin: 0px;}
+.sm {font-size: 80%;}
+.updatedflag {font-size: 9pt; font-weight: bold; font-family: helvetica,arial,sans-serif; background-color: #00ff00; color: #000000;}
+img.block {display: block;}
+a:link {color: #0000ff;}
+a:visited {background-color: #ffffff; color: #777777;}
+a:hover {background-color: #ffdddd; color: black;}
+a:active {background-color: #ffffff; color: #ff0000;}

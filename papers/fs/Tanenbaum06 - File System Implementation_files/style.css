@@ -1,0 +1,298 @@
+/*Amazon styles */
+.aTopMenu
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 7pt;
+	color : #4B4B4B;
+	text-decoration : none;
+}
+.aTopMenu:hover
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 7pt;
+	color : #4B4B4B;
+	text-decoration : underline;
+}
+
+.aBottomBoxesLink
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	font-weight:700;
+	color : black;
+	text-decoration : underline;
+}
+.aBottomBoxesLink:link
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	font-weight:700;
+	color : black;
+	text-decoration : underline;
+}
+.aBottomBoxesLink:visited
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	font-weight:700;
+	color : black;
+	text-decoration : underline;
+}
+.aCells {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	color : #303030;
+	text-decoration : none;
+}
+
+.aCells:link {
+	text-decoration : none;
+	color : #303030;
+}
+
+.aAuthor
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	color : #303030;
+	text-decoration : underline;
+
+}
+.aCategories
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	color : #423E5C;
+	background-color:#EEF2F6;
+	font-style: italic
+}
+
+body { background-color: white; font-family: Arial,Helvetica, sans-serif; font-size: 1em; }
+.DefaultPageHeadline { font-family: Arial, Helvetica, sans-serif; font-size: 1.5em; font-weight: bold; }
+.DefaultPageText { font-family: Arial, Helvetica, sans-serif; }
+
+/* ===== InformIT 6.0 Header =====*/
+/* HEADER WRAPPER */
+#header {margin:0; padding:0; width:100%; position:relative; height:102px; background-color:#FFF; background-image:url(/portals/informit/images/topnav/background_header.gif); background-repeat:repeat-x; text-align: center; }
+
+/* HEADER CONTENT */
+#headerContent {margin:0 auto 0 auto; padding:0; width:760px; position:relative;}
+
+/* LOGO */
+#logo {margin:0; padding:0; width:100%; position:absolute; top:0; left:0; text-align:left;}
+#logo img#coBrand {float:right;}
+
+/* MAIN NAV */
+#mainNav {margin:0; padding:0; position:absolute; top:57px; left:0; width:512px; text-align:left; }
+#mainNav div {margin:0; padding:0; width:100%; height:15px;}
+#mainNav div ul {margin:0; padding:0; list-style-type:none; width:525px; height:15px;}
+#mainNav div ul li {margin:0; padding:0; display:inline; height:15px; float:left;}
+#mainNav div ul li span {margin:0; padding:0; height:15px;}
+#mainNav div ul li span a {margin:0; padding:0; width:auto;}
+#mainNav div ul li span a img {margin:0; padding:0; width:auto;}
+
+/* SUB NAV */
+/* See also: .navbtn and .navbtnSel */
+#subNav {margin:0; padding:0; position:absolute; top:79px; left:0; width:100%; text-align:left;}
+#subNav div {margin:0; padding:0; width:760px;}
+#subNav div ul {margin:0; padding:0; list-style-type:none; width:760px; font-family:Arial, Verdana, Helvetica, sans-serif; font-size:9px;}
+#subNav div ul li {margin:0 9px 0 0; padding:0 3px; display:inline;}
+#subNav div ul li span {margin:0; padding:0; height:13px; width:auto;}
+#subNav div ul li span a {margin:0; padding:0;}
+#subNav a:link {color:#FFF; text-decoration:none;}
+#subNav a:visited {color:#FFF; text-decoration:none; }
+#subNav a:hover {color:#FFF; text-decoration:underline;}
+
+
+/* SETS THE TEXT AND BACKGROUND COLORS FOR THE NAVIGATION BUTTONS ON TOP.XSL */
+li.navbtn {  }
+#subNav li.navbtnSel { background-color: #CCC; }
+#subNav li.navbtnSel a:link { color: #000; text-decoration: none; }
+#subNav li.navbtnSel a:visited { color: #000; text-decoration: none; }
+#subNav li.navbtnSel a:hover { color:#000074; text-decoration: underline;}
+
+
+
+/* FOOTER */
+#footer {text-align:center; margin: 10px 0 0 0; padding: 10px 0; width:100%; background-color:#EAEAEA; font-family: Arial, Helvetica, sans-serif; font-size:10px; color:#525252; } /* margin:0 auto 0 auto; */
+#footer #footerNav { width:760px; margin:0 0 15px 0; padding:0; }
+#footer #footerNav ul {margin:0; padding:0; list-style-type:none;}
+#footer #footerNav ul li {margin:0; padding:0 5px 0 5px; display:inline; color:#000; border-right:1px solid #000;}
+#footer #footerNav ul li.last {border-right:0px;}
+#footer #footerNav ul li a:link, #footer #footerNav ul li a:hover, #footer #footerNav ul li a:visited {color:#000074;}
+#footer p.copyright {margin:0; padding:0;}
+#footer p.address {margin:0; padding:0;}
+#footer img {margin:0 5px; padding:0;}
+
+/* END INFORMIT */
+
+
+
+.a1 a:link, .a1 a:visisted { text-decoration: underline; color: #666666; }
+.a1 a:hover { text-decoration: underline; color: #000; }
+.a1 { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #666666; }
+.a2 a:link { text-decoration: underline; color: #666666; }
+.a2 a:hover { text-decoration: underline; color: #000; }
+.a2 { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #666666; text-decoration: none; }
+.a3 { font-family: Arial, Helvetica, sans-serif; font-size: 10px; color: #4B4B4B; text-decoration: none; }
+.a3:link { text-decoration: underline; color: #4B4B4B; }
+.a3:hover { text-decoration: underline; color: #9E0B0E; }
+.a4 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #222222; line-height: 18px; }
+.AdvancedSearchTextHighlight { background-color: #F7E583; }
+.bg { background-color: #FFF; }
+
+
+
+/* SETS THE BACKGROUND COLOR FOR DIALOG BOXES SUCH AS ADVANCED SEARCH */
+.dlg { background-color: #EEE; }
+.entrybox1 { border: 1px solid #E7D68E; font-family: Arial, Helvetica, sans-serif; font-size: 11px; }
+.FAQBoxHeadline { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #CC0033; text-decoration: none; font-weight: bold; }
+.FAQBoxQuestion { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #303030; text-decoration: none; font-weight: bold }
+.FAQBoxAnswer { font-family: Arial, Helvetica, sans-serif; font-size: 11px; text-decoration: none; color: #4B4B4B; font-weight: normal }
+.GroupNotesBorder { background-color: #666666; }
+.GroupNotesEvenRows { background-color: #FFF; }
+.GroupNotesOddRows { background-color: #FFF; }
+
+
+
+.GroupNotesTableHeading { background-color: #EEE; }
+.hdr1 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; padding-left: 2px; text-align: left; border-top-width: 1px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 1px; border-top-style: solid; border-right-style: solid; border-bottom-style: solid; border-left-style: solid; border-top-color: #999; border-left-color: #999; color: #0A0A0A; vertical-align: middle; line-height: 11px; }
+.hdr { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; padding-left: 2px; text-align: left; color: #0A0A0A; vertical-align: middle; line-height: 11px; }
+.ListByCatBorder { background-color: #666666; }
+.ListByCatEvenRows { background-color: #FFF; }
+.ListByCatOddRows { background-color: #FFF; }
+.ListByCatTableHeading { background-color: #999; }
+
+
+/* SETS THE BACKGROUND AND TEXT COLORS FOR THE NAV BAR LOGOUT CELL IN TOP.XSL */
+.logout {  } /* float: right */
+/* .logout:hover { } */
+.menuborder { background-color: #666666; }
+.menuLeft { background-color: #EEE; }
+.menuRight { background-color: #EEE; }
+
+
+/* SETS THE BACKGROUND AND TEXT PROPERTIES FOR THE HEADER BARS IN THE RIGHT MENU OF HOME.XSL */
+.menuRightHeader { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; text-decoration: none; color: #FFF; background-color: #333366; }
+
+
+/* SETS THE BACKGROUND AND TEXT PROPERTIES FOR THE LOGIN AND WELCOME BARS IN THE RIGHT MENU OF HOME.XSL */
+.menuRightLoginHeader { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; text-decoration: none; background-color: #B5121B; color: #FFD200; }	
+.MyBookmarksBorder { background-color:#666666; }
+.MyBookmarksEvenRows { background-color: #FFF; }
+.MyBookmarksOddRows { background-color: #FFF; }
+.MyBookmarksTableHeading { background-color: #EEE; }
+.MyBookshelfBorder { background-color: #666666; }
+.MyBookshelfSpacer { background-color: #666666; }
+.MyBookshelfEvenRows { background-color: #FFF; }
+.MyBookshelfOddRows { background-color: #FFF; }
+.MyBookshelfTableHeading { }
+.MyDownloadsBorder { background-color:#666666; }
+.MyDownloadsEvenRows { background-color: #FFF; }
+.MyDownloadsOddRows { background-color: #FFF; }
+.MyDownloadsTableHeading { background-color: #EEE; }
+.MyTokensBorder { background-color:#666666; }
+.MyTokensEvenRows { background-color: #FFF; }
+.MyTokensOddRows { background-color: #FFF; }
+.MyTokensTableHeading { background-color: #EEE; }
+.MyNotesBorder { background-color: #666666; }
+.MyNotesEvenRows { background-color: #FFF; }
+.MyNotesOddRows { background-color: #FFF; }
+.MyNotesTableHeading { background-color: #EEE; }
+.MyRecentPagesBorder { background-color: #666666; }
+.MyRecentPagesEvenRows { background-color: #FFF; }
+.MyRecentPagesOddRows { background-color: #FFF; }
+.MyRecentPagesTableHeading { background-color: #EEE; }
+.MyRecentSearchesBorder { background-color: #666666; }
+.MyRecentSearchesEvenRows { background-color: #FFF; }
+.MyRecentSearchesOddRows { background-color: #FFF; }
+.MyRecentSearchesTableHeading { background-color: #EEE; }
+.n1 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #303030; text-decoration: none; padding: 7px; }
+
+
+
+
+.NewThisWeekBorder { background-color: #666666; }
+.NewThisWeekEvenRows { background-color: #FFF; }
+.NewThisWeekOddRows { background-color: #FFF; }
+.NewThisWeekTableHeading { }
+.PreviewTableTitleBackground { color: #F3E583; font-weight: bold; font-size: 11px; line-height: 20px; font-family: Arial, Helvetica, sans-serif; text-decoration: none; background-color: #CC0000; text-align: left; font-weither: bold }
+.PreviewTableBodyBackground { color: #303030; font-weight: normal; font-size: 11px; line-height: 16px; font-family: Arial, Helvetica, sans-serif; text-decoration: none; background-color: #FFD2D3 }
+.printhdr { font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
+.PublicNotesBorder { background-color: #666666; }
+.PublicNotesEvenRows { background-color: #FFF; }
+.PublicNotesOddRows { background-color: #FFF; }
+.PublicNotesTableHeading { background-color: #EEE; }
+.RecommendedTitlesBorder { background-color: #666666; }
+.RecommendedTitlesEvenRows { background-color: #FFF; }
+.RecommendedTitlesOddRows { background-color: #FFF; }
+.RecommendedTitlesTableHeading { }
+.SearchResultBorder { background-color:#666666; }
+.SearchResultEvenRows { background-color: #FFF; }
+.SearchResultOddRows { background-color: #FFF; }
+.SearchResultTableHeading { background-color: #CCCCCC; font-family: Arial, Helvetica, sans-serif; font-size: 11px; padding-left: 2px; text-align: center; border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-top-style: solid; border-right-style: solid; border-bottom-style: solid; border-left-style: solid; color: #000; vertical-align: middle; line-height: 11px; }
+.SectionSearchResultBorder { background-color:#666666; }
+.SectionSearchResultEvenRows { background-color: #FFF; }
+.SectionSearchResultOddRows { background-color:#EEE; }
+.SectionSearchResultTableHeading { background-color: #CCCCCC; font-family: Arial, Helvetica, sans-serif; font-size: 11px; padding-left: 2px; text-align: center; border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-top-style: solid; border-right-style: solid; border-bottom-style: solid; border-left-style: solid; color: #000; vertical-align: middle; line-height: 11px; }
+.t1 { color:#000; font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight:bold; }
+.t2 a { color:#003399; }
+.t2 a:hover { color:#000033; }
+.t2 a:visited { color:#003399; }
+.t2 { color:#000; font-size: 10px; }
+.t3 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; background-color: #000074; color: #FFF; }
+.t4 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; text-decoration: none; background-color: #000074; color: #FFF; }
+.t5 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; text-decoration: none; color: #FFF; background-color: #000074; }
+.tToolsTable{font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; text-decoration: none; color: #FFF; }
+.TextFrame { background-color: #d1c8a1; }
+.toc { background-color: #CDF; }
+.Top5Border { background-color: #666; }
+.Top5EvenRows { background-color: #FFF; }
+.Top5OddRows { background-color: #FFF; }
+.Top5TableHeading { }
+
+
+/* SETS THE BACKGROUND COLOR FOR THE TOP BAR OF TOP.XSL */
+.toplogo { background-color: #A3A8B1; }
+
+
+/* SETS THE BORDER BACKGROUND COLOR FOR THE NAVBAR OF TOP.XSL */
+.topmenu { background-color: #000; }
+.v1 a:hover { color: #000033; }
+.v1 a:link { color: #003399; }
+.v1 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; }
+.v2 a:hover { color: #000033; }
+.v2 a:link, .v2 a:visited { color: #003399; }
+.v2 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; line-height: 16px; }
+.v3 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; text-decoration: none; color: #4B4B4B; }
+.v3:hover { text-decoration: underline; color: #9E0B0E; }
+.v3:link { text-decoration: none; color: #303030; }
+.v4 a:hover { font-weight: bold; text-decoration: underline; color: #000; }
+.v4 a:link, .v4 a:visited { font-weight: bold; text-decoration: none; color: #000; }
+.v4 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #000; }
+.v5 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; line-height: 16px; }
+
+
+/* BEGIN New InformIT Styles */
+.HelpHeaderBar { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-style: normal; font-weight: bold; background-color: #EDB933; color: #000; text-align: left; text-indent: 5pt; vertical-align: middle; padding-left: 5px; }
+.HelpNavLinks a:hover { color: #000033; }
+.HelpNavLinks a:link { color: #003399; }
+.HelpNavLinks { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; line-height: 11px; font-weight: bold; list-style-image: none; list-style-type: none; list-style-position: inside; }
+.HelpNavLinks2 a:hover { color: #000033; }
+.HelpNavLinks2 a:link { color: #003399; }
+.HelpNavLinks2 { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: normal; color: #000; list-style-image: none; list-style-type: none; list-style-position: inside; text-indent: 5pt; }
+.HelpSectionHead { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-style: normal; font-weight: bold; color: #000; text-align: left; }
+.HelpSectionSubHead { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-style: normal; font-weight: bold; color: #000; text-align: left; }
+.HelpText { font-family: Arial, Helvetica, sans-serif; font-size: 11px; list-style-position: inside; list-style-image: none; list-style-type: disc; color: #000; }
+/* .copyright a, .copyright a:visited { color:#FFF } */
+/* .copyright a:hover { color:#000 } */
+/* .copyright { color:#FFF; font-size: 10px } */
+
+.networklink a, .networklink a:visited { color:#454B55 }
+.networklink a:hover { color:#000 }
+.networklink { color: #454B55; font-size: 10px }
+.td { font-family: Arial, Helvetica, sans-serif; color: #000; }
+.PricesMax { background-color: #FFF; }
+.PricesMaxOutline { background-color: #EDB933; }
+.PricesBasic { background-color: #FFF; }
+.PricesBasicOutline { background-color: #999; }

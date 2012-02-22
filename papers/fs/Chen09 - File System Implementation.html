@@ -1,0 +1,535 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="en"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>CS111 Lecture 12 Scribe Notes: File System</title>
+<style>
+  td {	
+    font-family:    Verdana,Helvetica,Arial,sans-serif;
+    font-size:      10pt;
+    text-align:			justify;
+    vertical-align:	top;
+	}	
+	pre {
+    color:          #0033CC;
+  }
+  .new {
+    font-family:    Verdana,Helvetica,Arial,sans-serif;
+    font-size:      10pt;
+    text-align:			center;
+    vertical-align:	center;
+  }
+</style>
+</head>
+
+<body>
+<div align="center">
+<table border="0" cellspacing="10" width="600">
+<tbody><tr>
+	<td>
+		<h1 align="left">File System Implementation</h1>
+		<h3>CS111 scribe notes for lecture 12 (05/11/2009)</h3>
+		<i>by Nanxi Chen and Zhenkai Zhu</i>
+		<br><br><br>
+	</td>
+</tr>
+	
+<tr>
+	<td>
+		<h2>Dr. Eggert's Implementation</h2>
+	</td>
+</tr>
+
+<tr>
+	<td>
+		<h4>Simple File Syetem</h4>
+	
+		<p>In the summer of 1974, Dr. Eggert (an undergraduate at UCLA then) 
+was hired by a professor to implement a file system. As all the computer
+ scientists would do, he decided to implement it from scratch. Here is 
+how he did it.</p>
+		
+		<p>The disk is treated as a big array. At the beginning of the disk is
+ the Table of Content (TOC) field, followed by data field. Files are 
+stored in data field contigously, but there can be unused space between 
+files. In the TOC field, there are limited chunks of file discription 
+entries, with each entry discribing the name, start location and size of
+ a file as shown in the following figure.</p>
+		
+		<br>
+		<div align="center">
+		<img src="Chen09%20-%20File%20System%20Implementation_files/Simple20File.png" width="600">
+		<br><br>
+		<b>Figure 1. Dr. Eggert's File System</b>
+		</div>
+
+		<br>
+	</td>
+</tr>
+
+<tr>
+	<td>
+		<h4>Pros and Cons</h4>
+
+		<p>The main advantage of this implementation is simplicity. Whenever 
+there is a new file created, a continuous disk space is allocated for 
+that file, which makes I/O (read and write) operations much faster.</p>
+	
+		<p>However, it suffers from several aspects. First of all, it has 
+external fragmentation problem. Because only continuous space can be 
+utilized, it may come to the situation that there is enough free space 
+in sum, but none of the continuous space is large enough to hold the 
+whole file. Second, once a file is created, it cannot be easily extended
+ because the space after this file may already be occupied by another 
+file. Third, there is no hierarchy of directories and no notion of file 
+type.</p>
+
+		<h4>External and Internal Fragmentation</h4>
+
+		<p>External fragmentation is the phenomenon in which free storage 
+becomes divided into many small pieces over time. It occurs when an 
+application allocates and deallocates regions of storage of varying 
+sizes, and the allocation algorithm responds by leaving the allocated 
+and deallocated regions interspersed. The result is that although free 
+storage is available, it is effectively unusable because it is divided 
+into pieces that are too small to satisfy the demands of the 
+application.</p>
+		
+		<p>Internal fragmentation is the space wasted inside of allocated 
+memory blocks because of restriction on the allowed sizes of allocated 
+blocks.</p>
+		
+		<div align="center">
+		<img src="Chen09%20-%20File%20System%20Implementation_files/fragmentation.png" width="400">
+		<br><br>
+		<b>Figure 2. External and Internal Fragmentation</b>
+		</div>
+
+	</td>
+</tr>
+
+<tr>
+	<td>
+		<table border="1" cellpadding="5">
+			<tbody><tr><td>
+				<p><b>Note</b>: Although Dr. Eggert's implementation appears to be simple and a little problematic, the real world OS (<a href="http://en.wikipedia.org/wiki/RT-11">RT-11, DEC 1970</a>) actually adopted very similar design.</p>
+			</td></tr>
+		</tbody></table>
+	</td>
+</tr>
+
+<tr>
+	<td>
+	<br><br>
+	</td>
+</tr>
+
+<tr>
+	<td>
+		<h2>File Allocation Table System</h2>
+	</td>
+</tr>
+
+<tr>
+	<td>
+		<h4>OS/360</h4>
+		
+		<p>The major problems with the above simple version of file system are
+ "external fragmentation" and "inability to grow file". There is a way 
+to partially address these problems, as IBM OS/360 did. When you create a
+ file, you manually specify the space to allocate. You can grow the file
+ by incremental space allocation. However, the number of increments is 
+limited.</p> 
+
+		<h4>FAT</h4>
+		
+		<p>A better way to solve these problems is FAT, which stands for File 
+Allocation Table. In FAT, the disk space is still viewed as an array 
+(which steals Dr. Eggert's idea). The very first field of the disk is 
+the boot sector, which contains essential information to boot the 
+computer. A super block, which is fixed sized and contains the metadata 
+of the file system, sits just after the boot sector. It is immediatedly 
+followed by a file allocation table. The last section of the disk space 
+is the data section, consisting of small blocks with size of 4 KiB.</p> 
+
+		<div align="center">
+		<img src="Chen09%20-%20File%20System%20Implementation_files/fat.png" width="600">
+		<br><br>
+		<b>Figure 3. FAT File System</b>
+		</div>
+		<br>
+		
+		<p>In FAT, a file is viewed as a linked list of data blocks. Usually, 
+one would expect that there should be a small field called "next block 
+pointer" in each data block to make up a linked list. However, this is 
+considered a hassle and is eliminated by introducing the FAT field. FAT 
+field stores data block index, with each entry having a number N. 
+		</p><ul>
+			<li>N &gt; 0, N is the index of next block</li>
+			<li>N = 0, it means that this is the end of a file</li>
+			<li>N = -1, it means this block is free</li>
+		</ul>
+		<p></p>
+		
+	<p>Thus, a file can be stored in a non-continuous pattern in FAT. The 
+maximum internal fragmentation equals to 4095 bytes (4k bytes - 1 byte).</p> 
+
+	<p>Directory in the FAT is a file that contains directory entries. The format of directory entries look as follows:</p>
+	
+	<div align="center">
+	<b>Sample of Directory</b>
+	<br><br>
+	<table border="1" width="400">
+	<tbody><tr>
+		<td class="new">Name</td>
+		<td class="new">Size</td>
+		<td class="new">Index of 1st block</td>
+		<td class="new">Type</td>	
+	</tr>
+	<tr>
+		<td class="new">foo.c</td>
+		<td class="new">12</td>
+		<td class="new">55</td>
+		<td class="new">regular</td>	
+	</tr>
+	<tr>
+		<td class="new">subdir</td>
+		<td class="new">660</td>
+		<td class="new">39</td>
+		<td class="new">directory</td>	
+	</tr>
+	<tr>
+		<td class="new">...</td>
+		<td class="new">...</td>
+		<td class="new">...</td>
+		<td class="new">...</td>	
+		</tr>
+	</tbody></table>
+	</div>
+
+	<h4>Pros and Cons</h4>
+	<p>Now we have a review of the pros and cons about FAT. Readers will 
+find most of the following features have been already talked about 
+above. So we only give a very simple list of these features. 
+	</p><dl>
+		<dt>pros</dt>
+		<dd>+ no external fragmentation</dd>
+		<dd>+ can grow file size</dd>
+		<dd>+ has hierarchy of directories</dd>
+		<dt>cons</dt>
+		<dd>- no pre-allocation</dd>
+		<dd>- disk space allocation is not contiguous (accordingly read and write operations will slow)</dd>
+		<dd>- assume File Allocation Table fits in RAM. Otherwise lseek and 
+extending a file would take intolerably long time due to frequent memory
+ operation.</dd>
+	</dl>
+	<p></p>
+</td>
+</tr>
+	
+<tr>
+	<td>
+		<table border="1" cellpadding="5">
+			<tbody><tr><td>
+				<p><b>Note</b>: How large the FAT is for a 1 TiB disk? 1 TiB = 2^40 
+bytes. Each block has 2^12 bytes. FAT size = 2^28 (blocks) x 4 
+(bytes/block) = 1 GiB. Obviously, it is a huge waste of RAM even for 
+modern computers.</p>
+			</td></tr>
+		</tbody></table>
+	</td>
+</tr>	
+
+<tr>
+	<td>
+		<table border="1" cellpadding="5">
+			<tbody><tr><td>
+			<p><b>Note</b>: How to find a particular file in the file system? In 
+Unix-like systems, there is a field in super block which points to the 
+location of root directory. Starting from root, you can find any file 
+along the directory tree.</p>
+			</td></tr>
+		</tbody></table>
+	</td>
+</tr>	
+
+<tr>
+	<td>
+		<table border="1" cellpadding="5">
+			<tbody><tr><td>
+				<p><b>Note</b>: When you use FAT for a while, the free blocks would 
+be scattered here and there. As a result, when you read/write a file, 
+the disk header needs to move back and forth frequently, which greatly 
+degrades the performance. You can re-arrange the blocks so that files 
+are stored as contiguously as possible. This is called defragmentation.</p>
+			</td></tr>
+		</tbody></table>
+	</td>
+</tr>	
+
+<tr>
+	<td>
+	<br><br>
+	</td>
+</tr>
+
+<tr>
+	<td>
+		<h2>Unix-like File System</h2>
+	</td>
+</tr>
+
+<tr>	
+	<td>
+		<h4>Overview of Unix-like File System</h4>
+		
+		<p>Unix-like File System is a file system used by many Unix and 
+Unix-like operating systems, although there may be some minor changes 
+over different operating systems. The one we will talk about is from BSD
+ variant, developed at 1980.</p>
+	
+		<div align="center">
+		<img src="Chen09%20-%20File%20System%20Implementation_files/Unix.png" width="600">
+		<br><br>
+		<b>Figure 4. FAT file system</b>
+		</div>
+		<br>
+
+		<p>Basically, disk space is divided into five parts as shown in Figure 4:
+		</p><ul>
+  		<li>Boot Sector</li>
+ 		  <li>Super Block</li>
+  		<li>Free Block Bitmap: This part indicates which block is reserved 
+and which is not. Each bit represents one block. If a bit in the Free 
+Block Bitmap is set to 1, it indicates the corresponding block is free; 
+otherwise the corresponding block has been allocated. Free Block Bitmap 
+is much more efficient than File Allocated Table since one bit is usedto
+ tell whether a block is allocated or not. This feature allows Unix-like
+ file system to scale up to large disk space without wasting too much 
+memory. Assume each block has size of 8 KiB. A 1 TiB disk contains 2^27 
+blocks. So the Free Block Bitmap only takes 16 MiB space, which is 
+1/64000 of total disk space. Meanwhile, with FAT, it would take 1 GiB to
+ store File Allocation Table (1/1000 of disk space).</li>
+			<li>Inode Table: Inode Table stores all the inodes. We will explain inode later. </li>
+			<li>Data Blocks</li>
+		</ul>
+		<p></p>
+	</td>
+</tr>
+	
+<tr>
+	<td>
+		<h4>Inode</h4>		
+		
+		<p>Inode is the data structure that describes the meta data of files 
+(regular files and directories). One inode represents one file or one 
+directory. A typical structure of an inode can be seen in Figure 4. 
+Inode is composed of several fields such as Ownership, Size, Last Modify
+ Time, Mode, Link Count and Data Block pointers (which point to the data
+ blocks that store the content of the file). Note that inode does not 
+include file/directory's name. We will talk about nameless in detail 
+later. In shell, a file's inode number can be found using the <code>ls -i</code> command.</p>
+			
+		<p>Each inode has 10 direct block pointers (different file system may 
+have different number of direct block pointers). Every direct block 
+pointer directly points to a data block. The maximun size of a file 
+using only direct block pointerscan be as big as 80 KiB.</p> 
+	
+		<p>To extend file size, inode introduces the concept of indirect block
+ pointer. Indirect block pointer does not point to file content; 
+instead, it points to the data blocks which store direct block pointers.
+ In other word, to access file content through indirect block pointer, 
+one has to do at least 3 I/O operations. Assume each block pointer costs
+ 4 bytes, a data block can store 2048 block pointers. So the file size 
+can be up to (10 + 8192/4) x 8192 = 16 MiB.</p> 
+		
+		<p>To accomodate even larger file, we need double indirect block 
+pointer, which adds another level of indirection. As shown in Figure 4, 
+there are 4 I/O operations to access file content stored with double 
+indirect block pointer. Now file size can be as big as (10 + 8192/4 + 
+(8192/4)^2) x 8192 = 32 GiB, which is big enough for most of files used 
+nowadays. Remember, this filesystem is designed in 1980s; most files at 
+that time wouldn't reach that size. Some inode has triple indirect block
+ pointer field, and certainly is able to handle even larger files.</p> 
+	</td>
+</tr>
+
+<tr>
+	<td>
+		<table border="1" cellpadding="5" width="600">
+			<tbody><tr><td>
+				<p><b>Note: unit used in computers</b><br> </p>
+					<div align="center">
+					<table border="1" width="300">
+						<tbody><tr>
+						<td class="new">Ki</td>
+						<td class="new">Mi</td>
+						<td class="new">Gi</td>
+						<td class="new">Ti</td>
+						<td class="new">Pi</td>
+						</tr>
+						<tr>
+						<td class="new">2^10</td>
+						<td class="new">2^20</td>
+						<td class="new">2^30</td>
+						<td class="new">2^40</td>
+						<td class="new">2^50</td>
+						</tr>
+					</tbody></table>
+				</div><p>
+					It is interesting that disk sellers always use base 10 instead of 
+base 2 to label the size of their products. So now you finally realize 
+why the disk you've bought is always smaller than it is labeled.  
+				</p>
+			</td></tr>
+		</tbody></table>
+		<br>
+	</td>
+</tr>	
+
+<tr>
+	<td>
+		<h4>Holes in the File</h4>
+	
+		<p>The file in the unix-like file system can have holes inside. A hole
+ does not actually occupy the disk space; instead, the file system just 
+remembers the location and size of the hole. When you read from these 
+holes, you get zeros; when you write into the holes, the file system 
+allocates new data blocks. Therefore, even a file which has holes inside
+ seems to be very large (e.g. 100 GiB), it may only take very little 
+disk space indeed (e.g. 1 MB).</p>
+
+		<p>Now let's try an interesting test. You can easily create holes with following shell command:</p>
+		<code>$dd if=/etc/passwd of=file seek=BIG NUMBER</code>
+		<p>To have a look at the size of the file, type</p>
+		<code>$ls -l file</code>
+		<p>File size may be as big as 1239852395812489000000000000 bytes. Then you type</p>
+		<code>$ls -ls file</code>
+		<p>You may find actually a small number of blocks is used. But if you use copy command, things may become totally different</p>
+		<code>$cp file file1</code>
+		<p>file1 actually uses BIG NUMBER data blocks. In other word, all the zeros in the holes are copied. Don't do this in SEASnet!</p>
+
+		<p>Who would create a file that has holes (other than for fun)? Here 
+are two examples in real world: Berkeley DB uses hashing and creates a 
+lot of holes in the file. Another popular application, Bittorrent, also 
+creates holes.</p>
+
+		<h4>Inode is nameless</h4>
+		
+		<p>Inodes don't know the file name, and they don't know the containing
+ directory either. Directory stores the file names. Each directory entry
+ is consisted of a pair of file name and inode number. It's ok to have 
+two or more names for the same file. E.g.</p>
+			
+		<div align="center">
+		<b>Hard Link</b>
+		<br><br>
+		<table border="1">
+			<tbody><tr>
+				<td class="new">Name (14 bytes)</td>
+				<td class="new">Inode Number (2 bytes)</td>
+			</tr>
+			<tr>
+				<td class="new">foo.c</td>
+				<td class="new">3196</td>
+			</tr>
+			<tr>
+				<td class="new">bar.c</td>
+				<td class="new">3196</td>
+			</tr>
+		</tbody></table>
+		</div>
+
+		<p>The above phenomenon is so called hard link. The system keeps a 
+file as long as a) at least 1 hard link on that file, or b) at least 1 
+process has it opened.</p> 
+
+		<p>Hard link is a controversial feature of Unix-like file system. It 
+was initially designed to support rename operation "robustly". To rename
+ a file, you first a) create a new directory entry for the file; then b)
+ remove the old directory entry. If both creating and removing are 
+atomic operations, the renaming operation is considered robust. It is 
+also cheap to clone read only directory structures. To realize this, we 
+only need to perform the step a) without step b). If you are interested,
+ check <a href="http://www.kernel.org/pub/software/scm/git/docs/git-clone.html">git-clone</a> out.
+		</p>
+</td>
+</tr>
+
+<tr>
+	<td>
+		<table border="1" cellpadding="5">
+			<tbody><tr><td>
+				<p><b>Sidebar: remove data safely</b></p>
+				<p>Suppose you have a love letter in your SEASnet home directory. 
+You want to delete it before anyone discovers it and laughes at you. You
+ have two concerns:</p>
+				
+					<ol>
+					<li>Others may link to the file or open the file already, so your deletion might not help at all.</li>
+					<li>Removing file doesn't destroy the content on the disk; instead, it simply marks the data blocks as free.</li>
+					</ol>
+				
+				<p>So, what should you do? Of course, you don't want to physically 
+destroy the disk (sorry, I cannot tell you how much you would be 
+punished by doing this. But note that even physical destruction may fail
+ to prevent information leaking because data can be recovered from a 
+small piece of disk which happen to contain your love letter. The 
+government now requires that disks with classified information must be 
+melted).</p>
+				
+				<p>One method would be write over the file with random numbers and 
+then remove it. Actually there is a command called "shred" for this 
+purpose. If you want to make sure the file is destroyed, you can shred 
+it multiple times. In most cases, this is enough. But special equipment 
+can still recover your love letter in some cases!</p>
+				 
+				<p>Shred doesn't work well in log-structured file system. So when 
+dealing with this kind of file systems, remember to shred the file 
+system itself!</p> 
+				<code>$shred /dev/sda1</code>
+			</td></tr>
+		</tbody></table>
+	</td>
+</tr>	
+
+<tr>
+	<td>
+	<br><br>
+	</td>
+</tr>
+
+<tr>
+	<td>
+		<h2>System Call</h2>
+	</td>
+</tr>
+
+<tr>
+	<td>
+		<h4>Unlink</h4>
+		
+		<code>unlink("f")</code>
+		<p>This system call decrements the link count in the inode by 1. File is removed when link count equals to 0.</p>
+
+		<h4>Open</h4>
+		
+		<code>open("a/b/c", ...)</code>
+		<p>System starts to resolute the path "a/b/c" from current working 
+directory. The resolution procedure is shown in Figure 5 (to be simple, 
+we allow inode to contain the directory entry).</p>
+		
+		<div align="center">
+		<img src="Chen09%20-%20File%20System%20Implementation_files/open.png" width="400">
+		<br><br>
+		<b>Figure 5. Path Resolution Procedure</b>
+		</div>
+		
+		<p>We can obtain working directory from process descriptor. Actually, root directory is also stored in the process descriptor.</p>
+
+		<p>Command "chroot" can be used to change root directory. However, executing <code>chroot</code> requires root privilege. </p>
+	</td>
+</tr>
+
+</tbody></table>
+</div>
+</body></html>

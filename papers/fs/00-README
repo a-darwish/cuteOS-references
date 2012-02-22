@@ -1,0 +1,830 @@
+
+				File Systems
+				------------
+
+
+Study notes for a number of FileSystem-related papers, which serves as
+a preparation for building our “Cute” kernel FS implementation.
+
+The __primary sources__ of the following topics are discussed:
+
+	- Hierarchial File Systems: originated in Multics & introduced
+	  the concepts of directories, relative and absolute paths,
+	  storing file meta-data in directory entries, symbolic links,
+	  current working directory, etc.
+
+	- The classical Unix SVR2 file System: introduced the now-common
+	  concepts of inodes, inode table, superblock, disk external
+	  fragmentation & blocks, direct & double-indirect access, etc.
+
+	- Berkeley's Fast File System: introduced the critical idea of
+	  minimizing head seeks for better FS performance, leading to
+	  the concepts of cylinder and block groups.  This was the FS
+	  that also popularized the use of bitmaps to track free disk
+	  blocks instead of the legacy SVR2 free blocks list. Most of
+	  the classical Unix file systems (UFS, ext2+) are FFS-based.
+
+	- Microsoft's FAT file system: nothing novel, but it's mostly
+	  implemented in all sever, desktop, and mobile kerenls.  Its
+	  format should thus be studied.
+
+	- Immediate files, originated in Amoeba OS: the paper 
+	  introduced dynamic inode allocation, surved Unix file sizes
+	  and discovered prevalance of small files (~1K) in Unix, and
+	  also introduced the concept of saving file data inside the
+	  inode to minimize disk seeks (a feature later used by NTFS).
+
+	- Micosoft's NTFS file system: a very interesting
+	  implementation of FS technologies at the time. It introduces
+	  an inode table reserved zone area that can increase or
+	  shrunk per need! Another nicely introduced concepts include
+	  'every thing on disk is a file' and 'everthing related to
+	  a file is an attribute', including its data.
+
+	- Linux ext2, introduces block groups, an FFS cylinder group
+	  equivalent for modern disks. It Streeses on the concepts of
+	  powerful file system tools to check, repair, and debug the
+	  file system. The format is intentionally kept simple to
+	  maximize the usefulness of such tools.
+
+
+2012, Ahmed S. Darwish <darwish.07@gmail.com>
+
+
+NOTE-1: You can find a cached copy of *all* the discussed papers at
+        http://gitorious.org/cute-os/references/trees/master/papers/fs
+
+NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
+
+
+* TOC:
+  ----
+
+  - Daley65, “A General Purpose File System for Secondary Storage”, MIT
+  - Bach88, “The Design of the UNIX Operating System”, Prentice Hall
+  - Thompson78, “Unix Implementation”, Bell Systems Technical Journal
+  - Microsoft00, “FAT32 File System Specification”
+  - Mckusick84, “A Fast File System for UNIX”, ACM Transactions
+  - Mullender84, “Immediate Files”, Software: Practice & Experience
+  - Tanenbaum06, “File Size Distribution on UNIX Systems: Then & Now”, SIGOPS
+  - Russinovich04, “NTFS On-Disk Structure”, Microsoft Press
+  - Card94, “Design and Implementation of the second extended file system”
+
+
+* R.C. Daley & P.G. Neuman, “A General Purpose File System for Secondary
+  Storage”, MIT and Bell Telephone Laboratories, 1965:
+  ----------------------------------------------------------------------
+
+  The paper which introduced hierarchial file systems to the masses!  It
+  also includes all the extras of relative and absolute paths, symbolic
+  links (shortcut in NT terminology), and the concept of accessing files
+  using the kernel's VM page-in and page-out architecture.
+
+  Due to all of the above, that paper has a main entry in Per Brinch
+  Hansen's “Classical Operating Systems” book, which includes the most
+  important papers in the history of modern operating systems. Here's the
+  paper most important points:
+
+  - First, the file system is provided as an abstraction concept: "The
+    basic structure of the file system is independent of machine consider-
+    ations. Within a hierarchy of files, the user is aware only of symbolic
+    addresses. All physical addressing of a multilevel complex of secondary
+    storage devices is done by the file system, and is not seen by the user."
+
+  - To maintain machine independence and OS modularity, files are formatless
+    from an FS point of view: "the modularity of design enables modules
+    affecting secondary storage device usage to be altered without changing
+    other modules.  Similarly, the files are formatless at the level of the
+    file system, so that any changes in format do not affect the basic
+    structure of the file system. Machine independence is attempted wherever
+    it is meaningful." (i.e. FS views files as a random string of bytes)
+
+  - Definition of a file is then provided: "A file is simply an ordered
+    sequence of elements, where an element could be a machine word, a char-
+    acter, or a bit, depending upon the implementation. A user may create,
+    modify or delete files __only through the use of the file system__. At
+    the level of the file system, a file is formatless. All formatting is
+    done by higher-level modules or by user-supplied programs, if desired."
+
+  - And the definition of a directory follows: "A directory is a special
+    file which is maintained by the file system, and which contains a list
+    of entries. To a user, an entry appears to be a file and is accessed in
+    terms of its symbolic entry name.  An entry name need be unique only
+    within the directory in which it occurs."
+
+    A branch is a "directory entry that points to a file", while a link is
+    a "directory entry that points to another directory."
+
+  - The paper then delves, for a while, in the implementation details of
+    the FS. It mainly answers the question of where does the FS store files
+    attributes and meta-data?
+
+    "Each branch contains a description of the way in which it may be used
+    and of the way in which it is being used. This description includes
+    information such as the actual physical address of the file, the time
+    this file was created or last modified, the time the file was last
+    referred to, and access control information for the branch.  The descr-
+    iption also includes the current state of the file (readable, writable,
+    etc)"
+
+    So, in modern terminology, the FS directory entry contains:
+    	- physical address of the file
+  	- timestamps for files creation and modification
+  	- file access permissions
+
+    NOTE! This is how it's done in the Microsoft FAT file-system. All of
+    the files meta-data are stored in the directory entries, except the
+    allocation table part, which is saved after the superblock. UNIX, on
+    the other hand, abstracts __ALL__ the file meta-data in the ‘inode’
+    structure.
+
+  - The file system structure "is a tree of files, some of which are
+    directories. Each file (e.g., each directory) finds itself directly
+    pointed to by exactly one branch in exactly one directory.  The root
+    is implicitly pointed to by a fictitious branch which is known to
+    the file system."
+
+    The definitions of the following relations are then given:
+    ‘immediately inferior’, ‘immediately superior’, ‘inferior’, and
+    ‘superior’. Nonterminal nodes are "files which are directories", while
+    leaf nodes indicate files which are of any type except directores!
+
+    Note that since only the tree structure is being considered, each file
+    other than the root has __exactly one__ immediately superior file.
+
+  - The paper then introduces the ‘working directory’ concept, which is a
+    private area for each user: a file in that directory can be _directly_
+    accessed only using its entry name. The file-system hierarchy is thus
+    arranged "so that users with similar interests can share common files,
+    and yet have private files when desired."
+
+  - An ‘entry name’ (file name) "is meaningful only with respect to the
+    directory in which it occurs, and may or may not be unique outside of
+    that directory"
+
+    ==> "It is thus desirable to have a symbolic name which does uniquely
+    	define an entry in the hierarchy as a whole.  Such name is
+	obtained relative to the root, and is called the ‘tree name’."
+
+	i.e., as if that file is the _root_ of a _new tree_ called with
+	that ‘tree name’.  NOTE THAT an ‘absolute path’ is the modern
+	terminology for a Multics tree name.
+
+	In a tree name, 'entry names' are separated by colons (:); Unix
+	kernels separate entry names by slashes (/) instead. In differe-
+	nce to UNIX, tree names (absolute paths) didn't start with the
+	entry names separator. Thus the Multics path:
+				A:B:C:file1
+	get translated in UNIX as:
+				/A/B/C/file1
+
+  - In the previous point, writing paths (tree names) relative to the
+    root directory was demonstrated. "However, a file may also be named
+    uniquely relative to an arbitrary directory, as follows:
+
+    	     + If a file X is inferior to a directory Y, the tree name
+	       of X relative to Y is the chain of entry names required to
+	       reach X from Y. (e.g. :A:B:X, note initial separator)
+
+	     + If X is superior to Y, the tree name of X relative to Y
+	       consists of a chain of asterisks, one for each level of
+	       immediate superiority (e.g. :*:*:*, note init separator)
+	       The ‘*’ is equivalent to Unix's double dots ‘..’ mark!
+
+	     + If the file is neither inferior nor superior to the dire-
+	       ctory, first find the directory Z with the maximum level
+	       which is superior to both X and Y. Then the tree name of
+	       X relative to Y consists of the tree name of Z relative
+	       to X (a chain of asterisks) followed by the tree name of
+	       Y relative to Z (a chain of entry names) (e.g. :*:*:A:B:X)
+
+    As said, an initial name entry separator (:) in a directory path in
+    Multics indicate a path relative to the ‘working directory’. An
+    initial separator (/) in Unix indicate a path relative to the root.
+    Multics and Unix have opposite semantics in that regard.
+
+  - The paper then introduces the concept of SYMBOLIC LINKS, calling em
+    just ‘links’: "the name of the entry to be linked to [dst path] may
+    be specified as a tree name relative to the working directory or to
+    the root. A link serves as a shortcut to a branch somewhere else in
+    the hierarchy, and gives the user the illusion that the link is
+    actually a branch pointing directly to the desired file"
+
+    Symbolic links "greatly facilitate the ease with which the FS may be
+    used":
+    	     + A file may have different names to different users,
+	       depending on how it's used.
+	     + Links help eliminate the need for duplicate copies of
+	       shareable files
+
+    A PERSONAL VIEW: symbolic links are a HACK over the hierarchial FS
+    model. It hopelessly tries to solve the model's big disadvantage of
+    accessing a file only using a single method/address. A search-based
+    file system can solve this problem easily by using path names only
+    as tags, much like the Java's namespace model (e.g. org.sun.XXX).
+
+    Symbolic links also break the tree structure, and induce several
+    special cases in the form of cycles, to the model.
+
+  - Access permissions on files (and their directory subtypes) was then
+    discussed. Classcial read, write, execute, and append permissions was
+    allowed to be set on files (and directories). The execute semantics
+    on directoriews was similar to the current UNIX interpretation.
+
+  - Very Important! As specified in the “Structure of the Multics Super-
+    visor” paper, sections ‘Segmentation, Paging and Addressable Storage’
+    and ‘Segments and files’, files was accessed using the VM subsystem!
+    This was as was later done by SVR4, Solaris and the rest of 'modern'
+    Unix kernels. Reading the content of a file? A page faulthander will
+    dynamically load the file contents as needed!
+
+
+* Maurice J. Bach, “The Design of the UNIX Operating System”, Ch. 4:
+  ‘Internal Representation of Files’, 1986 &&  Ken Thompson,  “UNIX
+  Implementation”, The Bell System Technical Journal, 1978:
+  ------------------------------------------------------------------
+
+  These papers are the definitive description of the Unix SVR2 FS, which
+  is the base of all classical Unix file systems like UFS and ext2. Here
+  are the most important points:
+
+  - In opposite to the original Multics file system and other FSes like
+    MS FAT, __all__ the files meta-data are kept in the file's ‘inode’
+    (index node) structure. There's a 1-to-1 relationship between indodes
+    and their respective files.
+
+    (FAT, on the other hand, distributes the meta-data around. File attr-
+    ibutes are kept in the directory entries, while the allocation table
+    is stored, on its own, after the superblock. Check the FAT section
+    for extra information.)
+
+  - The overly simple method of storing files __contiguously__ faces two
+    critical problems:
+
+	+ External fragmentation: after modest file system usage (simple
+	  creation and deletion of files, etc), the disk free space would
+	  be very fragmented. This would lead to files not being able to
+	  be written on disk although the total free space could be much
+	  much larger!
+
+	+ Cannot append data to files efficiently: to append data, which
+	  is a VERY COMMON operation, a new bigger space need to be
+	  allocated, then the original file will be copied, then the new
+	  data will be added. Ugly & inefficient
+
+    ----------------------------------------------------------------------
+    |					Appendix
+    |
+    | * External fragmentation is NOT an issue in read-only/write-once
+    | FSes since all the file sizes are known in advance and will never
+    | change during subsequent use of the file system! An excellent case
+    | is CD-R and DVD meda, where contigous allocation freely minimize
+    | the costly seeks.
+    |
+    | * There's a striking similarity between the problem of files data
+    | allocation and processes memory allocation.  If files data were
+    | allocated contiguously, external fragmentation would be huge in
+    | the file system after usage.  Allocation of files later will not
+    | be possible, although the sum of free spaces can be much bigger
+    | than the desired file of data. Similarly, external fragmentation
+    | can be huge in physical memory, leading to several processes not
+    | being able to get loaded to RAM any more.
+    |
+    | A solution of this problem is to use ‘blocks’ __that can get
+    | mapped anywhere__ to represent files data.  This is how it's also
+    | handled in memory management by the use of paging. It's usaully
+    | very hard to find contigous memory spaces to hold a full process
+    | image (although the sum of free spaces can be much bigger); the
+    | solution is to use memory ‘blocks’ (pages) that can get mapped
+    | __anywhere__ in the physical memory space.
+    |
+    | * In both memory and file systems, As long as blocks can be mapped
+    | anywhere, a mapping table need to be present!  A problem that
+    | _directly_ appears is the MAPPING TABLE SIZE.
+    |
+    | A small table will directly limit the amount of memory that can
+    | be mapped. A big table wastes huge memory for each process or file,
+    | and also puts useless constraints on file/process size. A solution
+    | would be to use linear, dynamically sized, page tables. But such
+    | tables will cause a main problem:
+    |
+    |   bad support of sparse files or memory area accesses (e.g. a
+    |   large Bittorent file, or a memory image where the top part is
+    |   used for the stack and the bottom is used for the heap!).
+    |   Thus, file/memory random access is practically not possible!
+    |   
+    | The solution is to let the mapping table use data blocks for its
+    | own memory, and dynamically allocate needed parts only as necessary.
+    | Non-mapped parts in the middle of the mapping table need not to
+    | be allocated (or navigated) at all. Holes can thus be supported
+    | efficiently, and the meta-data can be kept in one place, etc.
+    |
+    | * A possible space-efficient implementation of the 'dynamically-
+    | sized, linear mapping table' discussed above is to have the blocks
+    | themselves link to each other till the end of the file is reached.
+    | Such implementation, while space-efficient, still have the main
+    | disadvantage of the inability to randomly access files efficiently.
+    | BY THE WAY, THIS IS A HUGE PROBLEM: Imagine the common cases of:
+    |		- appending data to files
+    |		- seeks in large files as in movies (including Youtube)
+    |		- sparse files as in bittorent ones
+    |
+    | Such inefficiency can be fixed by putting the 'block links' in a
+    | separate table (file allocation table), and put that table entirely
+    | in memory. This is done by FAT systems, but it has the disadvantage
+    | of high memory usage for the table. As also said by Tanenbaum,
+    | "The table could be put in pageable memory, but it would still
+    | occupy a great deal of virtual memory and disk space as well as
+    | generating paging traffic [a 20-GB disk needs around 80MB table]."
+    |
+    | * UNIX SVR2, FFS, UFS, ext{2,3,4} file systems use the discussed
+    | method of the mapping table that extends itself by the use of
+    | data blocks or pages only as necessary, to solve the problems of
+    | external fragmentation and efficient data random access. The
+    | format is discussed in Bach's book and Ken Thompson's paper.
+    |
+    | NOTE! Such format has a problem of fragmenting the file over disk,
+    | leading to many seeks.  Check FFS and ext2 for possible solutions,
+    | along with modern on-disk format FSes like XFS and BtrFS.
+    |
+    | NOTE! The problem of having a space-efficient, holes-friendly,
+    | big mapping tables is common in CPU architectures design! Papers
+    | from that sub-field can help immensely.  Check below paper for
+    | inspiration:
+    |	M. Talluri, et al., “A New Page-table for 64-bit Address Spaces”
+    |
+    ----------------------------------------------------------------------
+
+  - On-disk inodes are cached using in-core ones, by the FS code, for
+    quick reference and to minimize disk access since the locality concept
+    also applies to data access patterns. In-core indoes need to be tracked
+    by some sort of structure to find them quickly; SVR2 used a hash table
+    with hash queues for collisions to find in-core indoes. A simple modulo
+    operator was used as the hashing function, taking inode number as input.
+
+    A linked list for linking free in-core inodes were also used. Newly
+    loaded on-disk indoes use one of such free caches.
+
+    NOTE! Such free list is not needed in modern systems thanks to the
+    support of dynamic memory allocation: we could just free the inode
+    image and allocate a new one later using dynamic memory facilities.
+
+  - Free data blocks are tracked using a list, each node in that list is
+    a block which holds the number/index of free blocks in disk. Such
+    list start in the superblock.
+
+    There's no way to tell if a block is free except by it being existing
+    in the free blocks list. i.e. we can't scan the disk for free blocks.
+    This is quite different from MS FAT, where's there's a NULL mark in
+    the allocation table indicating that a specific block is free.
+
+    Newer UNIX file systems usually keep a bitmap of free blocks.
+
+    A list of free blocks will be nicely and sequentially ordered at file
+    system creation time. Making disk block allocation for new files be
+    sequential and ‘extent’-like in performance.
+
+    After a typical usage pattern of creating, appending, and deleting
+    files, such list blocks order get completely random and become
+    dependent on blocks insertion and deletion.  This will make the
+    allocated blocks for news files be scattered allover the disk,
+    leading to terrible head seek latencies. Bitmaps don't suffer from
+    that problem.
+
+  - Directories are plain files, with the exception of having the kernel
+    exclusively keep the write permission for itself. The directory file
+    is divided to fixed-length 16-byte records: 2-bytes for the inode
+    number and 14-byte for the file name.
+
+    FAT use a similar structure, while also using the directory entries
+    for storing files meta-data. Newer Unix FSes use variable-sized
+    directory entries.
+
+
+* Microsoft Extensible Firmware Initiative, “FAT32 File System
+  Specification”, ‘FAT: General View of On-Disk Format’, 2000:
+  ------------------------------------------------------------
+
+  FAT can be summarized in the following points:
+
+  - Keeping with the legacy of the original Multics hierarchial FS,
+    file attributes are stored in the directory entries.
+
+  - Having the file blocks list to each other, using the first word
+    in each block as a pointer, makes random access very slow.
+    Random access is quite important for reasons outlined above.
+
+    This is solved by taking the pointer word from each block and
+    putting in a a table in memory. i.e., the linked list of file
+    blocks is represented using a table in memory. To traverse the
+    list of blocks, it's sufficient to traverse its table cells.
+
+    Note: This has some similarity with kernel memory allocators
+    moving from classic power-of-2 ones to the Mckusik-Karels approach.
+    Power-of-2 allocators linked free blocks of equal size using their
+    first two bytes as a pointer. MK allocator removed those two bytes
+    and used a table describing each free block property by the page
+    it was residesing in.  FAT solved the issue by keeping the list
+    untouched, only representing it using a different method.
+
+
+* M.K. Mckusick, W.N. Joy, S.J. Leffler & R.S. Fabry, “A Fast File
+  System for UNIX”, ACM Transactions on Computer Systems, 1984:
+  ----------------------------------------------------------------
+
+  FFS expoits the fact that seeks are slow, and thus performance can
+  substantiallly increase by allowing better locality of reference than
+  the classical SVR2 file system. The details follows:
+
+  - FFS 'retained the abstraction and simply changed the underlying
+    implementation to increase its throughput'
+
+  - The first problem in SVR2 FS was that the inode information was put
+    far away from its data, thus accessing a file normally incurs a long
+    seek from a file's inode to its data.
+
+  - Files in a single directory were not typically allocated in consecutive
+    slots, although they'are usually accessed together.  This caused "many
+    non-consecutive blocks of inodes to be accessed when executing
+    operations on the inodes of several files in a directory."
+
+  - The allocation of data blocks was also sub-optimum. The next free data
+    block was not on the same cylinder, forcing seeks between 512-byte
+    transfers.
+
+  - Earlier expirements found that increasing the block size improved disk
+    performance by a power of 2 cause of less seeks and less dependence on
+    indirect blocks.
+
+  - While the free block list was ordered for optimal access, it became
+    __entirely random__ after usage, causing files blocks to be allocated
+    randomly over disk, and forcing a seek before every block access. Such
+    pattern was pretty bad for access locality.
+
+    NOTE! A bitmap would better help the situation here, as it protraits
+    a clear view of the free blocks which are contiguous. SVR2 FS lists,
+    on the other hand, depended on the order of insertion and deletion.
+    Thus, such lists portrait of free contiguous blocks became completely
+    random after usage.
+
+  New changes:
+
+  - superblock is replicated to protect against catastrophic loss.
+
+  - access files as large as 4GB with only 2 levels of indirection, using
+    4K blocks and increasing the number of inode direct blocks.
+
+  - The FS is divided over cylinder groups.  Each group includes a
+    redundant copy of the super block, list of inodes, and a bit map
+    describing available blocks (replacing free blocks list in SVR2.)
+    As in SVR2, inode list is created at file system creation time.
+
+  - Large blocks would make a huge overhead for small files, counted at
+    45% overhead for a typical system. Solution was to fragment: a
+    block can optionally be divided into 2, 4, or more fragments.
+
+  - A bitmap, at the fragment level, is used instead of the SVR2 free
+    blocks list.
+
+  - A higher priority is always there to put files over full blocks,
+    instead of fragments (or the UFS will be useless). If a file was
+    stored in a fragment, then extended, it's copied to a new block.
+
+  - "The global policies try to balance the two conflicting goals of
+    localizing data that is concurrently accessed while spreading out
+    unrelated data." Taken to the extreme, total localization can result
+    in a single huge cluster resembling the old SVR2 file system!
+
+    To handle this, folders are stored in the same cluster, new folders
+    are not. Big files, not to fill an entier cluster and make others
+    span on different one, use another cluster once exceeding a certain
+    size limit.
+
+  - The directory format has changed. Instead of fixed records limiting
+    the file name to 14 characters, variable-sized records are used.
+
+    NOTE!! the use of variable sized records imply a _memory allocation
+    problem_, external fragmentation, etc. FFS directory format is in
+    fact a "Resource Map" allocator (Unix Internals, page 378/410) which
+    puts the map entries in the first bytes of the blocks.
+
+    Using your memory allocation experience, can you specify a better
+    format? A format that would minimize external fragmentation while
+    making the file name variable? What about file name search speed?
+
+    (My answer: a possible format can be fixed blocks, solving external
+    fragmentation, while providing the facility of using more than one
+    block for a single file name. A bitmap for each directory file data
+    block exist, describing the free blocks within it. Each block has
+    a link field which would list the next block holding the file name,
+    or an end mark.  That would be similar to the FAT file system!
+
+    Of course, one should measure the value of the introduced
+    complexity against the cheap value of storage hardware.)
+
+    When an entry get deleted from an FFS directory file, its free
+    space is merged with previous entry.  This way, FFS transform the
+    resulting external fragmentation directly to internal fragmentation.
+    Nonetheless, it keeps the implementation a very simple linked list,
+    and makes the access of directory file records very direct!
+
+    NOTE! Another value of such simple folder format is the simple
+    ability to recover deleted files: the deleted entry still remains
+    at its place.  Check 'ext3grep', a program which restores deleted
+    files from ext3 partitions, for further details.
+
+  - Symbolic links support, which originated in Multics, has been added.
+
+  - This paper also talks about the feature of avoiding the page/buffer
+    cache altogether, which is done in Linux using open(O_DIRECT) and in
+    Solaris using UFS directio() system call.
+
+
+* Sape J. Mullender & Andrew S. Tanenbaum, “Immediate Files”, Software
+  Practice and Experience, Wiley, 1984:
+  --------------------------------------------------------------------
+
+  Similar to the Berkely fast file system, this is an optimization over
+  SVR2 to minimize disk seeks. To minimize double disk access (and seeks)
+  for small files, it extends the classical inode structure by expanding
+  it to occupy an entire disk block: a small portion of the block is used
+  for the inode fields, and the remainder of the block can store the
+  entire file.
+
+  Main advantage is that only one disk access is necessary to get the
+  inode and its data if the file fits in the inode block.  The support
+  of dynamic inode allocation and reclamation is also mentioned.  Notes
+  from the paper:
+
+  - The combination of short files and the need to make two disk accesses
+    suggests another possible file organization out of SVR2: Expand the
+    inode to a full disk block, and put the first part of the file in it.
+
+  - Such blocks are called ‘Immediate Blocks’, similar to ‘immediate’
+    operands in a machine opcode, where a value is directly encoded in
+    the machine instruction instead of being referenced by a register.
+
+  - If a block size is 2K bytes, some 60 percent of files (in the paper's
+    testing environment) can be accessed using one disk operation!
+
+  - A VERY IMPORTANT point of the paper is that, unlike UNIX, the inodes
+    are dynamically allocated and can be put anywhere in the disk -- not
+    just at disk start.  The last 48 bytes are reserved for the inode
+    fields in the ‘inode block’.
+
+  - Since the inodes are allocated anywhere in the system, making disk
+    recovery a more complex operation, meta-data for recovery sake are
+    put at the end of each block's 48 bytes.
+
+  - This paper, although quite small and concise, has been referenced
+    by important papers in the file systems field. Examples include:
+
+    + “Generating realistic impressions for file-system benchmarking”,
+       by Arpaci-Dusseau et al.
+    + “The Utility of File Names”, by Margo Seltzer et al.
+
+  - NOTE! The concept of immediate files is used Microsoft's NTFS and
+    is called a ‘resident attribute’ (since a file data is considered
+    _one_ of the file attributes in NTFS.)
+
+
+* Andrew S. Tanenbaum, Jorrit N. Herder & Herbert Bos, “File Size
+  Distribution on UNIX Systems - Then and Now”, ACM SIGOPS, 2006:
+  ---------------------------------------------------------------
+
+  This is a quick paper, in continuation of the previous “Immediate
+  files” one, which checks the distribution of file sizes over Unix
+  systems.
+
+  The size distribution hasn't changed much on _server systems_: the
+  graph has just shifted to the right, where the mean size increases
+  to 2.5KBs instead of the classical mean of 1KB discussed in
+  Tanenbaum's immediate files paper. Notes:
+
+  - A big disadvantage of this paper is not checking desktop systems:
+    they are full of file sizes in the order of Mega bytes. Such Files
+    include Word and Powerpint slides (which themselves include lots
+    of pictures), high-qulity pictures from digital cameras, high-
+    bitrate and sometimes lossless music files, movies with sizes in
+    the order of 100-MBs, games, etc. Such systems would have a
+    *drastically different* mean file size.
+ 
+  - A final conclusion from that paper is that a modern FS should never
+    ignore the small files case - even in this day and age. One type of
+    such file systems is Microsoft's NTFS, which uses the concept of
+    ‘immediate files’ discussed above while also optimizing the case of
+    large files using ‘extents’.
+
+
+* Mark E. Russinovich & David A. Solomon, “Microsoft Windows Internals,
+  Fourth Edition”, Ch. 12: ‘NTFS On-Disk Format’, 2004 && Microsoft
+  Support, “How NTFS Reserve Space for its Master File Table”, 2008 &&
+  Anton Altaparmakov & Richard Russon, Linux-NTFS layout.h header file:
+  ---------------------------------------------------------------------
+
+  NTFS is an inode- and extent- based file system, with support of
+  immediate files up to the size of ~1KB bytes. It adheres to a rule of
+  “Everything on disk is a file”, including all of the FS meta data
+  like the inode table and the free blocks bitmap. Making it able to
+  extend the inode table beyound the originally-reserved area, unlike
+  the rest of Unix FFS-based variants. Important notes:
+
+  - Terminology:
+
+    +-------------------------------------------------------------------+
+    | NTFS				|	UNIX			|
+    |-------------------------------------------------------------------|
+    | Master File Table (MFT)		|	Inode table		|
+    | File record (in MFT)		|	Inode			|
+    | Cluster				|	Block			|
+    | Run				|	Extent			|
+    | Resident Attribute (in record)	|	Immediate File		|
+    +-------------------------------------------------------------------+
+
+  - A ‘Master File Table’, equivalent to the classical UNIX inode array,
+    exists. Each ‘file record’ in such a table represents an inode. The
+    MFT is in fact represented as a file called $MFT. $MFT file recrod
+    (inode) has a reserved entry #0 in the inode table.
+
+    The first few recrords in the MFT are also reserved for NTFS meta
+    data files.  Examples include:
+
+     $MFT		Master File Table file
+     $MftMirr		Copy of first four MFT records
+     $LogFile		File system journalling log
+     $Root		File record (INODE) of the root directory
+     $Bitmap		Allocation bitmap of all clusters (BLOCKS)
+     $Extend		File record for dir containing meta-data (NTFS3.0)
+
+  - Unix statically allocate the inode table (MFT) at FS creation time.
+    NTFS on the other hand considers the inode table just another file,
+    so it can get extended as the need arise!
+
+  - A fragmented $MFT file is a disaster in terms of head seeks:
+
+    "Very early versions of Windows would grow the MFT in small portions
+    which would cause fragmentation.  Later versions of Windows
+    introduced an MFT zone reservation.  This zone is a portion of the
+    disk that is reserved for the MFT to grow into so that the MFT can
+    remain continuous."
+
+    "Windows Vista and Windows Server 2008 use a default size of 200MB
+    for the initial MFT zone reservation.  As the MFT outgrows the
+    default zone due to more files being added to the volume, the MFT
+    will create another 200MB zone to grow into.  This change to fixed
+    amount versus a percentage was done to deal with increasing size of
+    volumes and create better efficiencies."
+					-- Microsoft Support
+
+    Such MFT zone reservation is similar to what Unix SVR2, FFS, ext2+,
+    and UFS file systems does by statically allocating the inode table
+    at file system creation time.
+
+    Unlike Unix though, the MFT Zone can get shrunk or extended upon
+    need!! "If the (MFT-)unreserved space becomes full, space for user
+    files and directories starts to be allocated from the MFT zone
+    competing with the MFT for allocation. If the MFT zone becomes full,
+    space for new MFT entries is allocated from the remainder of the
+    disk, again competing with other files."
+
+    Note that the MFT table itself cannot get shrunk except by using
+    the Windows defragmentation tool, the quote above talks about the
+    ‘MFT _zone_’ instead.
+
+    Such dynamic re-sizing of the MFT region *is very valuable*. It's
+    unlike the Unix case where admins would bang their head against a
+    wall if the statically allocated inodes table was exhausted!!!
+
+  - A ‘record header’ is present at the beginning of each MFT record,
+    which is then followd by a *sequence* of variable length attribute
+    records that is terminated by an attribute of type $END.
+
+    A file in NTFS is thus a collection of 'attribute/value pairs':
+    file data is a value of the ‘unnamed data attribute’. Attributes
+    are either ‘resident’ (stored in the file's MFT record) or ‘non-
+    resident’ (not stored in the file record).
+
+    Immediate files (<= 1KB) are stored in their file record by having
+    the data attribute value be 'resident'. Example attributes include:
+
+     $STANDARD_INFORMATION --> Properties typically put in the Unix inode
+     $FILE_NAME		--> File name in unicode
+     $OBJECT_ID		--> UUID value for referencing a file
+     $DATA		--> File data
+     $END		--> End mark for attribute records in an MFT record
+
+    Note that each attribute has a unique value, and is not represented
+    as text on the disk. For example:
+
+     $STANDARD_INFORMATION --> 0x10
+     $FILE_NAME		--> 0x30
+     $OBJECT_ID		--> 0x40
+     $DATA		--> 0x80
+     $END		--> 0xffffffff
+
+    Each attribute header, which is always resident, include the fields:
+
+     type		$FILE_NAME, $DATA, $END??
+     length		size of resident part of the attribute
+     non_resident	attribute is resident or not?
+
+    and these fields if the attribute is resident:
+
+     value_length	Attribute value size (for resident attribute)
+     value_offset	Attribute value offset (resident attribute)
+
+    or below ones if it was non-resident:
+
+     attributes mapping the attribute data to clusters (as in direct,
+     indirect, and double indirect blocks in the UNIX world.)
+
+  - This finishes our notes on the NTFS file system; a definitely
+    interesting (but quite complex) file system.
+
+
+* Remy Card, Theodore Tso & Stephen Tweedie, “Design and Implementation
+  of the Second Extended Filesystem”, In Proceedings of the First Dutch
+  International Symposium on Linux, 1994:
+  ---------------------------------------------------------------------
+
+  Ext2 is an FFS-based file system, only replacing ‘cluster groups’ with
+  ‘block groups’ since the disk geomertry features exploited in FFS are
+  no longer valid. Even if such geomertry features were valid, they are
+  no longer exported to the operating system.  The exported geometry
+  is just a virtual view provided by the disk firmware. Important notes:
+
+  - The original ext FS inhered the linked list of free blocks from SVR2.
+    It lead to bad performances, and it made the FS code unable to
+    allocate contiguous blocks to files.
+
+    See the disadvantages of the linked list approach in our FFS
+    discussion.
+
+    Thus, naturally and as in FFS, ext2 used a bitmap to track free
+    blocks in the disk image. A bitmap is also used for tracking
+    free inodes.  Each bitmap is exactly one-block long.
+
+    The bitmap method has also shown its age these days (2012): modern
+    file systems usually keep track of the free disk space using trees
+    now.  The bottleneck of bitmap allocation can be apparent while
+    creating new large files. Check “Scalability in the XFS File System”
+    by Adam Sweeny for further details.
+
+  - As in SVR2 and FFS, the classical inode table remains.  If all the
+    inodes were allocated from that table, the user has to re-format
+    the disk and increase the number of inodes!
+
+    This is unlike NTFS, which can grow the inode table if the need
+    arose.
+
+    Other FSes dynamically allocate inodes on disk, as originally done
+    by the Amoeba file system by Tanenbaum and now done in all modern
+    Unix file systems like zFS, XFS, and BtrFS.
+
+    NTFS really has the sweet spot between static and dynamic alloca-
+    tion of inodes.  It acts like a C++ vector array of inodes.
+
+  - Symbolic links, originated in Multics and ignored by Unix till they
+    got added back in FFS, are supported.
+
+    Taking an idea from Tanebaum's immediate files, if the destination
+    path is small enough to fit in the inode structure, it's kept there,
+    thus minimizing head seeks.
+
+  - Like FFS, ext2 provide long file names support by using variable-
+    sized recores in the directory data blocks.
+
+  - Block sizes ranges frok 1K to 4K bytes.  Ext2 does it the easy way
+    and ignore the FFS-like ‘fragments’.
+
+  - "Since modern drives tend to be optimized for sequential access
+    and hide their physical geometry to the operating system, " block
+    groups are used instead of FFS cylinder groups.
+
+    The disk image is divided over several block groups, specified at
+    mkfs time.
+
+    Each block group contains a redundant copy of the superblock,
+    bitmap of that group blocks, bitmap of that group inodes, _the_
+    inode table, and the group's data blocks themselves.
+
+    Block groups minimize the distance between the inode tables and
+    _their_ data blocks.
+
+    As explained in our FFS discussion, ext2 implementation tries to put
+    files in the same folder in one block group, while scattering new
+    folders _uniformly_ accross the block groups. (See our FFS nots for
+    reasonings)
+
+  - Moving away from the on-disk format to the filesystem implementation,
+    ext2 tries hard to:
+
+     + allocate contigous areas for files
+     + keep inodes close to their data blocks
+     + read-ahead file and directory data
+     + preallocates up to 8 adjacent blocks when allocating a new block,
+       thus achieving good write performance while optimizing future
+       reads by minimizing their head seeks.
+
+  - A good place where ext2/3/4 shines is their ext2fs-utils group of
+    programs.  ‘debugfs’ is definitely my favorite e2fs utility!

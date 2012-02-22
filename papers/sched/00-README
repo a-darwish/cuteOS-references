@@ -34,6 +34,7 @@ the following topics are discussed:
 	  runqueues, interactions between spinlocks and kernel preemption,
 	  and thread scheduling soft and hard affinity!
 
+
 2010-2011, Ahmed S. Darwish <darwish.07@gmail.com>
 
 
