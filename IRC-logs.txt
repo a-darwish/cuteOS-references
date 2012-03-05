@@ -15,6 +15,8 @@ TOC:
 (5)  Virtual Memory in a long mode kernel
 (6)  @@ [INTERESTING] On Spinlocks and kernel preemption @@
 (7)  Con's advice on schedulers
+(8)  On Implementing a File System
+(9)  Geist on On the Unix File Descriptor Table, and passing pointers
 
 
 On Testing the Page allocator (01/01/2010!)
@@ -508,3 +510,74 @@ _____________________________
 	  that's a flaw in the classical MLFQ design itself
 <conman>  np
 <conman>  gotta go
+
+
+On Implementing a File System:
+------------------------------
+
+<darwish> hi
+<darwish> anyone remember his first days of writing a file system?
+<darwish> s/remember/remembering
+<geist>	  yeah
+<darwish> just a bit lost (as usual when starting a new sub-project in the
+	  kernel)
+<darwish> should I begin coding the low-level layer first? or code a
+	  filesystem over a memory area first (ramdisk)?
+<geist>	  i'd do the latter
+<geist>	  so you can worry about one layer at a time
+<geist>	  since a ramdisk is much easier to write and be pretty sure it works
+	  properly
+<darwish> mm...
+<darwish> so I guess I'll modify the bootloader to load a filesystem image
+	  (+ the kernel binary itself), write a small vfs interface, and then
+	  fill it with the file-system code
+<geist>	  sounds like a plan
+<geist>	  similar to what i did
+<darwish> and a simple file system as in BSD's legacy "fast file system"
+	  won't be a bad start?
+<geist>	  pretty decent
+<geist>	  ffs/ext2/etc are a nice little family of fses
+<geist>	  pretty easy to understand
+<darwish> mm, the plan sounds interesting!
+
+
+Geist on On the Unix File Descriptor Table, and passing pointers:
+-----------------------------------------------------------------
+
+<darwish> I wonder why Unix invented the idea of file descriptors in the range
+	  of 0 -> N, and not just return the address of the file descriptor
+	  (which holds current offset, etc) as the HANDLE?
+<geist>	  because the address would be in kernel space
+<darwish> mm, the user space will not dereference that address; it will just
+	  use it in opaque form
+<geist>	  sure, but then how to you verify it?
+<geist>	  ie, you should *never* pass kernel pointers back and forth between
+	  user and kernel space
+<geist>	  that's a terrible security/stability issue
+<darwish> mm, even if a signature was used, specifying that such a region is
+	  indeed a FILE structure?
+<geist>	  hmm?
+<darwish> I mean as a form of verifying the opaque address
+<geist>	  right, but now you have to start jumping through hoops to verify the
+	  pointer
+<geist>	  much easier to just have the fd be an index into a table
+<geist>	  and anyway, fork() would mess it up
+<darwish> geist, would it be too many hoops?
+<geist>	  since you want the same fds on both sides of the fork to be different
+<darwish> hmmm
+<geist>	  anyway, handles to tables that point to things is almost always what
+	  you want in a lot of situations
+<geist>   direct pointers across interfaces/binaries/etc is almost never a good
+	  idea
+<darwish> mm, yes. It seems like userspace meddling into an internal kernel
+	  representation; somethin it shouldn't deal with ..
+<geist>	  you could do all sorts of fun security hacks with that. start a
+	  write() with a large buffer with a fake FILE structure, and then in
+	  another thread try to use it by guessing the kernel's address, etc
+<darwish> ooh yes, quite horrible indeed
+<darwish> seems the 0 -> N numbering provide kind of "name space" abstraction.
+	  i.e. process A's file descriptor 8 is not equivalent to process B's
+	  file descriptor 8
+<darwish> aah, now things began to make sense
+<geist>	  ight
+<geist>	  each process has it's own fd table
