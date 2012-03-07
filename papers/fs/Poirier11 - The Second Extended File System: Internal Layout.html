@@ -1,0 +1,995 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"><title>The Second Extended File System</title><meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79"></head><body class="BOOK" link="#0000FF" alink="#0000FF" bgcolor="#FFFFFF" text="#000000" vlink="#840084"><div class="BOOK"><a name="EXT2.INTERNALS"></a><div class="TITLEPAGE"><h1 class="TITLE"><a name="AEN2">The Second Extended File System</a></h1><h2 class="SUBTITLE">Internal Layout</h2><h3 class="AUTHOR"><a name="AEN6"></a>Dave Poirier</h3><div class="AFFILIATION"><div class="ADDRESS"><p class="ADDRESS">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="EMAIL">&lt;<a href="mailto:instinc@gmail.com">instinc@gmail.com</a>&gt;</code><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p></div></div><p class="COPYRIGHT">Copyright © 2001-2011 Dave Poirier</p><div class="LEGALNOTICE"><p></p><a name="AEN15"></a><p>	Permission is granted to copy, distribute and/or modify this document
+	under the terms of the GNU Free Documentation License, Version 1.1
+	or any later version published by the Free Software Foundation;
+	with no Invariant Sections, with no Front-Cover Texts, and with no
+	Back-Cover Texts. A copy of the license can be acquired electronically
+	from http://www.fsf.org/licenses/fdl.html or by writing to 
+	59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+   </p><p></p></div><hr></div><div class="TOC"><dl><dt><b>Table of Contents</b></dt><dt><a href="#AEN18">About this book</a></dt><dt>1. <a href="#HISTORY">Historical Background</a></dt><dt>2. <a href="#DEFINITIONS">Definitions</a></dt><dd><dl><dt>2.1. <a href="#DEF-BLOCKS">Blocks</a></dt><dt>2.2. <a href="#DEF-BLOCK-GROUPS">Block Groups</a></dt><dt>2.3. <a href="#DEF-DIRECTORIES">Directories</a></dt><dt>2.4. <a href="#DEF-INODES">Inodes</a></dt><dt>2.5. <a href="#DEF-SUPERBLOCK">Superblocks</a></dt><dt>2.6. <a href="#DEF-SYMBOLIC-LINKS">Symbolic Links</a></dt></dl></dd><dt>3. <a href="#DISK-ORGANISATION">Disk Organization</a></dt><dd><dl><dt>3.1. <a href="#SUPERBLOCK">Superblock</a></dt><dd><dl><dt>3.1.1. <a href="#S-INODES-COUNT">s_inodes_count</a></dt><dt>3.1.2. <a href="#S-BLOCKS-COUNT">s_blocks_count</a></dt><dt>3.1.3. <a href="#S-R-BLOCKS-COUNT">s_r_blocks_count</a></dt><dt>3.1.4. <a href="#S-FREE-BLOCKS-COUNT">s_free_blocks_count</a></dt><dt>3.1.5. <a href="#S-FREE-INODES-COUNT">s_free_inodes_count</a></dt><dt>3.1.6. <a href="#S-FIRST-DATA-BLOCK">s_first_data_block</a></dt><dt>3.1.7. <a href="#S-LOG-BLOCK-SIZE">s_log_block_size</a></dt><dt>3.1.8. <a href="#S-LOG-FRAG-SIZE">s_log_frag_size</a></dt><dt>3.1.9. <a href="#S-BLOCKS-PER-GROUP">s_blocks_per_group</a></dt><dt>3.1.10. <a href="#S-FRAGS-PER-GROUP">s_frags_per_group</a></dt><dt>3.1.11. <a href="#S-INODES-PER-GROUP">s_inodes_per_group</a></dt><dt>3.1.12. <a href="#S-MTIME">s_mtime</a></dt><dt>3.1.13. <a href="#S-WTIME">s_wtime</a></dt><dt>3.1.14. <a href="#S-MNT-COUNT">s_mnt_count</a></dt><dt>3.1.15. <a href="#S-MAX-MNT-COUNT">s_max_mnt_count</a></dt><dt>3.1.16. <a href="#S-MAGIC">s_magic</a></dt><dt>3.1.17. <a href="#S-STATE">s_state</a></dt><dt>3.1.18. <a href="#S-ERRORS">s_errors</a></dt><dt>3.1.19. <a href="#S-MINOR-REV-LEVEL">s_minor_rev_level</a></dt><dt>3.1.20. <a href="#S-LASTCHECK">s_lastcheck</a></dt><dt>3.1.21. <a href="#S-CHECKINTERVAL">s_checkinterval</a></dt><dt>3.1.22. <a href="#S-CREATOR-OS">s_creator_os</a></dt><dt>3.1.23. <a href="#S-REV-LEVEL">s_rev_level</a></dt><dt>3.1.24. <a href="#S-DEF-RESUID">s_def_resuid</a></dt><dt>3.1.25. <a href="#S-DEF-RESGID">s_def_resgid</a></dt><dt>3.1.26. <a href="#S-FIRST-INO">s_first_ino</a></dt><dt>3.1.27. <a href="#S-INODE-SIZE">s_inode_size</a></dt><dt>3.1.28. <a href="#S-BLOCK-GROUP-NR">s_block_group_nr</a></dt><dt>3.1.29. <a href="#S-FEATURE-COMPAT">s_feature_compat</a></dt><dt>3.1.30. <a href="#S-FEATURE-INCOMPAT">s_feature_incompat</a></dt><dt>3.1.31. <a href="#S-FEATURE-RO-COMPAT">s_feature_ro_compat</a></dt><dt>3.1.32. <a href="#S-UUID">s_uuid</a></dt><dt>3.1.33. <a href="#S-VOLUME-NAME">s_volume_name</a></dt><dt>3.1.34. <a href="#S-LAST-MOUNTED">s_last_mounted</a></dt><dt>3.1.35. <a href="#S-ALGO-BITMAP">s_algo_bitmap</a></dt><dt>3.1.36. <a href="#S-PREALLOC-BLOCKS">s_prealloc_blocks</a></dt><dt>3.1.37. <a href="#S-PREALLOC-DIR-BLOCKS">s_prealloc_dir_blocks</a></dt><dt>3.1.38. <a href="#S-JOURNAL-UUID">s_journal_uuid</a></dt><dt>3.1.39. <a href="#S-JOURNAL-INUM">s_journal_inum</a></dt><dt>3.1.40. <a href="#S-JOURNAL-DEV">s_journal_dev</a></dt><dt>3.1.41. <a href="#S-LAST-ORPHAN">s_last_orphan</a></dt><dt>3.1.42. <a href="#S-HASH-SEED">s_hash_seed</a></dt><dt>3.1.43. <a href="#S-DEF-HASH-VERSION">s_def_hash_version</a></dt><dt>3.1.44. <a href="#S-DEFAULT-MOUNT-OPTIONS">s_default_mount_options</a></dt><dt>3.1.45. <a href="#S-FIRST-META-BG">s_first_meta_bg</a></dt></dl></dd><dt>3.2. <a href="#BLOCK-GROUP-DESCRIPTOR-TABLE">Block Group Descriptor Table</a></dt><dd><dl><dt>3.2.1. <a href="#BG-BLOCK-BITMAP">bg_block_bitmap</a></dt><dt>3.2.2. <a href="#BG-INODE-BITMAP">bg_inode_bitmap</a></dt><dt>3.2.3. <a href="#BG-INODE-TABLE">bg_inode_table</a></dt><dt>3.2.4. <a href="#BG-FREE-BLOCKS-COUNT">bg_free_blocks_count</a></dt><dt>3.2.5. <a href="#BG-FREE-INODES-COUNT">bg_free_inodes_count</a></dt><dt>3.2.6. <a href="#BG-USED-DIRS-COUNT">bg_used_dirs_count</a></dt><dt>3.2.7. <a href="#BG-PAD">bg_pad</a></dt><dt>3.2.8. <a href="#BG-RESERVED">bg_reserved</a></dt></dl></dd><dt>3.3. <a href="#BLOCK-BITMAP">Block Bitmap</a></dt><dt>3.4. <a href="#INODE-BITMAP">Inode Bitmap</a></dt><dt>3.5. <a href="#INODE-TABLE">Inode Table</a></dt><dd><dl><dt>3.5.1. <a href="#I-MODE">i_mode</a></dt><dt>3.5.2. <a href="#I-UID">i_uid</a></dt><dt>3.5.3. <a href="#I-SIZE">i_size</a></dt><dt>3.5.4. <a href="#I-ATIME">i_atime</a></dt><dt>3.5.5. <a href="#I-CTIME">i_ctime</a></dt><dt>3.5.6. <a href="#I-MTIME">i_mtime</a></dt><dt>3.5.7. <a href="#I-DTIME">i_dtime</a></dt><dt>3.5.8. <a href="#I-GID">i_gid</a></dt><dt>3.5.9. <a href="#I-LINKS-COUNT">i_links_count</a></dt><dt>3.5.10. <a href="#I-BLOCKS">i_blocks</a></dt><dt>3.5.11. <a href="#I-FLAGS">i_flags</a></dt><dt>3.5.12. <a href="#I-OSD1">i_osd1</a></dt><dt>3.5.13. <a href="#I-BLOCK">i_block</a></dt><dt>3.5.14. <a href="#I-GENERATION">i_generation</a></dt><dt>3.5.15. <a href="#I-FILE-ACL">i_file_acl</a></dt><dt>3.5.16. <a href="#I-DIR-ACL">i_dir_acl</a></dt><dt>3.5.17. <a href="#I-FADDR">i_faddr</a></dt><dt>3.5.18. <a href="#I-OSD2">Inode i_osd2 Structure</a></dt></dl></dd><dt>3.6. <a href="#AEN1729">Locating an Inode</a></dt></dl></dd><dt>4. <a href="#DIRECTORY">Directory Structure</a></dt><dd><dl><dt>4.1. <a href="#LINKED-DIRECTORIES">Linked List Directory</a></dt><dd><dl><dt>4.1.1. <a href="#IFDIR-INODE">inode</a></dt><dt>4.1.2. <a href="#IFDIR-REC-LEN">rec_len</a></dt><dt>4.1.3. <a href="#IFDIR-NAME-LEN">name_len</a></dt><dt>4.1.4. <a href="#IFDIR-FILE-TYPE">file_type</a></dt><dt>4.1.5. <a href="#IFDIR-NAME">name</a></dt><dt>4.1.6. <a href="#DIR-SAMPLE">Sample Directory</a></dt></dl></dd><dt>4.2. <a href="#INDEXED-DIRECTORY">Indexed Directory Format</a></dt><dd><dl><dt>4.2.1. <a href="#DX-ROOT">Indexed Directory Root</a></dt><dt>4.2.2. <a href="#DX-ENTRY">Indexed Directory Entry</a></dt><dt>4.2.3. <a href="#CONTRIB-LOOKUP-ALGORITHM">Lookup Algorithm</a></dt><dt>4.2.4. <a href="#CONTRIB-INSERT-ALGORITHM">Insert Algorithm</a></dt><dt>4.2.5. <a href="#CONTRIB-SPLITTING">Splitting</a></dt><dt>4.2.6. <a href="#CONTRIB-KEY-COLLISIONS">Key Collisions</a></dt><dt>4.2.7. <a href="#CONTRIB-HASH-FUNCTION">Hash Function</a></dt><dt>4.2.8. <a href="#CONTRIB-PERFORMANCE">Performance</a></dt></dl></dd></dl></dd><dt>5. <a href="#AEN2393">File Attributes</a></dt><dd><dl><dt>5.1. <a href="#AEN2397">Standard Attributes</a></dt><dd><dl><dt>5.1.1. <a href="#AEN2399">SUID, SGID and -rwxrwxrwx</a></dt><dt>5.1.2. <a href="#AEN2403">File Size</a></dt><dt>5.1.3. <a href="#AEN2407">Owner and Group</a></dt></dl></dd><dt>5.2. <a href="#CONTRIB-EXTENDED-ATTRIBUTES">Extended Attributes</a></dt><dd><dl><dt>5.2.1. <a href="#EXTENDED-ATTRIBUTE-LAYOUT">Extended Attribute Block Layout</a></dt><dt>5.2.2. <a href="#ATTRIBUTE-BLOCK-HEADER">Extended Attribute Block Header</a></dt><dt>5.2.3. <a href="#AEN2540">Attribute Entry Header</a></dt></dl></dd><dt>5.3. <a href="#BEHAVIOUR-FLAGS">Behaviour Control Flags</a></dt><dd><dl><dt>5.3.1. <a href="#EXT2-SECRM-FL">EXT2_SECRM_FL - Secure Deletion</a></dt><dt>5.3.2. <a href="#EXT2-UNRM-FL">EXT2_UNRM_FL - Record for Undelete</a></dt><dt>5.3.3. <a href="#EXT2-COMPR-FL">EXT2_COMPR_FL - Compressed File</a></dt><dt>5.3.4. <a href="#EXT2-SYNC-FL">EXT2_SYNC_FL - Synchronous Updates</a></dt><dt>5.3.5. <a href="#EXT2-IMMUTABLE-FL">EXT2_IMMUTABLE_FL - Immutable File</a></dt><dt>5.3.6. <a href="#EXT2-APPEND-FL">EXT2_APPEND_FL - Append Only</a></dt><dt>5.3.7. <a href="#EXT2-NODUMP-FL">EXT2_NODUMP_FL - Do No Dump/Delete</a></dt><dt>5.3.8. <a href="#EXT2-NOATIME-FL">EXT2_NOATIME_FL - Do Not Update .i_atime</a></dt><dt>5.3.9. <a href="#EXT2-DIRTY-FL">EXT2_DIRTY_FL - Dirty</a></dt><dt>5.3.10. <a href="#EXT2-COMPRBLK-FL">EXT2_COMPRBLK_FL - Compressed Blocks</a></dt><dt>5.3.11. <a href="#EXT2-NOCOMPR-FL">EXT2_NOCOMPR_FL - Access Raw Compressed Data</a></dt><dt>5.3.12. <a href="#EXT2-ECOMPR-FL">EXT2_ECOMPR_FL - Compression Error</a></dt><dt>5.3.13. <a href="#EXT2-BTREE-FL">EXT2_BTREE_FL - B-Tree Format Directory</a></dt><dt>5.3.14. <a href="#EXT2-INDEX-FL">EXT2_INDEX_FL - Hash Indexed Directory</a></dt><dt>5.3.15. <a href="#EXT2-IMAGIC-FL">EXT2_IMAGIC_FL -</a></dt><dt>5.3.16. <a href="#EXT3-JOURNAL-DATA-FL">EXT2_JOURNAL_DATA_FL - Journal File Data</a></dt><dt>5.3.17. <a href="#EXT2-RESERVED-FL">EXT2_RESERVED_FL - Reserved</a></dt></dl></dd></dl></dd><dt>A. <a href="#AEN2728">Credits</a></dt></dl></div><div class="LOT"><dl class="LOT"><dt><b>List of Tables</b></dt><dt>2-1. <a href="#BLOCK-SIZE-IMPACT">Impact of Block Sizes</a></dt><dt>3-1. <a href="#DISK-LAYOUT-SAMPLE-FLOPPY">Sample Floppy Disk Layout, 1KiB blocks</a></dt><dt>3-2. <a href="#DISK-LAYOUT-SAMPLE-20MB">Sample 20mb Partition Layout</a></dt><dt>3-3. <a href="#SUPERBLOCK-STRUCTURE">Superblock Structure</a></dt><dt>3-4. <a href="#S-STATE-VALUES">Defined s_state Values</a></dt><dt>3-5. <a href="#EXT2-ERRORS">Defined s_errors Values</a></dt><dt>3-6. <a href="#S-CREATOR-OS-VALUES">Defined s_creator_os Values</a></dt><dt>3-7. <a href="#S-REV-LEVEL-VALUES">Defined s_rev_level Values</a></dt><dt>3-8. <a href="#S-FEATURE-COMPAT-VALUES">Defined s_feature_compat Values</a></dt><dt>3-9. <a href="#S-FEATURE-INCOMPAT-VALUES">Defined s_feature_incompat Values</a></dt><dt>3-10. <a href="#S-FEATURE-RO-COMPAT-VALUES">Defined s_feature_ro_compat Values</a></dt><dt>3-11. <a href="#S-ALGO-BITMAP-VALUES">Defined s_algo_bitmap Values</a></dt><dt>3-12. <a href="#BLOCK-GROUP-DESCRIPTOR-STRUCTURE">Block Group Descriptor Structure</a></dt><dt>3-13. <a href="#INODE-STRUCTURE">Inode Structure</a></dt><dt>3-14. <a href="#RESERVED-INODES-VALUES">Defined Reserved Inodes</a></dt><dt>3-15. <a href="#AEN1288">Defined i_mode Values</a></dt><dt>3-16. <a href="#DEFINED-I-FLAGS-VALUES">Defined i_flags Values</a></dt><dt>3-17. <a href="#I-OSD2-HURD-STRUCTURE">Inode i_osd2 Structure: Hurd</a></dt><dt>3-18. <a href="#I-OSD2-LINUX-STRUCTURE">Inode i_osd2 Structure: Linux</a></dt><dt>3-19. <a href="#I-OSD2-MASIX-STRUCTURE">Inode i_osd2 Structure: Masix</a></dt><dt>3-20. <a href="#INODE-COMPUTATION-SAMPLE">Sample Inode Computations</a></dt><dt>4-1. <a href="#LINKED-DIRECTORY-ENTRY-STRUCTURE">Linked Directory Entry Structure</a></dt><dt>4-2. <a href="#IFDIR-FILE-TYPE-VALUES">Defined Inode File Type Values</a></dt><dt>4-3. <a href="#SAMPLE-LINKED-DIRECTORY-DATA">Sample Linked Directory Data Layout, 4KiB blocks</a></dt><dt>4-4. <a href="#DX-ROOT-STRUCTURE">Indexed Directory Root Structure</a></dt><dt>4-5. <a href="#DEFINED-DX-HASH-VERSION-VALUES">Defined Indexed Directory Hash Versions</a></dt><dt>4-6. <a href="#DX-ENTRY-STRUCTURE">Indexed Directory Entry Structure (dx_entry)</a></dt><dt>4-7. <a href="#DX-ENTRY-COUNTLIMIT">Indexed Directory Entry Count and Limit Structure</a></dt><dt>5-1. <a href="#EXTENDED-ATTRIBUTE-BLOCK-LAYOUT">Extended Attribute Block Layout</a></dt><dt>5-2. <a href="#ATTRIBUTE-BLOCK-HEADER-STRUCTURE">ext2_xattr_header structure</a></dt><dt>5-3. <a href="#AEN2579">Behaviour Control Flags</a></dt></dl></div><div class="LOT"><dl class="LOT"><dt><b>List of Figures</b></dt><dt>4-1. <a href="#AEN2384">Performance of Indexed Directories</a></dt><dt>5-1. <a href="#AEN2542">ext2_xattr_header structure</a></dt></dl></div><div class="PREFACE"><hr><h1><a name="AEN18"></a>About this book</h1><p>	The latest version of this document may be downloaded from
+	http://www.freesoftware.fsf.org/ext2-doc/
+  </p><p>	This book is intended as an  introduction  and  guide  to  the  Second
+	Extended File System, also known as Ext2.  The reader  should  have  a
+	good understanding of the purpose of a file  system  as  well  as  the
+	associated vocabulary (file, directory, partition, etc).
+  </p><p>	Implementing file system drivers is already a daunting task, unfortunately
+	except for tidbits of information here and there most of the documentation
+	for the Second Extended Filesystem is in source files.
+  </p><p>	Hopefully this document will fix this problem, may it be of help to as
+	many of you as possible.
+  </p><p>	<span class="emphasis"><i class="EMPHASIS">Unless otherwise stated, all values  are  stored  in  little
+	endian byte order.</i></span>
+  </p></div><div class="CHAPTER"><hr><h1><a name="HISTORY"></a>Chapter 1. Historical Background</h1><p>	Written by Remy Card, Theodore Ts'o and Stephen Tweedie as a major rewrite
+	of the Extended Filesystem, it was first released to the public on January
+	1993 as part of the Linux kernel.  One of its greatest achievement is the
+	ability to extend the file system functionalities while maintaining the
+	internal structures.  This allowed an easier development of the Third
+	Extended Filesystem (ext3) and the Fourth Extended Filesystem (ext4).
+  </p><p>	There are implementations available in most operating system including but
+	not limited to NetBSD, FreeBSD, the GNU HURD, Microsoft Windows, IBM OS/2
+	and RISC OS.
+  </p><p>	Although newer file systems have been designed, such as Ext3 and Ext4, the
+	Second Extended Filesystem is still prefered on flash drives as it requires
+	fewer write operations (since it has no journal).  The structures of Ext3
+	and Ext4 are based on Ext2 and add some additional options such as journaling,
+	journal checksums, extents, online defragmentation, delayed allocations and
+	larger directories to name but a few.
+  </p></div><div class="CHAPTER"><hr><h1><a name="DEFINITIONS"></a>Chapter 2. Definitions</h1><p>	The Second Extended Filesystem uses blocks as the basic unit of storage,
+	inodes as the mean of keeping track of files and system objects, block groups
+	to logically split the disk into more manageable sections, directories to
+	provide a hierarchical organization of files, block and inode bitmaps to keep
+	track of allocated blocks and inodes, and superblocks to define
+	the parameters of the file system and its overall state.
+  </p><p>	Ext2 shares many properties with traditional Unix filesystems.  It has space
+	in the specification for Access Control Lists (ACLs), fragments, undeletion
+	and compression.  There is also a versioning mechanism to allow new
+	features (such as journalling) to be added in a maximally compatible
+	manner; such as in Ext3 and Ext4.
+  </p><div class="SECT1"><hr><h2 class="SECT1"><a name="DEF-BLOCKS">2.1. Blocks</a></h2><p>	A partition, disk, file or block device formated with a Second Extended
+	Filesystem is divided into small groups of sectors called <span class="QUOTE">"blocks"</span>.  These blocks are then grouped into larger units called block groups.
+   </p><p>	The size of the blocks are usually determined when formatting the disk
+	and will have an impact on performance, maximum file size, and maximum
+	file system size.  Block sizes commonly implemented include 1KiB,
+	2KiB, 4KiB and 8KiB although provisions in the superblock allow for
+	block sizes as big as 1024 * (2^31)-1 (see
+	<a href="#S-LOG-BLOCK-SIZE">s_log_block_size</a>).
+   </p><p>	Depending on the implementation, some architectures may impose limits on
+	which block sizes are supported.  For example, a Linux 2.6
+	implementation on DEC Alpha uses blocks of 8KiB but the same
+	implementation on a Intel 386 processor will support a maximum block
+	size of 4KiB.
+   </p><div class="TABLE"><a name="BLOCK-SIZE-IMPACT"></a><p><b>Table 2-1. Impact of Block Sizes</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col><col><col><col><col></colgroup><thead><tr><th>Upper Limits</th><th>1KiB</th><th>2KiB</th><th>4KiB</th><th>8KiB</th></tr></thead><tbody><tr><td>file system blocks</td><td>2,147,483,647</td><td>2,147,483,647</td><td>2,147,483,647</td><td>2,147,483,647</td></tr><tr><td>blocks per block group</td><td>8,192</td><td>16,384</td><td>32,768</td><td>65,536</td></tr><tr><td>inodes per block group</td><td>8,192</td><td>16,384</td><td>32,768</td><td>65,536</td></tr><tr><td>bytes per block group</td><td>8,388,608 (8MiB)</td><td>33,554,432 (32MiB)</td><td>134,217,728 (128MiB)</td><td>536,870,912 (512MiB)</td></tr><tr><td>file system size (real)</td><td>4,398,046,509,056 (4TiB)</td><td>8,796,093,018,112 (8TiB)</td><td>17,592,186,036,224 (16TiB)</td><td>35,184,372,080,640 (32TiB)</td></tr><tr><td>file system size (Linux)</td><td>2,199,023,254,528 (2TiB)
+        <a name="AEN86" href="#FTN.AEN86"><span class="footnote">[a]</span></a>
+       </td><td>8,796,093,018,112 (8TiB)</td><td>17,592,186,036,224 (16TiB)</td><td>35,184,372,080,640 (32TiB)</td></tr><tr><td>blocks per file</td><td>16,843,020</td><td>134,217,728</td><td>1,074,791,436</td><td>8,594,130,956</td></tr><tr><td>file size (real)</td><td>17,247,252,480 (16GiB)</td><td>274,877,906,944 (256GiB)</td><td>2,199,023,255,552 (2TiB)</td><td>2,199,023,255,552 (2TiB)</td></tr><tr><td>file size (Linux 2.6.28)</td><td>17,247,252,480 (16GiB)</td><td>274,877,906,944 (256GiB)</td><td>2,199,023,255,552 (2TiB)</td><td>2,199,023,255,552 (2TiB)</td></tr></tbody><tbody><tr><td colspan="5">Notes:<br><a name="FTN.AEN86">a. </a>	This limit comes from the maximum size of a block device in
+	Linux 2.4; it is unclear whether a Linux 2.6 kernel using a 1KiB block
+	size could properly format and mount a Ext2 partition larger than 2TiB.
+         <br></td></tr></tbody></table></div><p>	Note: the 2TiB file 
+size is limited by the i_blocks value in the inode which indicates the 
+number of 512-bytes sector rather than the actual number of ext2 blocks 
+allocated.
+   </p></div><div class="SECT1"><hr><h2 class="SECT1"><a name="DEF-BLOCK-GROUPS">2.2. Block Groups</a></h2><table class="EPIGRAPH" border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr><td width="45%">&nbsp;</td><td align="LEFT" valign="TOP" width="45%"><i><p><i>This definition comes from the Linux Kernel Documentation.</i></p></i></td></tr></tbody></table><p>	Blocks are clustered into block groups in order to reduce fragmentation
+	and minimise the amount of head seeking when reading a large amount
+	of consecutive data.  Information about each block group is kept in a
+	descriptor table stored in the block(s) immediately after the superblock.
+	Two blocks near the start of each group are reserved for the block usage
+	bitmap and the inode usage bitmap which show which blocks and inodes
+	are in use.  Since each bitmap is limited to a single block, this means
+	that the maximum size of a block group is 8 times the size of a block.
+   </p><p>	The block(s) following the bitmaps in each block group are designated
+	as the inode table for that block group and the remainder are the data
+	blocks.  The block allocation algorithm attempts to allocate data blocks
+	in the same block group as the inode which contains them.
+   </p></div><div class="SECT1"><hr><h2 class="SECT1"><a name="DEF-DIRECTORIES">2.3. Directories</a></h2><table class="EPIGRAPH" border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr><td width="45%">&nbsp;</td><td align="LEFT" valign="TOP" width="45%"><i><p><i>This definition comes from the Linux Kernel Documentation with some minor
+	alterations.</i></p></i></td></tr></tbody></table><p>	A directory is a filesystem object and has an inode just like a file.
+	It is a specially formatted file containing records which associate
+	each name with an inode number.  Later revisions of the filesystem also
+	encode the type of the object (file, directory, symlink, device, fifo,
+	socket) to avoid the need to check the inode itself for this information
+   </p><p>	The inode allocation code should try to assign inodes which are in the same
+	block group as the directory in which they are first created.
+   </p><p>	The original Ext2 revision used singly-linked list to store
+	the filenames in the directory; newer revisions are able to use hashes
+	and binary trees.
+   </p><p>	Also note that as directory grows additional blocks are assigned to
+	store the additional file records. When filenames are removed, some
+	implementations do not free these additional blocks.
+   </p></div><div class="SECT1"><hr><h2 class="SECT1"><a name="DEF-INODES">2.4. Inodes</a></h2><table class="EPIGRAPH" border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr><td width="45%">&nbsp;</td><td align="LEFT" valign="TOP" width="45%"><i><p><i>This definition comes from the Linux Kernel Documentation with some minor
+	alterations.</i></p></i></td></tr></tbody></table><p>	The inode (index node) is a fundamental concept in the ext2 filesystem.
+	Each object in the filesystem is represented by an inode.  The inode
+	structure contains pointers to the filesystem blocks which contain the
+	data held in the object and all of the metadata about an object except
+	its name.  The metadata about an object includes the permissions, owner,
+	group, flags, size, number of blocks used, access time, change time,
+	modification time, deletion time, number of links, fragments, version
+	(for NFS) and extended attributes (EAs) and/or Access Control Lists (ACLs).
+   </p><p>	There are some reserved fields which are currently unused in the inode
+	structure and several which are overloaded.  One field is reserved for the
+	directory ACL if the inode is a directory and alternately for the top 32
+	bits of the file size if the inode is a regular file (allowing file sizes
+	larger than 2GB).  The translator field is unused under Linux, but is used
+	by the HURD to reference the inode of a program which will be used to
+	interpret this object.  Most of the remaining reserved fields have been
+	used up for both Linux and the HURD for larger owner and group fields,
+	The HURD also has a larger mode field so it uses another of the remaining
+	fields to store the extra bits.
+   </p><p>	There are pointers to the first 12 blocks which contain the file's data
+	in the inode.  There is a pointer to an indirect block (which contains
+	pointers to the next set of blocks), a pointer to a doubly-indirect
+	block (which contains pointers to indirect blocks) and a pointer to a
+	trebly-indirect block (which contains pointers to doubly-indirect blocks).
+   </p><p>	Some filesystem specific behaviour flags are also stored and allow for
+	specific filesystem behaviour on a per-file basis. There are flags for
+	secure deletion, undeletable, compression, synchronous updates,
+	immutability, append-only, dumpable, no-atime, indexed directories, and
+	data-journaling.
+   </p><p>	Many of the filesystem specific behaviour flags, like journaling, have been
+	implemented in newer filesystems like Ext3 and Ext4, while some other
+	are still under development.
+   </p><p>	All the inodes are stored in inode tables, with one inode table per block group.
+   </p></div><div class="SECT1"><hr><h2 class="SECT1"><a name="DEF-SUPERBLOCK">2.5. Superblocks</a></h2><table class="EPIGRAPH" border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr><td width="45%">&nbsp;</td><td align="LEFT" valign="TOP" width="45%"><i><p><i>This definition comes from the Linux Kernel Documentation with some minor
+	alterations.</i></p></i></td></tr></tbody></table><p>	The superblock contains all the information about the configuration of
+	the filesystem.  The information in the superblock contains fields
+	such as the total number of inodes and blocks in the filesystem and how
+	many are free, how many inodes and blocks are in each block group, when
+	the filesystem was mounted (and if it was cleanly unmounted), when it
+	was modified, what version of the filesystem it is and which OS created
+	it.
+   </p><p>	The primary copy of the superblock is stored at an offset of 1024 bytes
+	from the start of the device, and it is essential to mounting the
+	filesystem.  Since it is so important, backup copies of the superblock
+	are stored in block groups throughout the filesystem.
+   </p><p>	The first version of ext2 (revision 0) stores a copy at the start of
+	every block group, along with backups of the group descriptor block(s).
+	Because this can consume a considerable amount of space for large
+	filesystems, later revisions can optionally reduce the number of backup
+	copies by only putting backups in specific groups (this is the sparse
+	superblock feature). The groups chosen are 0, 1 and powers of 3, 5 and 7.
+   </p><p>	Revision 1 and higher of the filesystem also store extra fields, such as
+	a volume name, a unique identification number, the inode size, and space
+	for optional filesystem features to store configuration info.
+   </p><p>	All fields in the superblock (as in all other ext2 structures) are stored
+	on the disc in little endian format, so a filesystem is portable between
+	machines without having to know what machine it was created on.
+   </p></div><div class="SECT1"><hr><h2 class="SECT1"><a name="DEF-SYMBOLIC-LINKS">2.6. Symbolic Links</a></h2><table class="EPIGRAPH" border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr><td width="45%">&nbsp;</td><td align="LEFT" valign="TOP" width="45%"><i><p><i>This definition comes from Wikipedia.org with some minor
+	alterations.</i></p></i></td></tr></tbody></table><p>	A symbolic link (also symlink or soft link) is a special type of file that
+	contains a reference to another file or directory in the form of an
+	absolute or relative path and that affects pathname resolution.
+   </p><p>	Symbolic links operate transparently for most operations: programs which
+	read or write to files named by a symbolic link will behave as if
+	operating directly on the target file.  However, programs that need to
+	handle symbolic links specially (e.g., backup utilities) may identify
+	and manipulate them directly.
+   </p><p>	A symbolic link merely contains a text string that is interpreted and
+	followed by the operating system as a path to another file or directory.
+	It is a file on its own and can exist independently of its target.  The
+	symbolic links do not affect an inode link count.  If a symbolic link is
+	deleted, its target remains unaffected.  If the target is moved, renamed
+	or deleted, any symbolic link that used to point to it continues to exist
+	but now points to a non-existing file.  Symbolic links pointing to
+	non-existing files are sometimes called <span class="QUOTE">"orphaned"</span> or 
+	<span class="QUOTE">"dangling"</span>.
+   </p><p>	Symbolic links are also filesystem objects with inodes.  For all symlink
+	shorter than 60 bytes long, the data is stored within the inode itself; it
+	uses the fields which would normally be used to store the pointers to data
+	blocks. This is a worthwhile optimisation as it we avoid allocating a full
+	block for the symlink, and most symlinks are less than 60 characters long.
+   </p><p>	Symbolic links can also point to files or directories of other partitions
+	and file systems.
+   </p></div></div><div class="CHAPTER"><hr><h1><a name="DISK-ORGANISATION"></a>Chapter 3. Disk Organization</h1><p>	An Ext2 file systems starts with a <a href="#SUPERBLOCK">superblock</a>
+	located at byte offset 1024 from the start of the volume. This is block
+ 1
+	for a 1KiB block formatted volume or within block 0 for larger block 
+sizes.  Note that the size of the superblock is constant regardless of 
+the block size.
+  </p><p>	On the next block(s) following the superblock, is the 
+	Block Group Descriptor Table; which provides an overview of how the volume
+	is split into block groups and where to find the inode bitmap, the block bitmap,
+	and the inode table for each block group.
+  </p><p>	In revision 0 of Ext2, each block group consists of a copy superblock, a copy of the
+	block group descriptor table, a block bitmap, an inode bitmap, an inode table,
+	and data blocks.
+  </p><p>	With the introduction of revision 1 and the sparse superblock feature in Ext2,
+	only specific block groups contain copies of the superblock and block group
+	descriptor table.  All block groups still contain the block bitmap, inode
+	bitmap, inode table, and data blocks.  The shadow copies of the superblock can
+	be located in block groups 0, 1 and powers of 3, 5 and 7.
+  </p><p>	The block bitmap and inode bitmap are limited to 1 block each per block group,
+	so the total blocks per block group is therefore limited. (More information in
+	the <a href="#BLOCK-SIZE-IMPACT">Block Size Impact</a> table).
+  </p><p>	Each data block may also be further divided into <span class="QUOTE">"fragments"</span>. As of
+	Linux 2.6.28, support for fragment was still not implemented in the kernel;
+	it is therefore suggested to ensure the fragment size is equal to the
+	block size so as to maintain compatibility.
+  </p><div class="TABLE"><a name="DISK-LAYOUT-SAMPLE-FLOPPY"></a><p><b>Table 3-1. Sample Floppy Disk Layout, 1KiB blocks</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Block Offset</th><th>Length</th><th>Description</th></tr></thead><tbody><tr><td>byte 0</td><td>512 bytes</td><td>boot record (if present)</td></tr><tr><td>byte 512</td><td>512 bytes</td><td>additional boot record data (if present)</td></tr><tr><td colspan="3" align="LEFT">-- block group 0, blocks 1 to 1439 --</td></tr><tr><td>byte 1024</td><td>1024 bytes</td><td><a href="#SUPERBLOCK">superblock</a></td></tr><tr><td>block 2</td><td>1 block</td><td><a href="#BLOCK-GROUP-DESCRIPTOR-TABLE">block group descriptor table</a></td></tr><tr><td>block 3</td><td>1 block</td><td><a href="#BLOCK-BITMAP">block bitmap</a></td></tr><tr><td>block 4</td><td>1 block</td><td><a href="#INODE-BITMAP">inode bitmap</a></td></tr><tr><td>block 5</td><td>23 blocks</td><td><a href="#INODE-TABLE">inode table</a></td></tr><tr><td>block 28</td><td>1412 blocks</td><td>data blocks</td></tr></tbody></table></div><p>	For the curious, block 0 always points to the first sector of the disk
+	or partition and will always contain the boot record if one is present.
+  </p><p>	The superblock is always located at byte offset 1024 from the start of
+	the disk or partition.  In a 1KiB block-size formatted file system, this is
+	block 1, but it will always be block 0 (at 1024 bytes within block 0) in
+	larger block size file systems.
+  </p><p>	And here's the organisation of a 20MB ext2 file system, using 1KiB blocks:
+  </p><div class="TABLE"><a name="DISK-LAYOUT-SAMPLE-20MB"></a><p><b>Table 3-2. Sample 20mb Partition Layout</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Block Offset</th><th>Length</th><th>Description</th></tr></thead><tbody><tr><td>byte 0</td><td>512 bytes</td><td>boot record (if present)</td></tr><tr><td>byte 512</td><td>512 bytes</td><td>additional boot record data (if present)</td></tr><tr><td colspan="3" align="LEFT">-- block group 0, blocks 1 to 8192 --</td></tr><tr><td>byte 1024</td><td>1024 bytes</td><td><a href="#SUPERBLOCK">superblock</a></td></tr><tr><td>block 2</td><td>1 block</td><td><a href="#BLOCK-GROUP-DESCRIPTOR-TABLE">block group descriptor table</a></td></tr><tr><td>block 3</td><td>1 block</td><td><a href="#BLOCK-BITMAP">block bitmap</a></td></tr><tr><td>block 4</td><td>1 block</td><td><a href="#INODE-BITMAP">inode bitmap</a></td></tr><tr><td>block 5</td><td>214 blocks</td><td><a href="#INODE-TABLE">inode table</a></td></tr><tr><td>block 219</td><td>7974 blocks</td><td>data blocks</td></tr><tr><td colspan="3" align="LEFT">-- block group 1, blocks 8193 to 16384 --</td></tr><tr><td>block 8193</td><td>1 block</td><td><a href="#SUPERBLOCK">superblock</a> backup</td></tr><tr><td>block 8194</td><td>1 block</td><td><a href="#BLOCK-GROUP-DESCRIPTOR-TABLE">block group descriptor table</a> backup</td></tr><tr><td>block 8195</td><td>1 block</td><td><a href="#BLOCK-BITMAP">block bitmap</a></td></tr><tr><td>block 8196</td><td>1 block</td><td><a href="#INODE-BITMAP">inode bitmap</a></td></tr><tr><td>block 8197</td><td>214 blocks</td><td><a href="#INODE-TABLE">inode table</a></td></tr><tr><td>block 8408</td><td>7974 blocks</td><td>data blocks</td></tr><tr><td colspan="3" align="LEFT">-- block group 2, blocks 16385 to 24576 --</td></tr><tr><td>block 16385</td><td>1 block</td><td><a href="#BLOCK-BITMAP">block bitmap</a></td></tr><tr><td>block 16386</td><td>1 block</td><td><a href="#INODE-BITMAP">inode bitmap</a></td></tr><tr><td>block 16387</td><td>214 blocks</td><td><a href="#INODE-TABLE">inode table</a></td></tr><tr><td>block 16601</td><td>3879 blocks</td><td>data blocks</td></tr></tbody></table></div><p>	The layout on disk is very predictable as long as you know a few basic
+	information; block size, blocks per  group,  inodes  per  group.  This
+	information  is  all  located  in,  or  can  be  computed  from,   the
+	<code class="STRUCTNAME">superblock</code> structure.
+  </p><p>	Nevertheless, unless the image was crafted with controlled parameters,
+	the position of the various structures on disk (except the superblock)
+	should never be assumed.  Always load the superblock first.
+  </p><p>	Notice how block 0 is not part of the block group 0 in 1KiB block
+	size file systems.  The reason for this is block group 0 always starts
+	with the block containing the superblock.  Hence, on 1KiB block systems,
+	block group 0 starts at block 1, but on larger block sizes it starts on
+	block 0.  For more information, see the
+	<a href="#S-FIRST-DATA-BLOCK">s_first_data_block</a> superblock
+	entry.
+  </p><div class="SECT1"><hr><h2 class="SECT1"><a name="SUPERBLOCK">3.1. Superblock</a></h2><p>	The <a href="#DEF-SUPERBLOCK">superblock</a> is always located at
+	byte offset 1024 from the beginning of the file, block device or
+	partition formatted with Ext2 and later variants (Ext3, Ext4).
+   </p><p>	Its structure is mostly constant from Ext2 to Ext3 and Ext4 with only
+	some minor changes.
+   </p><div class="TABLE"><a name="SUPERBLOCK-STRUCTURE"></a><p><b>Table 3-3. Superblock Structure</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytes)</th><th>Description</th></tr></thead><tbody><tr><td>0</td><td>4</td><td><a href="#S-INODES-COUNT">s_inodes_count</a></td></tr><tr><td>4</td><td>4</td><td><a href="#S-BLOCKS-COUNT">s_blocks_count</a></td></tr><tr><td>8</td><td>4</td><td><a href="#S-R-BLOCKS-COUNT">s_r_blocks_count</a></td></tr><tr><td>12</td><td>4</td><td><a href="#S-FREE-BLOCKS-COUNT">s_free_blocks_count</a></td></tr><tr><td>16</td><td>4</td><td><a href="#S-FREE-INODES-COUNT">s_free_inodes_count</a></td></tr><tr><td>20</td><td>4</td><td><a href="#S-FIRST-DATA-BLOCK">s_first_data_block</a></td></tr><tr><td>24</td><td>4</td><td><a href="#S-LOG-BLOCK-SIZE">s_log_block_size</a></td></tr><tr><td>28</td><td>4</td><td><a href="#S-LOG-FRAG-SIZE">s_log_frag_size</a></td></tr><tr><td>32</td><td>4</td><td><a href="#S-BLOCKS-PER-GROUP">s_blocks_per_group</a></td></tr><tr><td>36</td><td>4</td><td><a href="#S-FRAGS-PER-GROUP">s_frags_per_group</a></td></tr><tr><td>40</td><td>4</td><td><a href="#S-INODES-PER-GROUP">s_inodes_per_group</a></td></tr><tr><td>44</td><td>4</td><td><a href="#S-MTIME">s_mtime</a></td></tr><tr><td>48</td><td>4</td><td><a href="#S-WTIME">s_wtime</a></td></tr><tr><td>52</td><td>2</td><td><a href="#S-MNT-COUNT">s_mnt_count</a></td></tr><tr><td>54</td><td>2</td><td><a href="#S-MAX-MNT-COUNT">s_max_mnt_count</a></td></tr><tr><td>56</td><td>2</td><td><a href="#S-MAGIC">s_magic</a></td></tr><tr><td>58</td><td>2</td><td><a href="#S-STATE">s_state</a></td></tr><tr><td>60</td><td>2</td><td><a href="#S-ERRORS">s_errors</a></td></tr><tr><td>62</td><td>2</td><td><a href="#S-MINOR-REV-LEVEL">s_minor_rev_level</a></td></tr><tr><td>64</td><td>4</td><td><a href="#S-LASTCHECK">s_lastcheck</a></td></tr><tr><td>68</td><td>4</td><td><a href="#S-CHECKINTERVAL">s_checkinterval</a></td></tr><tr><td>72</td><td>4</td><td><a href="#S-CREATOR-OS">s_creator_os</a></td></tr><tr><td>76</td><td>4</td><td><a href="#S-REV-LEVEL">s_rev_level</a></td></tr><tr><td>80</td><td>2</td><td><a href="#S-DEF-RESUID">s_def_resuid</a></td></tr><tr><td>82</td><td>2</td><td><a href="#S-DEF-RESGID">s_def_resgid</a></td></tr><tr><td colspan="3" align="LEFT">-- EXT2_DYNAMIC_REV Specific --</td></tr><tr><td>84</td><td>4</td><td><a href="#S-FIRST-INO">s_first_ino</a></td></tr><tr><td>88</td><td>2</td><td><a href="#S-INODE-SIZE">s_inode_size</a></td></tr><tr><td>90</td><td>2</td><td><a href="#S-BLOCK-GROUP-NR">s_block_group_nr</a></td></tr><tr><td>92</td><td>4</td><td><a href="#S-FEATURE-COMPAT">s_feature_compat</a></td></tr><tr><td>96</td><td>4</td><td><a href="#S-FEATURE-INCOMPAT">s_feature_incompat</a></td></tr><tr><td>100</td><td>4</td><td><a href="#S-FEATURE-RO-COMPAT">s_feature_ro_compat</a></td></tr><tr><td>104</td><td>16</td><td><a href="#S-UUID">s_uuid</a></td></tr><tr><td>120</td><td>16</td><td><a href="#S-VOLUME-NAME">s_volume_name</a></td></tr><tr><td>136</td><td>64</td><td><a href="#S-LAST-MOUNTED">s_last_mounted</a></td></tr><tr><td>200</td><td>4</td><td><a href="#S-ALGO-BITMAP">s_algo_bitmap</a></td></tr><tr><td colspan="3" align="LEFT">-- Performance Hints --</td></tr><tr><td>204</td><td>1</td><td><a href="#S-PREALLOC-BLOCKS">s_prealloc_blocks</a></td></tr><tr><td>205</td><td>1</td><td><a href="#S-PREALLOC-DIR-BLOCKS">s_prealloc_dir_blocks</a></td></tr><tr><td>206</td><td>2</td><td>(alignment)</td></tr><tr><td colspan="3" align="LEFT">-- Journaling Support --</td></tr><tr><td>208</td><td>16</td><td><a href="#S-JOURNAL-UUID">s_journal_uuid</a></td></tr><tr><td>224</td><td>4</td><td><a href="#S-JOURNAL-INUM">s_journal_inum</a></td></tr><tr><td>228</td><td>4</td><td><a href="#S-JOURNAL-DEV">s_journal_dev</a></td></tr><tr><td>232</td><td>4</td><td><a href="#S-LAST-ORPHAN">s_last_orphan</a></td></tr><tr><td colspan="3" align="LEFT">-- Directory Indexing Support --</td></tr><tr><td>236</td><td>4 x 4</td><td><a href="#S-HASH-SEED">s_hash_seed</a></td></tr><tr><td>252</td><td>1</td><td><a href="#S-DEF-HASH-VERSION">s_def_hash_version</a></td></tr><tr><td>253</td><td>3</td><td>padding - reserved for future expansion</td></tr><tr><td colspan="3" align="LEFT">-- Other options --</td></tr><tr><td>256</td><td>4</td><td><a href="#S-DEFAULT-MOUNT-OPTIONS">s_default_mount_options</a></td></tr><tr><td>260</td><td>4</td><td><a href="#S-FIRST-META-BG">s_first_meta_bg</a></td></tr><tr><td>264</td><td>760</td><td>Unused - reserved for future revisions</td></tr></tbody></table></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-INODES-COUNT">3.1.1. s_inodes_count</a></h3><p>	32bit value indicating the total number of inodes, both used and free,
+	in the file system.  This value must be lower or equal to
+	(s_inodes_per_group * number of block groups).  It must be equal to the
+	sum of the inodes defined in each block group.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-BLOCKS-COUNT">3.1.2. s_blocks_count</a></h3><p>	32bit value indicating the total number of blocks in the system including
+	all used, free and reserved. This value must be lower or equal to
+	(s_blocks_per_group * number of block groups). It must be equal to the
+	sum of the blocks defined in each block group.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-R-BLOCKS-COUNT">3.1.3. s_r_blocks_count</a></h3><p>	32bit value indicating the total number of  blocks  reserved  for  the
+	usage of the super user.  This is most useful if  for  some  reason  a
+	user, maliciously or not, fill the file system to capacity; the  super
+	user will have this specified amount of free blocks at his disposal so
+	he can edit and save configuration files.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-FREE-BLOCKS-COUNT">3.1.4. s_free_blocks_count</a></h3><p>	32bit value indicating the total number of free blocks, including  the
+	number of reserved blocks (see
+	<a href="#S-R-BLOCKS-COUNT">s_r_blocks_count</a>).  This is a  sum
+	of all free blocks of all the block groups.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-FREE-INODES-COUNT">3.1.5. s_free_inodes_count</a></h3><p>	32bit value indicating the total number of free inodes.  This is a sum
+	of all free inodes of all the block groups.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-FIRST-DATA-BLOCK">3.1.6. s_first_data_block</a></h3><p>	32bit value identifying the first data block, in other word the id  of
+	the block containing the <code class="STRUCTNAME">superblock</code> structure.
+    </p><p>	Note that this value is always 0 for file systems with  a  block  size
+	larger than 1KB, and always 1 for file systems with a  block  size  of
+	1KB.  The <code class="STRUCTNAME">superblock</code> is <span class="emphasis"><i class="EMPHASIS">always</i></span> starting at
+	the 1024th byte of the disk, which normally happens to  be  the  first
+	byte of the 3rd sector.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-LOG-BLOCK-SIZE">3.1.7. s_log_block_size</a></h3><p>	The block size is computed using this 32bit value  as  the  number  of
+	bits to shift left the value 1024.  This value may only be positive.
+    </p><pre class="PROGRAMLISTING">block size = 1024 &lt;&lt; s_log_block_size;
+    </pre><p>	Common block sizes include 1KiB, 2KiB, 4KiB and 8Kib. For information
+	about the impact of selecting a block size, see
+	<a href="#BLOCK-SIZE-IMPACT">Impact of Block Sizes</a>.
+    </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	In Linux, at least up to 2.6.28, the block size must be at least as
+	large as the sector size of the block device, and cannot be larger than
+	the supported memory page of the architecture.
+     </p></td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-LOG-FRAG-SIZE">3.1.8. s_log_frag_size</a></h3><p>	The fragment size is computed using this 32bit value as the number  of
+	bits to shift left the value 1024.  Note that a negative  value  would
+	shift the bit right rather than left.
+    </p><pre class="PROGRAMLISTING">if( positive )
+  fragmnet size = 1024 &lt;&lt; s_log_frag_size;
+else
+  framgnet size = 1024 &gt;&gt; -s_log_frag_size;
+    </pre><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	As of Linux 2.6.28 no support exists for an Ext2
+	partition with fragment size smaller than the block size, as this feature
+	seems to not be available.
+     </p></td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-BLOCKS-PER-GROUP">3.1.9. s_blocks_per_group</a></h3><p>	32bit value indicating the total number  of  blocks  per  group.  This
+	value in combination with
+	<a href="#S-FIRST-DATA-BLOCK">s_first_data_block</a> can  be  used
+	to determine the block groups boundaries.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-FRAGS-PER-GROUP">3.1.10. s_frags_per_group</a></h3><p>	32bit value indicating the total number of fragments per group.  It is
+	also used to determine the size of the <code class="STRUCTNAME">block bitmap</code>  of
+	each block group.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-INODES-PER-GROUP">3.1.11. s_inodes_per_group</a></h3><p>	32bit value indicating the total number of inodes per group.  This  is
+	also used to determine the size of the <code class="STRUCTNAME">inode bitmap</code>  of
+	each block group.  Note that you cannot have more than
+	(block size in bytes * 8) inodes per group as the inode bitmap
+	must fit within a single block. This value must be a perfect multiple
+	of the number of inodes that can fit in a block
+	((1024&lt;&lt;s_log_block_size)/s_inode_size).
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-MTIME">3.1.12. s_mtime</a></h3><p>	Unix time, as defined by POSIX, of the last time the file  system  was
+	mounted.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-WTIME">3.1.13. s_wtime</a></h3><p>	Unix time, as defined by POSIX, of the last write access to  the  file
+	system.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-MNT-COUNT">3.1.14. s_mnt_count</a></h3><p>	32bit value indicating how many  time  the  file  system  was  mounted
+	since the last time it was fully verified.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-MAX-MNT-COUNT">3.1.15. s_max_mnt_count</a></h3><p>	32bit value indicating the maximum  number  of  times  that  the  file
+	system may be mounted before a full check is performed.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-MAGIC">3.1.16. s_magic</a></h3><p>	16bit value  identifying  the  file  system  as  Ext2.  The  value  is
+	currently fixed to <code class="CONSTANT">EXT2_SUPER_MAGIC</code> of value 0xEF53.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-STATE">3.1.17. s_state</a></h3><p>	16bit value indicating the file system state.  When the file system is
+	mounted, this state is set  to  <code class="CONSTANT">EXT2_ERROR_FS</code>.  After the
+	file system was cleanly unmounted, this value is set to <code class="CONSTANT">EXT2_VALID_FS</code>.
+    </p><p>	When mounting the file system, if a valid of <code class="CONSTANT">EXT2_ERROR_FS</code> is
+	encountered it means the file system was not cleanly unmounted and most
+	likely contain errors that will need to be fixed.  Typically under Linux
+	this means running fsck.
+    </p><div class="TABLE"><a name="S-STATE-VALUES"></a><p><b>Table 3-4. Defined s_state Values</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col width="40%"><col width="20%"><col width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td>EXT2_VALID_FS</td><td>1</td><td>Unmounted cleanly</td></tr><tr><td>EXT2_ERROR_FS</td><td>2</td><td>Errors detected</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-ERRORS">3.1.18. s_errors</a></h3><p>	16bit value indicating what the file system driver should do  when  an
+	error is detected.  The following values have been defined:
+    </p><div class="TABLE"><a name="EXT2-ERRORS"></a><p><b>Table 3-5. Defined s_errors Values</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col width="40%"><col width="20%"><col width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td>EXT2_ERRORS_CONTINUE</td><td>1</td><td>continue as if nothing happened</td></tr><tr><td>EXT2_ERRORS_RO</td><td>2</td><td>remount read-only</td></tr><tr><td>EXT2_ERRORS_PANIC</td><td>3</td><td>cause a kernel panic</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-MINOR-REV-LEVEL">3.1.19. s_minor_rev_level</a></h3><p>	16bit value identifying the minor revision level within its
+	<a href="#S-REV-LEVEL">revision level</a>.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-LASTCHECK">3.1.20. s_lastcheck</a></h3><p>	Unix time, as defined by POSIX, of the last file system check.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-CHECKINTERVAL">3.1.21. s_checkinterval</a></h3><p>	Maximum Unix time interval, as defined by POSIX, allowed between file
+	system checks.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-CREATOR-OS">3.1.22. s_creator_os</a></h3><p>	32bit identifier of the os that created the file system.  Defined
+	values are:
+    </p><div class="TABLE"><a name="S-CREATOR-OS-VALUES"></a><p><b>Table 3-6. Defined s_creator_os Values</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col width="40%"><col width="20%"><col width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td>EXT2_OS_LINUX</td><td>0</td><td>Linux</td></tr><tr><td>EXT2_OS_HURD</td><td>1</td><td>GNU HURD</td></tr><tr><td>EXT2_OS_MASIX</td><td>2</td><td>MASIX</td></tr><tr><td>EXT2_OS_FREEBSD</td><td>3</td><td>FreeBSD</td></tr><tr><td>EXT2_OS_LITES</td><td>4</td><td>Lites</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-REV-LEVEL">3.1.23. s_rev_level</a></h3><p>	32bit revision level value.
+    </p><div class="TABLE"><a name="S-REV-LEVEL-VALUES"></a><p><b>Table 3-7. Defined s_rev_level Values</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col width="40%"><col width="20%"><col width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td>EXT2_GOOD_OLD_REV</td><td>0</td><td>Revision 0</td></tr><tr><td>EXT2_DYNAMIC_REV</td><td>1</td><td>Revision 1 with variable inode sizes, extended attributes, etc.</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-DEF-RESUID">3.1.24. s_def_resuid</a></h3><p>	16bit value used as the default user id for reserved blocks.  
+    </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	In Linux this defaults to <code class="CONSTANT">EXT2_DEF_RESUID</code> of 0.
+    </p></td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-DEF-RESGID">3.1.25. s_def_resgid</a></h3><p>	16bit value used as the default group id for reserved blocks.
+    </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	In Linux this defaults to <code class="CONSTANT">EXT2_DEF_RESGID</code> of 0.
+    </p></td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-FIRST-INO">3.1.26. s_first_ino</a></h3><p>	32bit value used as index to the  first  inode  useable  for  standard
+	files. In revision 0, the first	non-reserved inode is fixed to
+	11 (<code class="CONSTANT">EXT2_GOOD_OLD_FIRST_INO</code>). In revision 1 and later
+	this value may be set to any value.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-INODE-SIZE">3.1.27. s_inode_size</a></h3><p>	16bit value indicating the size of the inode structure. In revision 0, this
+	value is always 128 (<code class="CONSTANT">EXT2_GOOD_OLD_INODE_SIZE</code>). In revision 1
+	and later, this value must be a perfect power of 2 and must be smaller or
+	equal to the block size (1&lt;&lt;s_log_block_size).
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-BLOCK-GROUP-NR">3.1.28. s_block_group_nr</a></h3><p>	16bit value used to indicate the block group number hosting this
+	superblock structure.  This can be used to rebuild the file system
+	from any superblock backup.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-FEATURE-COMPAT">3.1.29. s_feature_compat</a></h3><p>	32bit bitmask of compatible features.  The file system implementation
+	is free to support them or not without risk of damaging the meta-data.
+    </p><div class="TABLE"><a name="S-FEATURE-COMPAT-VALUES"></a><p><b>Table 3-8. Defined s_feature_compat Values</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="40%"><col title="C2" width="20%"><col title="C3" width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td colspan="3" align="LEFT">EXT2_FEATURE_COMPAT_DIR_PREALLOC</td></tr><tr><td>&nbsp;</td><td>0x0001</td><td>Block pre-allocation for new directories</td></tr><tr><td colspan="3" align="LEFT">EXT2_FEATURE_COMPAT_IMAGIC_INODES</td></tr><tr><td>&nbsp;</td><td>0x0002</td><td>&nbsp;</td></tr><tr><td colspan="3" align="LEFT">EXT3_FEATURE_COMPAT_HAS_JOURNAL</td></tr><tr><td>&nbsp;</td><td>0x0004</td><td>An Ext3 journal exists</td></tr><tr><td colspan="3" align="LEFT">EXT2_FEATURE_COMPAT_EXT_ATTR</td></tr><tr><td>&nbsp;</td><td>0x0008</td><td>Extended inode attributes are present</td></tr><tr><td colspan="3" align="LEFT">EXT2_FEATURE_COMPAT_RESIZE_INO</td></tr><tr><td>&nbsp;</td><td>0x0010</td><td>Non-standard inode size used</td></tr><tr><td colspan="3" align="LEFT">EXT2_FEATURE_COMPAT_DIR_INDEX</td></tr><tr><td>&nbsp;</td><td>0x0020</td><td>Directory indexing (HTree)</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-FEATURE-INCOMPAT">3.1.30. s_feature_incompat</a></h3><p>	32bit bitmask of incompatible features.  The file system
+	implementation should refuse to mount the file system if any of
+	the indicated feature is unsupported.
+    </p><p>	An implementation not supporting these features would be unable to
+	properly use the file system.  For example, if compression is being
+	used and an executable file would be unusable after being read from
+	the disk if the system does not know how to uncompress it.
+    </p><div class="TABLE"><a name="S-FEATURE-INCOMPAT-VALUES"></a><p><b>Table 3-9. Defined s_feature_incompat Values</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="40%"><col title="C2" width="20%"><col title="C3" width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td colspan="3" align="LEFT">EXT2_FEATURE_INCOMPAT_COMPRESSION</td></tr><tr><td>&nbsp;</td><td>0x0001</td><td>Disk/File compression is used</td></tr><tr><td colspan="3" align="LEFT">EXT2_FEATURE_INCOMPAT_FILETYPE</td></tr><tr><td>&nbsp;</td><td>0x0002</td><td>&nbsp;</td></tr><tr><td colspan="3" align="LEFT">EXT3_FEATURE_INCOMPAT_RECOVER</td></tr><tr><td>&nbsp;</td><td>0x0004</td><td>&nbsp;</td></tr><tr><td colspan="3" align="LEFT">EXT3_FEATURE_INCOMPAT_JOURNAL_DEV</td></tr><tr><td>&nbsp;</td><td>0x0008</td><td>&nbsp;</td></tr><tr><td colspan="3" align="LEFT">EXT2_FEATURE_INCOMPAT_META_BG</td></tr><tr><td>&nbsp;</td><td>0x0010</td><td>&nbsp;</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-FEATURE-RO-COMPAT">3.1.31. s_feature_ro_compat</a></h3><p>	32bit bitmask of <span class="QUOTE">"read-only"</span> features.  The file system
+	implementation should mount as read-only if any of the indicated
+	feature is unsupported.
+    </p><div class="TABLE"><a name="S-FEATURE-RO-COMPAT-VALUES"></a><p><b>Table 3-10. Defined s_feature_ro_compat Values</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="40%"><col title="C2" width="20%"><col title="C3" width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td colspan="3" align="LEFT">EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER</td></tr><tr><td>&nbsp;</td><td>0x0001</td><td>Sparse Superblock</td></tr><tr><td colspan="3" align="LEFT">EXT2_FEATURE_RO_COMPAT_LARGE_FILE</td></tr><tr><td>&nbsp;</td><td>0x0002</td><td>Large file support, 64-bit file size</td></tr><tr><td colspan="3" align="LEFT">EXT2_FEATURE_RO_COMPAT_BTREE_DIR</td></tr><tr><td>&nbsp;</td><td>0x0004</td><td>Binary tree sorted directory files</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-UUID">3.1.32. s_uuid</a></h3><p>	128bit value used as the volume id.  This should, as much as possible,
+	be unique for each file system formatted.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-VOLUME-NAME">3.1.33. s_volume_name</a></h3><p>	16 bytes volume name, mostly unusued.  A valid volume name would consist
+	of only ISO-Latin-1 characters and be 0 terminated.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-LAST-MOUNTED">3.1.34. s_last_mounted</a></h3><p>	64 bytes directory path where the file system was last mounted.  While
+	not normally used, it could serve for auto-finding the mountpoint when
+	not indicated on the command line. Again the path should be zero
+	terminated for compatibility reasons.  Valid path is constructed from
+	ISO-Latin-1 characters.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-ALGO-BITMAP">3.1.35. s_algo_bitmap</a></h3><p>	32bit value used by compression algorithms to determine the compression
+	method(s) used.
+    </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	Compression is supported in Linux 2.4 and 2.6 via the e2compr patch. For
+	more information, visit http://e2compr.sourceforge.net/
+    </p></td></tr></tbody></table></div><div class="TABLE"><a name="S-ALGO-BITMAP-VALUES"></a><p><b>Table 3-11. Defined s_algo_bitmap Values</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col width="40%"><col width="20%"><col width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Bit Number</th><th>Description</th></tr></thead><tbody><tr><td>EXT2_LZV1_ALG</td><td>0</td><td>Binary value of 0x00000001</td></tr><tr><td>EXT2_LZRW3A_ALG</td><td>1</td><td>Binary value of 0x00000002</td></tr><tr><td>EXT2_GZIP_ALG</td><td>2</td><td>Binary value of 0x00000004</td></tr><tr><td>EXT2_BZIP2_ALG</td><td>3</td><td>Binary value of 0x00000008</td></tr><tr><td>EXT2_LZO_ALG</td><td>4</td><td>Binary value of 0x00000010</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-PREALLOC-BLOCKS">3.1.36. s_prealloc_blocks</a></h3><p>	8-bit value representing the number of blocks the implementation should
+	attempt to pre-allocate when creating a new regular file.  
+    </p><p>	Linux 2.6.28 will only perform pre-allocation using Ext4 although no
+	problem is expected if any version of Linux encounters a file with more
+	blocks present than required.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-PREALLOC-DIR-BLOCKS">3.1.37. s_prealloc_dir_blocks</a></h3><p>	8-bit value representing the number of blocks the implementation should
+	attempt to pre-allocate when creating a new directory.
+    </p><p>	Linux 2.6.28 will only perform pre-allocation using Ext4 and only if
+	the <code class="CONSTANT">EXT4_FEATURE_COMPAT_DIR_PREALLOC</code> flag is present. Since
+	Linux does not de-allocate blocks from directories after they were
+	allocated, it should be safe to perform pre-allocation and maintain
+	compatibility with Linux.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-JOURNAL-UUID">3.1.38. s_journal_uuid</a></h3><p>	16-byte value containing the uuid of the journal superblock.  See Ext3 
+	Journaling for more information.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-JOURNAL-INUM">3.1.39. s_journal_inum</a></h3><p>	32-bit inode number of the journal file.  See Ext3 Journaling for more 
+	information.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-JOURNAL-DEV">3.1.40. s_journal_dev</a></h3><p>	32-bit device number of the journal file.  See Ext3 Journaling for more 
+	information.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-LAST-ORPHAN">3.1.41. s_last_orphan</a></h3><p>	32-bit inode number, pointing to the first inode in the list of inodes
+	to delete.  See Ext3 Journaling for more information.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-HASH-SEED">3.1.42. s_hash_seed</a></h3><p>	An array of 4 32bit values containing the seeds used for the hash 
+	algorithm for directory indexing.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-DEF-HASH-VERSION">3.1.43. s_def_hash_version</a></h3><p>	An 8bit value containing the default hash version used for directory indexing.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-DEFAULT-MOUNT-OPTIONS">3.1.44. s_default_mount_options</a></h3><p>	A 32bit value containing the default mount options for this file system. TODO: Add more information here!
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="S-FIRST-META-BG">3.1.45. s_first_meta_bg</a></h3><p>	A 32bit value indicating the block group ID of the first meta block group.  TODO: Research if this is an Ext3-only extension.
+    </p></div></div><div class="SECT1"><hr><h2 class="SECT1"><a name="BLOCK-GROUP-DESCRIPTOR-TABLE">3.2. Block Group Descriptor Table</a></h2><p>	The block group descriptor table is an array of 
+	<a href="#BLOCK-GROUP-DESCRIPTOR-STRUCTURE">block group descriptor</a>, 
+	used to define parameters of all the 
+  <a href="#DEF-BLOCK-GROUPS">block groups</a>. It provides the location
+	of the inode bitmap	and inode table, block bitmap, number of free blocks and
+	inodes, and some other useful information.
+   </p><p>	The block group descriptor table starts on the first block following the
+	superblock.  This would be the third block on a 1KiB block file system, or the
+	second block for 2KiB and larger block file systems. Shadow copies of the
+	block	group descriptor table are also stored with every copy of the 
+	superblock.
+   </p><p>	Depending on how many block groups are defined, this table can require
+	multiple blocks of storage.  Always refer to the superblock in case of
+	doubt.
+   </p><p>	The layout of a block group descriptor is as follows:
+   </p><div class="TABLE"><a name="BLOCK-GROUP-DESCRIPTOR-STRUCTURE"></a><p><b>Table 3-12. Block Group Descriptor Structure</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytes)</th><th>Description</th></tr></thead><tbody><tr><td>0</td><td>4</td><td><a href="#BG-BLOCK-BITMAP">bg_block_bitmap</a></td></tr><tr><td>4</td><td>4</td><td><a href="#BG-INODE-BITMAP">bg_inode_bitmap</a></td></tr><tr><td>8</td><td>4</td><td><a href="#BG-INODE-TABLE">bg_inode_table</a></td></tr><tr><td>12</td><td>2</td><td><a href="#BG-FREE-BLOCKS-COUNT">bg_free_blocks_count</a></td></tr><tr><td>14</td><td>2</td><td><a href="#BG-FREE-INODES-COUNT">bg_free_inodes_count</a></td></tr><tr><td>16</td><td>2</td><td><a href="#BG-USED-DIRS-COUNT">bg_used_dirs_count</a></td></tr><tr><td>18</td><td>2</td><td><a href="#BG-PAD">bg_pad</a></td></tr><tr><td>20</td><td>12</td><td><a href="#BG-RESERVED">bg_reserved</a></td></tr></tbody></table></div><p>	For each block group in the file system, such a <code class="STRUCTNAME">group_desc</code> is
+	created.  Each represent a single block group within the
+	file system and the information within any one of them is pertinent
+	only to the group it is describing.  Every block group descriptor table
+	contains all the information about all the block groups.
+   </p><p>	NOTE: All indicated <span class="QUOTE">"block id"</span> are absolute.
+   </p><div class="SECT2"><hr><h3 class="SECT2"><a name="BG-BLOCK-BITMAP">3.2.1. bg_block_bitmap</a></h3><p>	32bit block id of the first block of the
+	<span class="QUOTE">"<a href="#BLOCK-BITMAP">block bitmap</a>"</span>
+	for the group represented.
+    </p><p>	The actual block bitmap is located within its own allocated blocks 
+	starting at the block ID specified by this value.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="BG-INODE-BITMAP">3.2.2. bg_inode_bitmap</a></h3><p>	32bit block id of the first block of the
+	<span class="QUOTE">"<a href="#INODE-BITMAP">inode bitmap</a>"</span>
+	for the group represented.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="BG-INODE-TABLE">3.2.3. bg_inode_table</a></h3><p>	32bit block id of the first block of the
+	<span class="QUOTE">"<a href="#INODE-TABLE">inode table</a>"</span>
+	for the group represented.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="BG-FREE-BLOCKS-COUNT">3.2.4. bg_free_blocks_count</a></h3><p>	16bit value indicating the total number of free blocks for
+	the represented group.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="BG-FREE-INODES-COUNT">3.2.5. bg_free_inodes_count</a></h3><p>	16bit value indicating the total number of free inodes for
+	the represented group.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="BG-USED-DIRS-COUNT">3.2.6. bg_used_dirs_count</a></h3><p>	16bit value indicating the number of inodes allocated to
+	directories for the represented group.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="BG-PAD">3.2.7. bg_pad</a></h3><p>	16bit value used for padding the structure on a 32bit boundary.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="BG-RESERVED">3.2.8. bg_reserved</a></h3><p>	12 bytes of reserved space for future revisions.
+    </p></div></div><div class="SECT1"><hr><h2 class="SECT1"><a name="BLOCK-BITMAP">3.3. Block Bitmap</a></h2><p>	On small file systems, the <span class="QUOTE">"Block Bitmap"</span> is normally located
+	at the first block, or second block if a superblock backup is present,
+	of each block group. Its official location can be determined by reading the
+	<span class="QUOTE">"<a href="#BG-BLOCK-BITMAP">bg_block_bitmap</a>"</span>
+	in its associated <a href="#BLOCK-GROUP-DESCRIPTOR-TABLE">group descriptor</a>.
+   </p><p>	Each bit represent the current state of a block within that block group,
+	where 1 means <span class="QUOTE">"used"</span> and 0 <span class="QUOTE">"free/available"</span>. The
+	first block of this block group is represented by bit 0 of byte 0,
+	the second by bit 1 of byte 0.  The 8th block is represented by bit 7
+	(most significant bit) of byte 0 while the 9th block is represented by
+	bit 0 (least significant bit) of byte 1.
+   </p></div><div class="SECT1"><hr><h2 class="SECT1"><a name="INODE-BITMAP">3.4. Inode Bitmap</a></h2><p>	The <span class="QUOTE">"Inode Bitmap"</span> works in a similar way as the
+	<span class="QUOTE">"<a href="#BLOCK-BITMAP">Block Bitmap</a>"</span>,
+	difference being in each bit representing an inode in the
+	<span class="QUOTE">"<a href="#INODE-TABLE">Inode Table</a>"</span> rather
+	than a block.
+   </p><p>	There is one inode bitmap per group and its location may be
+	determined by reading the
+	<span class="QUOTE">"<a href="#BG-INODE-BITMAP">bg_inode_bitmap</a>"</span>
+	in its associated <a href="#BLOCK-GROUP-DESCRIPTOR-TABLE">group descriptor</a>.
+   </p><p>   	When the inode table is created, all the reserved inodes are marked
+	as used.  In revision 0 this is the first 11 inodes.
+   </p></div><div class="SECT1"><hr><h2 class="SECT1"><a name="INODE-TABLE">3.5. Inode Table</a></h2><p>	The inode table is used to keep track of every directory,
+	regular file, symbolic link, or special file; their
+	location, size, type and access rights are all stored in inodes. There
+	is no filename stored in the inode itself, names are contained in
+	<a href="#DIRECTORY">directory</a> files only.
+   </p><p>	There is one inode table per block group and it can be located by reading the
+	<a href="#BG-INODE-TABLE">bg_inode_table</a>
+	in its associated <a href="#BLOCK-GROUP-DESCRIPTOR-TABLE">group descriptor</a>.
+	There are <a href="#S-INODES-PER-GROUP">s_inodes_per_group</a>
+	inodes per table.
+   </p><p>	Each inode contain the information about a single physical file on the
+	system.  A file can be a directory, a socket, a buffer, character or
+	block device, symbolic link or a regular file.  So an inode can be
+	seen as a block of information related to an entity, describing its
+	location on disk, its size and its owner.  An inode looks like this:
+   </p><div class="TABLE"><a name="INODE-STRUCTURE"></a><p><b>Table 3-13. Inode Structure</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytes)</th><th>Description</th></tr></thead><tbody><tr><td>0</td><td>2</td><td><a href="#I-MODE">i_mode</a></td></tr><tr><td>2</td><td>2</td><td><a href="#I-UID">i_uid</a></td></tr><tr><td>4</td><td>4</td><td><a href="#I-SIZE">i_size</a></td></tr><tr><td>8</td><td>4</td><td><a href="#I-ATIME">i_atime</a></td></tr><tr><td>12</td><td>4</td><td><a href="#I-CTIME">i_ctime</a></td></tr><tr><td>16</td><td>4</td><td><a href="#I-MTIME">i_mtime</a></td></tr><tr><td>20</td><td>4</td><td><a href="#I-DTIME">i_dtime</a></td></tr><tr><td>24</td><td>2</td><td><a href="#I-GID">i_gid</a></td></tr><tr><td>26</td><td>2</td><td><a href="#I-LINKS-COUNT">i_links_count</a></td></tr><tr><td>28</td><td>4</td><td><a href="#I-BLOCKS">i_blocks</a></td></tr><tr><td>32</td><td>4</td><td><a href="#I-FLAGS">i_flags</a></td></tr><tr><td>36</td><td>4</td><td><a href="#I-OSD1">i_osd1</a></td></tr><tr><td>40</td><td>15 x 4</td><td><a href="#I-BLOCK">i_block</a></td></tr><tr><td>100</td><td>4</td><td><a href="#I-GENERATION">i_generation</a></td></tr><tr><td>104</td><td>4</td><td><a href="#I-FILE-ACL">i_file_acl</a></td></tr><tr><td>108</td><td>4</td><td><a href="#I-DIR-ACL">i_dir_acl</a></td></tr><tr><td>112</td><td>4</td><td><a href="#I-FADDR">i_faddr</a></td></tr><tr><td>116</td><td>12</td><td><a href="#I-OSD2">i_osd2</a></td></tr></tbody></table></div><p>	The first few entries of the inode tables are reserved.  In revision
+	0 there are 11 entries reserved while in revision 1
+	(EXT2_DYNAMIC_REV) and later the number of reserved inodes entries is
+	specified	in the <a href="#S-FIRST-INO">s_first_ino</a> of the 
+	superblock structure.  Here's a listing of the known reserved inode 
+	entries:
+   </p><div class="TABLE"><a name="RESERVED-INODES-VALUES"></a><p><b>Table 3-14. Defined Reserved Inodes</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="40%"><col title="C2" width="20%"><col title="C3" width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td>EXT2_BAD_INO</td><td>1</td><td>bad blocks inode</td></tr><tr><td>EXT2_ROOT_INO</td><td>2</td><td>root directory inode</td></tr><tr><td>EXT2_ACL_IDX_INO</td><td>3</td><td>ACL index inode (deprecated?)</td></tr><tr><td>EXT2_ACL_DATA_INO</td><td>4</td><td>ACL data inode (deprecated?)</td></tr><tr><td>EXT2_BOOT_LOADER_INO</td><td>5</td><td>boot loader inode</td></tr><tr><td>EXT2_UNDEL_DIR_INO</td><td>6</td><td>undelete directory inode</td></tr></tbody></table></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-MODE">3.5.1. i_mode</a></h3><p>	16bit value used to indicate the format of the described file and the
+	access rights.  Here are the possible values, which can be combined
+	in various ways:
+    </p><div class="TABLE"><a name="AEN1288"></a><p><b>Table 3-15. Defined i_mode Values</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="40%"><col title="C2" width="20%"><col title="C3" width="40%"></colgroup><thead><tr><th>Constant</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td colspan="3" align="LEFT">-- file format --</td></tr><tr><td>EXT2_S_IFSOCK</td><td>0xC000</td><td>socket</td></tr><tr><td>EXT2_S_IFLNK</td><td>0xA000</td><td>symbolic link</td></tr><tr><td>EXT2_S_IFREG</td><td>0x8000</td><td>regular file</td></tr><tr><td>EXT2_S_IFBLK</td><td>0x6000</td><td>block device</td></tr><tr><td>EXT2_S_IFDIR</td><td>0x4000</td><td>directory</td></tr><tr><td>EXT2_S_IFCHR</td><td>0x2000</td><td>character device</td></tr><tr><td>EXT2_S_IFIFO</td><td>0x1000</td><td>fifo</td></tr><tr><td colspan="3" align="LEFT">-- process execution user/group override --</td></tr><tr><td>EXT2_S_ISUID</td><td>0x0800</td><td>Set process User ID</td></tr><tr><td>EXT2_S_ISGID</td><td>0x0400</td><td>Set process Group ID</td></tr><tr><td>EXT2_S_ISVTX</td><td>0x0200</td><td>sticky bit</td></tr><tr><td colspan="3" align="LEFT">-- access rights --</td></tr><tr><td>EXT2_S_IRUSR</td><td>0x0100</td><td>user read</td></tr><tr><td>EXT2_S_IWUSR</td><td>0x0080</td><td>user write</td></tr><tr><td>EXT2_S_IXUSR</td><td>0x0040</td><td>user execute</td></tr><tr><td>EXT2_S_IRGRP</td><td>0x0020</td><td>group read</td></tr><tr><td>EXT2_S_IWGRP</td><td>0x0010</td><td>group write</td></tr><tr><td>EXT2_S_IXGRP</td><td>0x0008</td><td>group execute</td></tr><tr><td>EXT2_S_IROTH</td><td>0x0004</td><td>others read</td></tr><tr><td>EXT2_S_IWOTH</td><td>0x0002</td><td>others write</td></tr><tr><td>EXT2_S_IXOTH</td><td>0x0001</td><td>others execute</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-UID">3.5.2. i_uid</a></h3><p>	16bit user id associated with the file.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-SIZE">3.5.3. i_size</a></h3><p>	In revision 0, (signed) 32bit value indicating the size of the file in 
+	bytes.  In revision 1 and later revisions, and only for regular files, this 
+	represents the lower 32-bit of the file size; the upper 32-bit is located
+	in the i_dir_acl.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-ATIME">3.5.4. i_atime</a></h3><p>	32bit value representing the number of seconds since january 1st 1970
+	of the last time this inode was accessed.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-CTIME">3.5.5. i_ctime</a></h3><p>	32bit value representing the number of seconds since january 1st 1970, of
+	when the inode was created.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-MTIME">3.5.6. i_mtime</a></h3><p>	32bit value representing the number of seconds since january 1st 1970,
+	of the last time this inode was modified.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-DTIME">3.5.7. i_dtime</a></h3><p>	32bit value representing the number of seconds since january 1st 1970, of
+	when the inode was deleted.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-GID">3.5.8. i_gid</a></h3><p>	16bit value of the POSIX group having access to this file.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-LINKS-COUNT">3.5.9. i_links_count</a></h3><p>	16bit value indicating how many times this particular inode is linked 
+	(referred to). Most files will have a link count of 1.  Files with hard 
+	links pointing to them will have an additional count for each hard link.
+    </p><p>	Symbolic links do not affect the link count of an inode. When the link count
+	reaches 0 the inode and all its associated blocks are freed.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-BLOCKS">3.5.10. i_blocks</a></h3><p>	32-bit value representing the total number of 512-bytes blocks reserved to contain the
+	data of this inode, regardless if these blocks are used or not.  The block
+	numbers of these reserved blocks are contained in the 
+	<a href="#I-BLOCK">i_block</a> array.
+    </p><p>	Since this value represents 512-byte blocks and not file system blocks,
+	this value should not be directly used as an index to the i_block array.
+	Rather, the maximum index of the i_block array should be computed from
+	i_blocks / ((1024&lt;&lt;s_log_block_size)/512), or once simplified, i_blocks/(2&lt;&lt;s_log_block_size).
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-FLAGS">3.5.11. i_flags</a></h3><p>	32bit value indicating how the ext2 implementation should behave when
+	accessing the data for this inode.
+    </p><div class="TABLE"><a name="DEFINED-I-FLAGS-VALUES"></a><p><b>Table 3-16. Defined i_flags Values</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="40%"><col title="C2" width="20%"><col title="C3" width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td><a href="#EXT2-SECRM-FL">EXT2_SECRM_FL</a></td><td>0x00000001</td><td>secure deletion</td></tr><tr><td><a href="#EXT2-UNRM-FL">EXT2_UNRM_FL</a></td><td>0x00000002</td><td>record for undelete</td></tr><tr><td><a href="#EXT2-COMPR-FL">EXT2_COMPR_FL</a></td><td>0x00000004</td><td>compressed file</td></tr><tr><td><a href="#EXT2-SYNC-FL">EXT2_SYNC_FL</a></td><td>0x00000008</td><td>synchronous updates</td></tr><tr><td><a href="#EXT2-IMMUTABLE-FL">EXT2_IMMUTABLE_FL</a></td><td>0x00000010</td><td>immutable file</td></tr><tr><td><a href="#EXT2-APPEND-FL">EXT2_APPEND_FL</a></td><td>0x00000020</td><td>append only</td></tr><tr><td><a href="#EXT2-NODUMP-FL">EXT2_NODUMP_FL</a></td><td>0x00000040</td><td>do not dump/delete file</td></tr><tr><td><a href="#EXT2-NOATIME-FL">EXT2_NOATIME_FL</a></td><td>0x00000080</td><td>do not update .i_atime</td></tr><tr><td colspan="3" align="LEFT">-- Reserved for compression usage --</td></tr><tr><td><a href="#EXT2-DIRTY-FL">EXT2_DIRTY_FL</a></td><td>0x00000100</td><td>Dirty (modified)</td></tr><tr><td><a href="#EXT2-COMPRBLK-FL">EXT2_COMPRBLK_FL</a></td><td>0x00000200</td><td>compressed blocks</td></tr><tr><td><a href="#EXT2-NOCOMPR-FL">EXT2_NOCOMPR_FL</a></td><td>0x00000400</td><td>access raw compressed data</td></tr><tr><td><a href="#EXT2-ECOMPR-FL">EXT2_ECOMPR_FL</a></td><td>0x00000800</td><td>compression error</td></tr><tr><td colspan="3" align="LEFT">-- End of compression flags --</td></tr><tr><td><a href="#EXT2-BTREE-FL">EXT2_BTREE_FL</a></td><td>0x00001000</td><td>b-tree format directory</td></tr><tr><td><a href="#EXT2-INDEX-FL">EXT2_INDEX_FL</a></td><td>0x00001000</td><td>hash indexed directory</td></tr><tr><td><a href="#EXT2-IMAGIC-FL">EXT2_IMAGIC_FL</a></td><td>0x00002000</td><td>AFS directory</td></tr><tr><td><a href="#EXT3-JOURNAL-DATA-FL">EXT3_JOURNAL_DATA_FL</a></td><td>0x00004000</td><td>journal file data</td></tr><tr><td><a href="#EXT2-RESERVED-FL">EXT2_RESERVED_FL</a></td><td>0x80000000</td><td>reserved for ext2 library</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-OSD1">3.5.12. i_osd1</a></h3><p>        32bit OS dependant value.
+    </p><div class="SECT3"><hr><h4 class="SECT3"><a name="I-OSD1-HURD">3.5.12.1. Hurd</a></h4><p>        32bit value labeled as <span class="QUOTE">"translator"</span>.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="I-OSD1-LINUX">3.5.12.2. Linux</a></h4><p>        32bit value currently reserved.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="I-OSD1-MASIX">3.5.12.3. Masix</a></h4><p>        32bit value currently reserved.
+     </p></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-BLOCK">3.5.13. i_block</a></h3><p>	15 x 32bit block numbers pointing to the blocks containing the data for
+	this inode. The first 12 blocks are direct blocks.  The 13th entry in this
+	array is the block number of the first indirect block; which is a block
+	containing an array of block ID containing the data.  Therefore, the 13th
+	block of the file will be the first block ID contained in the indirect block.
+	With a 1KiB block size, blocks 13 to 268 of the file data are contained
+	in this indirect block.
+     </p><p>	The 14th entry in this array is the block number of the first doubly-indirect
+	block; which is a block containing an array of indirect block IDs, with each
+	of those indirect blocks containing an array of blocks containing the data.  
+	In a 1KiB block size, there would be 256 indirect blocks per doubly-indirect
+	block, with 256 direct blocks per indirect block for a total of 65536 blocks 
+	per doubly-indirect block.
+     </p><p>	The 15th entry in this array is the block number of the triply-indirect 
+	block; which is a	block containing an array of doubly-indrect block IDs,
+	with each of those doubly-indrect block containing an array of indrect block,
+	and each of those indirect block containing an array of direct block.  In a
+	1KiB file system, this would be a total of 16777216 blocks per
+	triply-indirect block.
+     </p><p>	A value of 0 in this array effectively terminates it with no further block 
+	being defined.	All the remaining entries of the array should still be set
+	to 0.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-GENERATION">3.5.14. i_generation</a></h3><p>        32bit value used to indicate the file version (used by NFS).
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-FILE-ACL">3.5.15. i_file_acl</a></h3><p>	32bit value indicating the block number containing the extended
+	attributes. In revision 0 this value is always 0.
+    </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>      Patches and implementation status of ACL under Linux can generally be found at http://acl.bestbits.at/
+     </p></td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-DIR-ACL">3.5.16. i_dir_acl</a></h3><p>	In revision 0 this 32bit value is always 0.  In revision 1, for regular
+	files this 32bit value contains the high 32 bits of the 64bit file size.
+    </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	Linux sets this value to 0 if the file is not a regular file (i.e. block
+	devices, directories, etc).  In theory, this value could be set to point
+	to a block containing extended attributes of the directory or special file.
+     </p></td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-FADDR">3.5.17. i_faddr</a></h3><p>	32bit value indicating the location of the file fragment.
+    </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	In Linux and GNU HURD, since fragments are unsupported this value is always 
+	0.  In Ext4	this value is now marked as obsolete.
+    </p><p>	In theory, this should contain the block number which hosts the
+	actual fragment.  The fragment number and its size would be contained
+	in the <a href="#I-OSD2">i_osd2</a> structure.
+    </p></td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="I-OSD2">3.5.18. Inode i_osd2 Structure</a></h3><p>        96bit OS dependant structure.
+    </p><div class="SECT3"><hr><h4 class="SECT3"><a name="I-OSD2-HURD">3.5.18.1. Hurd</a></h4><div class="TABLE"><a name="I-OSD2-HURD-STRUCTURE"></a><p><b>Table 3-17. Inode i_osd2 Structure: Hurd</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytes)</th><th>Description</th></tr></thead><tbody><tr><td>0</td><td>1</td><td><a href="#H-I-FRAG">h_i_frag</a></td></tr><tr><td>1</td><td>1</td><td><a href="#H-I-FSIZE">h_i_fsize</a></td></tr><tr><td>2</td><td>2</td><td><a href="#H-I-MODE-HIGH">h_i_mode_high</a></td></tr><tr><td>4</td><td>2</td><td><a href="#H-I-UID-HIGH">h_i_uid_high</a></td></tr><tr><td>6</td><td>2</td><td><a href="#H-I-GID-HIGH">h_i_gid_high</a></td></tr><tr><td>8</td><td>4</td><td><a href="#H-I-AUTHOR">h_i_author</a></td></tr></tbody></table></div><div class="SECT4"><hr><h5 class="SECT4"><a name="H-I-FRAG">3.5.18.1.1. h_i_frag</a></h5><p>	8bit fragment number.  Always 0 GNU HURD since fragments are
+	not supported. Obsolete with Ext4.
+      </p></div><div class="SECT4"><hr><h5 class="SECT4"><a name="H-I-FSIZE">3.5.18.1.2. h_i_fsize</a></h5><p>	8bit fragment size.  Always 0 in GNU HURD since fragments are
+	not supported.  Obsolete with Ext4.
+      </p></div><div class="SECT4"><hr><h5 class="SECT4"><a name="H-I-MODE-HIGH">3.5.18.1.3. h_i_mode_high</a></h5><p>	High 16bit of the 32bit mode.
+      </p></div><div class="SECT4"><hr><h5 class="SECT4"><a name="H-I-UID-HIGH">3.5.18.1.4. h_i_uid_high</a></h5><p>	High 16bit of <a href="#I-UID">user id</a>.
+      </p></div><div class="SECT4"><hr><h5 class="SECT4"><a name="H-I-GID-HIGH">3.5.18.1.5. h_i_gid_high</a></h5><p>	High 16bit of <a href="#I-GID">group id</a>.
+      </p></div><div class="SECT4"><hr><h5 class="SECT4"><a name="H-I-AUTHOR">3.5.18.1.6. h_i_author</a></h5><p>	32bit user id of the assigned file author. If this value is set to -1, the 
+	POSIX <a href="#I-UID">user id</a> will be used.
+      </p></div></div><div class="SECT3"><hr><h4 class="SECT3"><a name="I-OSD2-LINUX">3.5.18.2. Linux</a></h4><div class="TABLE"><a name="I-OSD2-LINUX-STRUCTURE"></a><p><b>Table 3-18. Inode i_osd2 Structure: Linux</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytes)</th><th>Description</th></tr></thead><tbody><tr><td>0</td><td>1</td><td><a href="#L-I-FRAG">l_i_frag</a></td></tr><tr><td>1</td><td>1</td><td><a href="#L-I-FSIZE">l_i_fsize</a></td></tr><tr><td>2</td><td>2</td><td>reserved</td></tr><tr><td>4</td><td>2</td><td><a href="#L-I-UID-HIGH">l_i_uid_high</a></td></tr><tr><td>6</td><td>2</td><td><a href="#L-I-GID-HIGH">l_i_gid_high</a></td></tr><tr><td>8</td><td>4</td><td>reserved</td></tr></tbody></table></div><div class="SECT4"><hr><h5 class="SECT4"><a name="L-I-FRAG">3.5.18.2.1. l_i_frag</a></h5><p>	8bit fragment number.
+      </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	  Always 0 in Linux since fragments are not supported.
+      </p></td></tr></tbody></table></div><div class="IMPORTANT"><p></p><table class="IMPORTANT" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/important.html" alt="Important" hspace="5"></td><td align="LEFT" valign="TOP"><p>	A new implementation of Ext2 should completely disregard this field
+	if the <a href="#I-FADDR">i_faddr</a> value is 0; in Ext4 this
+	field is combined with <a href="#L-I-FSIZE">l_i_fsize</a> to
+	become the high 16bit of the 48bit blocks count for the inode data.
+      </p></td></tr></tbody></table></div></div><div class="SECT4"><hr><h5 class="SECT4"><a name="L-I-FSIZE">3.5.18.2.2. l_i_fsize</a></h5><p>	8bit fragment size.
+      </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	 Always 0 in Linux since fragments are not supported.
+      </p></td></tr></tbody></table></div><div class="IMPORTANT"><p></p><table class="IMPORTANT" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/important.html" alt="Important" hspace="5"></td><td align="LEFT" valign="TOP"><p>	A new implementation of Ext2 should completely disregard this field
+	if the <a href="#I-FADDR">i_faddr</a> value is 0; in Ext4 this
+	field is combined with <a href="#L-I-FRAG">l_i_frag</a> to
+	become the high 16bit of the 48bit blocks count for the inode data.
+      </p></td></tr></tbody></table></div></div><div class="SECT4"><hr><h5 class="SECT4"><a name="L-I-UID-HIGH">3.5.18.2.3. l_i_uid_high</a></h5><p>	High 16bit of <a href="#I-UID">user id</a>.
+      </p></div><div class="SECT4"><hr><h5 class="SECT4"><a name="L-I-GID-HIGH">3.5.18.2.4. l_i_gid_high</a></h5><p>	High 16bit of <a href="#I-GID">group id</a>.
+      </p></div></div><div class="SECT3"><hr><h4 class="SECT3"><a name="I-OSD2-MASIX">3.5.18.3. Masix</a></h4><div class="TABLE"><a name="I-OSD2-MASIX-STRUCTURE"></a><p><b>Table 3-19. Inode i_osd2 Structure: Masix</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytes)</th><th>Description</th></tr></thead><tbody><tr><td>0</td><td>1</td><td><a href="#M-I-FRAG">m_i_frag</a></td></tr><tr><td>1</td><td>1</td><td><a href="#M-I-FSIZE">m_i_fsize</a></td></tr><tr><td>2</td><td>10</td><td>reserved</td></tr></tbody></table></div><div class="SECT4"><hr><h5 class="SECT4"><a name="M-I-FRAG">3.5.18.3.1. m_i_frag</a></h5><p>	8bit fragment number.  Always 0 in Masix as framgents are not
+	supported.  Obsolete with Ext4.
+      </p></div><div class="SECT4"><hr><h5 class="SECT4"><a name="M-I-FSIZE">3.5.18.3.2. m_i_fsize</a></h5><p>	8bit fragment size.  Always 0 in Masix as fragments are not
+	supported.  Obsolete with Ext4.
+      </p></div></div></div></div><div class="SECT1"><hr><h2 class="SECT1"><a name="AEN1729">3.6. Locating an Inode</a></h2><p>	Inodes are all numerically ordered.  The <span class="QUOTE">"inode number"</span> is
+	an index in the	<a href="#INODE-TABLE">inode table</a> to an
+	<a href="#INODE-STRUCTURE">inode</a> structure.  The size of the
+	inode table	is fixed at format time; it is built to hold a maximum
+	number of	entries.  Due to the large amount of entries
+	created, the table is quite big and thus, it is split equally among
+	all the <a href="#BLOCK-GROUP-DESCRIPTOR-TABLE">block groups</a>
+	(see <a href="#DISK-ORGANISATION">Chapter 3</a>	for more information).
+   </p><p>	The <a href="#S-INODES-PER-GROUP">s_inodes_per_group</a> field in
+	the <a href="#SUPERBLOCK">superblock</a> structure tells us how many
+	inodes are defined per group.  Knowing that inode 1 is the first inode
+	defined in the inode table, one can use the following formulaes:
+   </p><pre class="PROGRAMLISTING">block group = (inode - 1) / s_inodes_per_group
+   </pre><p>	Once the block is identified, the local inode index for the local inode
+	table can be identified using:
+   </p><pre class="PROGRAMLISTING">local inode index = (inode - 1) % s_inodes_per_group
+   </pre><p>	Here are a couple of sample values that could be used to test
+	your implementation:
+   </p><div class="TABLE"><a name="INODE-COMPUTATION-SAMPLE"></a><p><b>Table 3-20. Sample Inode Computations</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="40%"><col title="C2" width="30%"><col title="C3" width="30%"></colgroup><thead><tr><th>Inode Number</th><th>Block Group Number</th><th>Local Inode Index</th></tr></thead><tbody><tr><td colspan="3">s_inodes_per_group = 1712</td></tr><tr><td>1</td><td>0</td><td>0</td></tr><tr><td>963</td><td>0</td><td>962</td></tr><tr><td>1712</td><td>0</td><td>1711</td></tr><tr><td>1713</td><td>1</td><td>0</td></tr><tr><td>3424</td><td>1</td><td>1711</td></tr><tr><td>3425</td><td>2</td><td>0</td></tr></tbody></table></div><p>	As many of you are most likely already familiar with, an index of 0
+	means the first entry.  The reason behind using 0 rather than 1 is that
+	it can more easily be multiplied by the structure size to find the
+	final byte offset of its location in memory or on disk.
+   </p></div></div><div class="CHAPTER"><hr><h1><a name="DIRECTORY"></a>Chapter 4. Directory Structure</h1><p>	Directories are used to hierarchically organize files.  Each directory
+	can contain other directories, regular files and special files.
+  </p><p>	Directories are stored as data block and referenced by an inode.  They
+	can be identified by the file type
+	<code class="CONSTANT">EXT2_S_IFDIR</code> stored in the <a href="#I-MODE">i_mode</a>
+	field of the <a href="#INODE-STRUCTURE">inode</a> structure.
+  </p><p>	The second entry of the <a href="#INODE-TABLE">Inode table</a> contains
+	the inode pointing to the data of the root directory; as defined by the
+	<code class="CONSTANT">EXT2_ROOT_INO</code> constant.
+  </p><p>	In revision 0 directories could only be stored in a linked list.  Revision 1
+	and later introduced indexed directories.  The indexed directory is backward
+	compatible with the linked list directory; this is achieved by inserting
+	empty directory entry records to skip over the hash indexes.
+  </p><div class="SECT1"><hr><h2 class="SECT1"><a name="LINKED-DIRECTORIES">4.1. Linked List Directory</a></h2><p>	A directory file is a linked list of 
+	<a href="#LINKED-DIRECTORY-ENTRY-STRUCTURE">directory entry</a> 
+	structures.  Each structure contains the name of the entry, the inode
+	associated with the data of this entry, and the distance within the
+	directory file to the next entry.
+   </p><p>	In revision 0, the type of the entry (file, directory, special file, etc)
+	has to be looked up in the inode of the file.  In revision 0.5 and later,
+	the file type is also contained in the
+	<a href="#LINKED-DIRECTORY-ENTRY-STRUCTURE">directory entry</a> structure.
+   </p><div class="TABLE"><a name="LINKED-DIRECTORY-ENTRY-STRUCTURE"></a><p><b>Table 4-1. Linked Directory Entry Structure</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytes)</th><th>Description</th></tr></thead><tbody><tr><td>0</td><td>4</td><td><a href="#IFDIR-INODE">inode</a></td></tr><tr><td>4</td><td>2</td><td><a href="#IFDIR-REC-LEN">rec_len</a></td></tr><tr><td>6</td><td>1</td><td><a href="#IFDIR-NAME-LEN">name_len</a><a name="AEN1829" href="#FTN.AEN1829"><span class="footnote">[a]</span></a></td></tr><tr><td>7</td><td>1</td><td><a href="#IFDIR-FILE-TYPE">file_type</a><a name="AEN1838" href="#FTN.AEN1838"><span class="footnote">[b]</span></a></td></tr><tr><td>8</td><td>0-255</td><td><a href="#IFDIR-NAME">name</a></td></tr></tbody><tbody><tr><td colspan="3">Notes:<br><a name="FTN.AEN1829">a. </a>	Revision 0 of Ext2 used a 16bit <code class="STRUCTFIELD">name_len</code>;
+	since most implementations restricted filenames to a maximum of 255
+	characters this value was truncated to 8bit with the upper 8bit
+	recycled as <a href="#IFDIR-FILE-TYPE">file_type</a>.
+        <br><a name="FTN.AEN1838">b. </a>	Not available in revision 0; this field was part of the 16bit
+	<a href="#IFDIR-NAME-LEN">name_len</a> field.
+        <br></td></tr></tbody></table></div><div class="SECT2"><hr><h3 class="SECT2"><a name="IFDIR-INODE">4.1.1. inode</a></h3><p>	32bit inode number of the file entry.  A value of 0 indicate that the entry
+	is not used.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="IFDIR-REC-LEN">4.1.2. rec_len</a></h3><p>	16bit unsigned displacement to the next directory entry from the start of the
+	current directory entry. This field must have a value at least equal to the
+	length of the current record.
+    </p><p>	The directory entries must be aligned on 4 bytes boundaries and there cannot
+	be any directory entry spanning multiple data blocks.  If an entry cannot
+	completely fit in one block, it must be pushed to the next data block and the
+	rec_len of the previous entry properly adjusted.
+    </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	Since this value cannot be negative, when a file is removed the previous
+	record within the block has to be modified to point to the next valid record
+	within the block or to the end of the block when no other directory entry is
+	present.
+     </p><p>	If the first entry within the block is removed, a blank record
+	will be created and point to the next directory entry or to the end of the
+	block.
+     </p></td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="IFDIR-NAME-LEN">4.1.3. name_len</a></h3><p>	8bit unsigned value indicating how many bytes of character data are contained in the name.
+    </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	This value must never be larger than rec_len - 8.  If the directory entry
+	name is updated and cannot fit in the existing directory entry, the entry may
+	have to be relocated in a new directory entry of sufficient size and
+	possibly stored in a new data block.
+     </p></td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="IFDIR-FILE-TYPE">4.1.4. file_type</a></h3><p>	8bit unsigned value used to indicate file type.
+    </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	In revision 0, this field was the upper 8-bit of the then 16-bit name_len.  
+	Since all implementations still limited the file names to 255 characters this
+	8-bit value was always 0.
+     </p><p>	This value must match the inode type defined in the related inode entry.
+     </p></td></tr></tbody></table></div><div class="TABLE"><a name="IFDIR-FILE-TYPE-VALUES"></a><p><b>Table 4-2. Defined Inode File Type Values</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="40%"><col title="C2" width="20%"><col title="C3" width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td>EXT2_FT_UNKNOWN</td><td>0</td><td>Unknown File Type</td></tr><tr><td>EXT2_FT_REG_FILE</td><td>1</td><td>Regular File</td></tr><tr><td>EXT2_FT_DIR</td><td>2</td><td>Directory File</td></tr><tr><td>EXT2_FT_CHRDEV</td><td>3</td><td>Character Device</td></tr><tr><td>EXT2_FT_BLKDEV</td><td>4</td><td>Block Device</td></tr><tr><td>EXT2_FT_FIFO</td><td>5</td><td>Buffer File</td></tr><tr><td>EXT2_FT_SOCK</td><td>6</td><td>Socket File</td></tr><tr><td>EXT2_FT_SYMLINK</td><td>7</td><td>Symbolic Link</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="IFDIR-NAME">4.1.5. name</a></h3><p>	Name of the entry.  The ISO-Latin-1 character set is expected in most system.
+	The name must be no longer than 255	bytes after encoding.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="DIR-SAMPLE">4.1.6. Sample Directory</a></h3><p>	Here's a sample of the home directory of one user on my system:
+    </p><pre class="PROGRAMLISTING">$ ls -1a ~
+.
+..
+.bash_profile
+.bashrc
+mbox
+public_html
+tmp
+    </pre><p>	For which the following data representation can be found on the storage
+	device:
+    </p><div class="TABLE"><a name="SAMPLE-LINKED-DIRECTORY-DATA"></a><p><b>Table 4-3. Sample Linked Directory Data Layout, 4KiB blocks</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytes)</th><th>Description</th></tr></thead><tbody><tr><td colspan="3" align="LEFT">Directory Entry 0</td></tr><tr><td>0</td><td>4</td><td>inode number: 783362</td></tr><tr><td>4</td><td>2</td><td>record length: 12</td></tr><tr><td>6</td><td>1</td><td>name length: 1</td></tr><tr><td>7</td><td>1</td><td>file type: <code class="CONSTANT">EXT2_FT_DIR</code>=2</td></tr><tr><td>8</td><td>1</td><td>name: .</td></tr><tr><td>9</td><td>3</td><td>padding</td></tr><tr><td colspan="3" align="LEFT">Directory Entry 1</td></tr><tr><td>12</td><td>4</td><td>inode number: 1109761</td></tr><tr><td>16</td><td>2</td><td>record length: 12</td></tr><tr><td>18</td><td>1</td><td>name length: 2</td></tr><tr><td>19</td><td>1</td><td>file type: <code class="CONSTANT">EXT2_FT_DIR</code>=2</td></tr><tr><td>20</td><td>2</td><td>name: ..</td></tr><tr><td>22</td><td>2</td><td>padding</td></tr><tr><td colspan="3" align="LEFT">Directory Entry 2</td></tr><tr><td>24</td><td>4</td><td>inode number: 783364</td></tr><tr><td>28</td><td>2</td><td>record length: 24</td></tr><tr><td>30</td><td>1</td><td>name length: 13</td></tr><tr><td>31</td><td>1</td><td>file type: <code class="CONSTANT">EXT2_FT_REG_FILE</code></td></tr><tr><td>32</td><td>13</td><td>name: .bash_profile</td></tr><tr><td>45</td><td>3</td><td>padding</td></tr><tr><td colspan="3" align="LEFT">Directory Entry 3</td></tr><tr><td>48</td><td>4</td><td>inode number: 783363</td></tr><tr><td>52</td><td>2</td><td>record length: 16</td></tr><tr><td>54</td><td>1</td><td>name length: 7</td></tr><tr><td>55</td><td>1</td><td>file type: <code class="CONSTANT">EXT2_FT_REG_FILE</code></td></tr><tr><td>56</td><td>7</td><td>name: .bashrc</td></tr><tr><td>63</td><td>1</td><td>padding</td></tr><tr><td colspan="3" align="LEFT">Directory Entry 4</td></tr><tr><td>64</td><td>4</td><td>inode number: 783377</td></tr><tr><td>68</td><td>2</td><td>record length: 12</td></tr><tr><td>70</td><td>1</td><td>name length: 4</td></tr><tr><td>71</td><td>1</td><td>file type: <code class="CONSTANT">EXT2_FT_REG_FILE</code></td></tr><tr><td>72</td><td>4</td><td>name: mbox</td></tr><tr><td colspan="3" align="LEFT">Directory Entry 5</td></tr><tr><td>76</td><td>4</td><td>inode number: 783545</td></tr><tr><td>80</td><td>2</td><td>record length: 20</td></tr><tr><td>82</td><td>1</td><td>name length: 11</td></tr><tr><td>83</td><td>1</td><td>file type: <code class="CONSTANT">EXT2_FT_DIR</code>=2</td></tr><tr><td>84</td><td>11</td><td>name: public_html</td></tr><tr><td>95</td><td>1</td><td>padding</td></tr><tr><td colspan="3" align="LEFT">Directory Entry 6</td></tr><tr><td>96</td><td>4</td><td>inode number: 669354</td></tr><tr><td>100</td><td>2</td><td>record length: 12</td></tr><tr><td>102</td><td>1</td><td>name length: 3</td></tr><tr><td>103</td><td>1</td><td>file type: <code class="CONSTANT">EXT2_FT_DIR</code>=2</td></tr><tr><td>104</td><td>3</td><td>name: tmp</td></tr><tr><td>107</td><td>1</td><td>padding</td></tr><tr><td colspan="3" align="LEFT">Directory Entry 7</td></tr><tr><td>108</td><td>4</td><td>inode number: 0</td></tr><tr><td>112</td><td>2</td><td>record length: 3988</td></tr><tr><td>114</td><td>1</td><td>name length: 0</td></tr><tr><td>115</td><td>1</td><td>file type: <code class="CONSTANT">EXT2_FT_UNKNOWN</code></td></tr><tr><td>116</td><td>0</td><td>name:</td></tr><tr><td>116</td><td>3980</td><td>padding</td></tr></tbody></table></div></div></div><div class="SECT1"><hr><h2 class="SECT1"><a name="INDEXED-DIRECTORY">4.2. Indexed Directory Format</a></h2><p>	Using the standard linked list directory format can become very slow
+	once the number of files starts growing.  To improve performances in
+	such a system, a hashed index is used, which allow to quickly
+	locate the particular file searched.
+   </p><p>	Bit <a href="#EXT2-INDEX-FL">EXT2_INDEX_FL</a> in the
+	<a href="#I-FLAGS">i_flags</a> of the directory inode
+	is set if the indexed directory format is used.
+   </p><p>	In order to maintain backward compatibility with older implementations,
+	the indexed directory also maintains a linked directory format side-by-side.
+	In case there's any discrepency between the indexed and linked directories,
+	the linked directory is preferred.
+   </p><p>	This backward compatibility is achieved by placing a fake directory entries
+	at the beginning of block 0 of the indexed directory data blocks.  These
+	fake entries are part of the <a href="#DX-ROOT-STRUCTURE">dx_root</a>
+	structure and host the linked directory information for the "." and ".."
+	folder entries.
+   </p><p>	Immediately following the <a href="#DX-ROOT">Section 4.2.1</a> structure is an array
+	of <a href="#DX-ENTRY">Section 4.2.2</a> up to the end of the data block or until
+	all files have been indexed.
+   </p><p>	When the number of files to be indexed exceeds the number of <a href="#DX-ENTRY">Section 4.2.2</a>
+	that can fit in a block (<a href="#DX-ENTRY-COUNTLIMIT-LIMIT">Section 4.2.2.3</a>), a level
+	of indirect indexes is created.  An indirect index is another data block allocated
+	to the directory inode that contains directory entries.
+   </p><div class="SECT2"><hr><h3 class="SECT2"><a name="DX-ROOT">4.2.1. Indexed Directory Root</a></h3><div class="TABLE"><a name="DX-ROOT-STRUCTURE"></a><p><b>Table 4-4. Indexed Directory Root Structure</b></p><table rules="none" class="CALSTABLE" border="1" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytes)</th><th>Description</th></tr></thead><tbody><tr><td colspan="3" align="LEFT">-- Linked Directory Entry: . --</td></tr><tr><td>0</td><td>4</td><td>inode: this directory</td></tr><tr><td>4</td><td>2</td><td>rec_len: 12</td></tr><tr><td>6</td><td>1</td><td>name_len: 1</td></tr><tr><td>7</td><td>1</td><td>file_type: <code class="CONSTANT">EXT2_FT_DIR</code>=2</td></tr><tr><td>8</td><td>1</td><td>name: .</td></tr><tr><td>9</td><td>3</td><td>padding</td></tr><tr><td colspan="3" align="LEFT">-- Linked Directory Entry: .. --</td></tr><tr><td>12</td><td>4</td><td>inode: parent directory</td></tr><tr><td>16</td><td>2</td><td>rec_len: (blocksize - this entry's length(12))</td></tr><tr><td>18</td><td>1</td><td>name_len: 2</td></tr><tr><td>19</td><td>1</td><td>file_type: <code class="CONSTANT">EXT2_FT_DIR</code>=2</td></tr><tr><td>20</td><td>2</td><td>name: ..</td></tr><tr><td>22</td><td>2</td><td>padding</td></tr><tr><td colspan="3" align="LEFT">-- Indexed Directory Root Information Structure --</td></tr><tr><td>24</td><td>4</td><td>reserved, zero</td></tr><tr><td>28</td><td>1</td><td><a href="#DX-HASH-VERSION">hash_version</a></td></tr><tr><td>29</td><td>1</td><td><a href="#DX-INFO-LENGTH">info_length</a></td></tr><tr><td>30</td><td>1</td><td><a href="#DX-INDIRECT-LEVELS">indirect_levels</a></td></tr><tr><td>31</td><td>1</td><td>reserved - unused flags</td></tr></tbody></table></div><div class="SECT3"><hr><h4 class="SECT3"><a name="DX-HASH-VERSION">4.2.1.1. hash_version</a></h4><p>	8bit value representing the hash version used in this indexed directory.
+     </p><div class="TABLE"><a name="DEFINED-DX-HASH-VERSION-VALUES"></a><p><b>Table 4-5. Defined Indexed Directory Hash Versions</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="40%"><col title="C2" width="20%"><col title="C3" width="40%"></colgroup><thead><tr><th>Constant Name</th><th>Value</th><th>Description</th></tr></thead><tbody><tr><td>DX_HASH_LEGACY</td><td>0</td><td>TODO: link to section</td></tr><tr><td>DX_HASH_HALF_MD4</td><td>1</td><td>TODO: link to section</td></tr><tr><td>DX_HASH_TEA</td><td>2</td><td>TODO: link to section</td></tr></tbody></table></div></div><div class="SECT3"><hr><h4 class="SECT3"><a name="DX-INFO-LENGTH">4.2.1.2. info_length</a></h4><p>	8bit length of the indexed directory information structure (dx_root); 
+	currently equal to 8.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="DX-INDIRECT-LEVELS">4.2.1.3. indirect_levels</a></h4><p>	8bit value indicating how many indirect levels of indexing are present in
+	this hash.
+     </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	In Linux, as of 2.6.28, the maximum indirect levels value supported is 1.
+     </p></td></tr></tbody></table></div></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="DX-ENTRY">4.2.2. Indexed Directory Entry</a></h3><p>	The indexed directory entries are used to quickly lookup the inode number
+	associated with the hash of a filename.  These entries are located immediately
+	following the fake linked directory entry of the directory data blocks, or
+	immediately following the <a href="#DX-ROOT">Section 4.2.1</a>.
+    </p><p>	The first indexed directory entry, rather than containing an actual hash and
+	block	number, contains the maximum number of indexed directory entries that
+	can fit in the block and the actual number of indexed directory entries 
+	stored in the block.	The format of this special entry is detailed in
+	<a href="#DX-ENTRY-COUNTLIMIT">Table 4-7</a>.
+    </p><p>	The other directory entries are sorted by hash value starting from the 
+	smallest to the largest numerical value.
+    </p><div class="TABLE"><a name="DX-ENTRY-STRUCTURE"></a><p><b>Table 4-6. Indexed Directory Entry Structure (dx_entry)</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytes)</th><th>Description</th></tr></thead><tbody><tr><td>0</td><td>4</td><td><a href="#DX-ENTRY-HASH">hash</a></td></tr><tr><td>4</td><td>4</td><td><a href="#DX-ENTRY-BLOCK">block</a></td></tr></tbody></table></div><div class="TABLE"><a name="DX-ENTRY-COUNTLIMIT"></a><p><b>Table 4-7. Indexed Directory Entry Count and Limit Structure</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytes)</th><th>Description</th></tr></thead><tbody><tr><td>0</td><td>2</td><td><a href="#DX-ENTRY-COUNTLIMIT-LIMIT">limit</a></td></tr><tr><td>2</td><td>2</td><td><a href="#DX-ENTRY-COUNTLIMIT-COUNT">count</a></td></tr></tbody></table></div><div class="SECT3"><hr><h4 class="SECT3"><a name="DX-ENTRY-HASH">4.2.2.1. hash</a></h4><p>	32bit hash of the filename represented by this entry.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="DX-ENTRY-BLOCK">4.2.2.2. block</a></h4><p>	32bit block index of the directory inode data block containing the (linked) directory entry for the filename.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="DX-ENTRY-COUNTLIMIT-LIMIT">4.2.2.3. limit</a></h4><p>	16bit value representing the total number of indexed directory entries that
+	fit within the block, after removing the other structures, but including
+	the count/limit entry.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="DX-ENTRY-COUNTLIMIT-COUNT">4.2.2.4. count</a></h4><p>	16bit value representing the total number of indexed directory entries
+	present in the block. TODO: Research if this value includes the count/limit entry.
+     </p></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="CONTRIB-LOOKUP-ALGORITHM">4.2.3. Lookup Algorithm</a></h3><p>	Lookup is straightforword:
+    </p><pre class="PROGRAMLISTING">- Compute a hash of the name
+- Read the index root
+- Use binary search (linear in the current code) to find the
+  first index or leaf block that could contain the target hash
+  (in tree order)
+- Repeat the above until the lowest tree level is reached
+- Read the leaf directory entry block and do a normal Ext2
+  directory block search in it.
+- If the name is found, return its directory entry and buffer
+- Otherwise, if the collision bit of the next directory entry is
+  set, continue searching in the successor block
+    </pre><p>	Normally, two logical blocks of the file will need to be accessed, and
+	one or two metadata index blocks.  The effect of the metadata index
+	blocks can largely be ignored in terms of disk access time since these
+	blocks are unlikely to be evicted from cache.  There is some small CPU
+	cost that can be addressed by moving the whole directory into the page
+	cache.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="CONTRIB-INSERT-ALGORITHM">4.2.4. Insert Algorithm</a></h3><p>	Insertion of new entries into the directory is considerably more
+	complex than lookup, due to the need to split leaf blocks when they
+	become full, and to satisfy the conditions that allow hash key
+	collisions to be handled reliably and efficiently.  I'll just summarize
+	here:
+    </p><pre class="PROGRAMLISTING">- Probe the index as for lookup
+- If the target leaf block is full, split it and note the block
+  that will receive the new entry
+- Insert the new entry in the leaf block using the normal Ext2
+  directory entry insertion code.
+    </pre><p>	The details of splitting and hash collision handling are somewhat
+	messy, but I will be happy to dwell on them at length if anyone is
+	interested.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="CONTRIB-SPLITTING">4.2.5. Splitting</a></h3><p>	In brief, when a leaf node fills up and we want to put a new entry into
+	it the leaf has to be split, and its share of the hash space has to
+	be partitioned.  The most straightforward way to do this is to sort the
+	entrys by hash value and split somewhere in the middle of the sorted
+	list.  This operation is log(number_of_entries_in_leaf) and is not a
+	great cost so long as an efficient sorter is used.  I used Combsort
+	for this, although Quicksort would have been just as good in this
+	case since average case performance is more important than worst case. 
+    </p><p>	An alternative approach would be just to guess a median value for the
+	hash key, and the partition could be done in linear time, but the
+	resulting poorer partitioning of hash key space outweighs the small
+	advantage of the linear partition algorithm.  In any event, the number
+	of entries needing sorting is bounded by the number that fit in a leaf.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="CONTRIB-KEY-COLLISIONS">4.2.6. Key Collisions</a></h3><p>	Some complexity is introduced by the need to handle sequences of hash
+	key collisions.  It is desireable to avoid splitting such sequences
+	between blocks, so the split point of a block is adjusted with this in
+	mind.  But the possibility still remains that if the block fills up
+	with identically-hashed entries, the sequence may still have to be
+	split.  This situation is flagged by placing a 1 in the low bit of the
+	index entry that points at the sucessor block, which is naturally
+	interpreted by the index probe as an intermediate value without any
+	special coding.  Thus, handling the collision problem imposes no real
+	processing overhead, just come extra code and a slight reduction in the
+	hash key space.  The hash key space remains  sufficient for any
+	conceivable number of directory entries, up into the billions.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="CONTRIB-HASH-FUNCTION">4.2.7. Hash Function</a></h3><p>	The exact properties of the hash function critically affect the
+	performance of this indexing strategy, as I learned by trying a number
+	of poor hash functions, at times intentionally.  A poor hash function
+	will result in many collisions or poor partitioning of the hash space. 
+	To illustrate why the latter is a problem, consider what happens when a
+	block is split such that it covers just a few distinct hash values. 
+	The probability of later index entries hashing into the same, small
+	hash space is very small.  In practice, once a block is split, if its
+	hash space is too small it tends to stay half full forever, an effect I
+	observed in practice.
+    </p><p>	After some experimentation I came up with a hash function that gives
+	reasonably good dispersal of hash keys across the entire 31 bit key
+	space.  This improved the average fullness of leaf blocks considerably,
+	getting much closer to the theoretical average of 3/4 full.
+    </p><p>	But the current hash function is just a place holder, waiting for
+	an better version based on some solid theory.  I currently favor the
+	idea of using crc32 as the default hash function, but I welcome
+	suggestions.
+    </p><p>	Inevitably, no matter how good a hash function I come up with, somebody
+	will come up with a better one later.  For this reason the design
+	allows for additional hash functiones to be added, with backward
+	compatibility.  This is accomplished simply, by including a hash
+	function number in the index root.  If a new, improved hash function is
+	added, all the previous versions remain available, and previously
+	created indexes remain readable.
+    </p><p>	Of course, the best strategy is to have a good hash function right from
+	the beginning.  The initial, quick hack has produced results that
+	certainly have not been disappointing.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="CONTRIB-PERFORMANCE">4.2.8. Performance</a></h3><p>	OK, if you have read this far then this is no doubt the part you've
+	been waiting for.  In short, the performance improvement over normal
+	Ext2 has been stunning.  With very small directories performance is
+	similar to standard Ext2, but as directory size increases standard
+	Ext2 quickly blows up quadratically, while htree-enhanced Ext2
+	continues to scale linearly.
+    </p><p>	Uli Luckas ran benchmarks for file creation in various sizes of
+	directories ranging from 10,000 to 90,000 files.  The results are
+	pleasing: total file creation time stays very close to linear, versus
+	quadratic increase with normal Ext2.
+    </p><p>	Time to create:
+    </p><div class="FIGURE"><a name="AEN2384"></a><p><b>Figure 4-1. Performance of Indexed Directories</b></p><pre class="PROGRAMLISTING">		Indexed		Normal
+		=======		======
+10000 Files:	0m1.350s	0m23.670s
+20000 Files:	0m2.720s	1m20.470s
+30000 Files:	0m4.330s	3m9.320s
+40000 Files:	0m5.890s	5m48.750s
+50000 Files:	0m7.040s	9m31.270s
+60000 Files:	0m8.610s	13m52.250s
+70000 Files:	0m9.980s	19m24.070s
+80000 Files:	0m12.060s	25m36.730s
+90000 Files:	0m13.400s	33m18.550s
+    </pre></div><p>	A graph is posted at: http://www.innominate.org/~phillips/htree/performance.png
+    </p><p>	All of these tests are CPU-bound, which may come as a surprise.  The
+	directories fit easily in cache, and the limiting factor in the case of
+	standard Ext2 is the looking up of directory blocks in buffer cache,
+	and the low level scan of directory entries.  In the case of htree
+	indexing there are a number of costs to be considered, all of them
+	pretty well bounded.  Notwithstanding, there are a few obvious
+	optimizations to be done:
+    </p><pre class="PROGRAMLISTING">- Use binary search instead of linear search in the interior index
+  nodes.
+
+- If there is only one leaf block in a directory, bypass the index
+  probe, go straight to the block.
+
+- Map the directory into the page cache instead of the buffer cache.
+    </pre><p>	Each of these optimizations will produce a noticeable improvement in
+	performance, but naturally it will never be anything like the big jump
+	going from N**2 to Log512(N), ~= N.  In time the optimizations will be
+	applied and we can expect to see another doubling or so in performance.
+    </p><p>	There will be a very slight performance hit when the directory gets big
+	enough to need a second level.  Because of caching this will be very
+	small.  Traversing the directories metadata index blocks will be a
+	bigger cost, and once again, this cost can be reduced by moving the
+	directory blocks into the page cache.
+    </p><p>	Typically, we will traverse 3 blocks to read or write a directory
+	entry, and that number increases to 4-5 with really huge directories. 
+	But this is really nothing compared to normal Ext2, which traverses
+	several hundred blocks in the same situation.
+    </p></div></div></div><div class="CHAPTER"><hr><h1><a name="AEN2393"></a>Chapter 5. File Attributes</h1><p>	Most of the file (also directory, symlink, device...) attributes are
+	located in the <a href="#INODE-TABLE">inode</a> associated with the file.
+	Some other attributes are only available as extended attributes.
+  </p><div class="SECT1"><hr><h2 class="SECT1"><a name="AEN2397">5.1. Standard Attributes</a></h2><div class="SECT2"><h3 class="SECT2"><a name="AEN2399">5.1.1. SUID, SGID and -rwxrwxrwx</a></h3><p>	There isn't much to say about those, they are located with the SGID and SUID bits in
+	<a href="#I-MODE">ext2_inode.i_mode</a>.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="AEN2403">5.1.2. File Size</a></h3><p>	The size of a file can be determined by looking at the
+	<a href="#I-SIZE">ext2_inode.i_size</a> field.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="AEN2407">5.1.3. Owner and Group</a></h3><p>	Under most implementations, the owner and group are 16bit values, but on
+	some recent Linux and Hurd implementations the owner and group id are
+	32bit.  When 16bit values are used, only the <span class="QUOTE">"low"</span> part should
+	be used as valid, while when using 32bit value, both the <span class="QUOTE">"low"</span>
+	and <span class="QUOTE">"high"</span> part should be used, the high part being shifted left
+	16 places then added to the low part.
+    </p><p>	The low part of owner and group are located in
+	<a href="#I-UID">ext2_inode.i_uid</a> and
+	<a href="#I-GID">ext2_inode.i_gid</a> respectively.
+    </p><p>	The high part of owner and group are located in
+	<a href="#H-I-UID-HIGH">ext2_inode.osd2.hurd.h_i_uid_high</a> and
+	<a href="#L-I-GID-HIGH">ext2_inode.osd2.hurd.h_i_gid_high</a>,
+	respectively, for Hurd and located in
+	<a href="#L-I-UID-HIGH">ext2_inode.osd2.linux.l_i_uid_high</a> and
+	<a href="#L-I-GID-HIGH">ext2_inode.osd2.linux.l_i_gid_high</a>,
+	respectively, for Linux.
+    </p></div></div><div class="SECT1"><hr><h2 class="SECT1"><a name="CONTRIB-EXTENDED-ATTRIBUTES">5.2. Extended Attributes</a></h2><p>	Extended attributes are name:value pairs associated  permanently  with
+	files and directories, similar to the environment  strings  associated
+	with a process.  An attribute may be defined or undefined.  If  it  is
+	defined, its value  may	be empty or non-empty.
+   </p><p>	Extended attributes are extensions to the normal attributes which  are
+	associated with all inodes in the  system.  They  are  often  used  to
+	provide additional  functionality  to  a  filesystem  -  for  example, 
+	additional security features such as Access Control Lists  (ACLs)  may
+	be implemented using extended attributes.
+   </p><p>	Extended attributes are accessed as atomic objects. Reading  retrieves
+	the whole value of an attribute and stores it  in  a  buffer.  Writing
+	replaces any previous value with the new value.
+   </p><p>	Extended attributes are stored on disk blocks allocated outside of
+	any inode. The <a href="#I-FILE-ACL">i_file_acl</a> field (for
+	regular files) or the <a href="#I-DIR-ACL">i_dir_acl</a> field
+	(for directories) fields contain the block number of the allocated data
+	block used to store the	extended attributes.
+   </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	Inodes which have all identical extended attributes may share the same
+	extended attribute block.
+   </p></td></tr></tbody></table></div><p>	The attribute values are on the  same block  as their  attribute entry
+	descriptions, aligned to the end of the  attribute block.  This allows
+	for additional attributes to be added more easily. The  size  of  entry
+	headers  varies with  the length  of the	attribute name.
+   </p><div class="SECT2"><hr><h3 class="SECT2"><a name="EXTENDED-ATTRIBUTE-LAYOUT">5.2.1. Extended Attribute Block Layout</a></h3><p>	The block header is followed by multiple entry descriptors. These entry
+	descriptors are variable in size, and aligned to <code class="CONSTANT">EXT2_XATTR_PAD</code>
+	(4) byte boundaries. The entry descriptors are sorted by attribute name,
+	so that two extended attribute blocks can be compared efficiently.
+    </p><p>	Attribute values are aligned to the end of the block, stored in
+	no specific order. They are also padded to <code class="CONSTANT">EXT2_XATTR_PAD</code> (4)
+	byte boundaries. No additional gaps are left between them.
+    </p><div class="TABLE"><a name="EXTENDED-ATTRIBUTE-BLOCK-LAYOUT"></a><p><b>Table 5-1. Extended Attribute Block Layout</b></p><table rules="none" class="CALSTABLE" border="1" width="100%"><colgroup><col title="C1" width="40%"><col title="C2" align="CENTER" width="5%"><col title="C3" width="55%"></colgroup><tbody><tr><td>Attribute Block Header</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Attribute Entry 1</td><td>|</td><td>&nbsp;</td></tr><tr><td>Attribute Entry 2</td><td>|</td><td>growing downwards</td></tr><tr><td>Attribute Entry 3</td><td>V</td><td>&nbsp;</td></tr><tr><td>4 null bytes</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>unused space...</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Attribute Value 1</td><td>^</td><td>&nbsp;</td></tr><tr><td>Attribute Value 3</td><td>|</td><td>growing upwards</td></tr><tr><td>Attribute Value 2</td><td>|</td><td>&nbsp;</td></tr></tbody></table></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="ATTRIBUTE-BLOCK-HEADER">5.2.2. Extended Attribute Block Header</a></h3><div class="TABLE"><a name="ATTRIBUTE-BLOCK-HEADER-STRUCTURE"></a><p><b>Table 5-2. ext2_xattr_header structure</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col title="C1" width="20%"><col title="C2" width="20%"><col title="C3" width="60%"></colgroup><thead><tr><th>Offset (bytes)</th><th>Size (bytse)</th><th>Description</th></tr></thead><tbody><tr><td>0</td><td>4</td><td><a href="#XATTR-H-MAGIC">h_magic</a></td></tr><tr><td>4</td><td>4</td><td><a href="#XATTR-H-REFCOUNT">h_refcount</a></td></tr><tr><td>8</td><td>4</td><td><a href="#XATTR-H-BLOCKS">h_blocks</a></td></tr><tr><td>12</td><td>4</td><td><a href="#XATTR-H-HASH">h_hash</a></td></tr><tr><td>16</td><td>16</td><td>reserved</td></tr></tbody></table></div><div class="SECT3"><hr><h4 class="SECT3"><a name="XATTR-H-MAGIC">5.2.2.1. h_magic</a></h4><p>	32bit magic number of identification, <code class="CONSTANT">EXT2_XATTR_MAGIC</code> = 0xEA020000.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="XATTR-H-REFCOUNT">5.2.2.2. h_refcount</a></h4><p>	32bit value used as reference count.  This value is incremented everytime
+	a link is created to this attribute block and decremented when a link is
+	destroyed.  Whenever this value reaches 0 the attribute block can be freed.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="XATTR-H-BLOCKS">5.2.2.3. h_blocks</a></h4><p>	32bit value indicating how many blocks are currently used by the
+	extended attributes.
+     </p><div class="NOTE"><p></p><table class="NOTE" border="0" width="100%"><tbody><tr><td align="CENTER" valign="TOP" width="25"><img src="Poirier11%20-%20The%20Second%20Extended%20File%20System:%20Internal%20Layout_files/note.html" alt="Note" hspace="5"></td><td align="LEFT" valign="TOP"><p>	In Linux a value of h_blocks higher than 1 is considered invalid.  This
+	effectively restrict the amount of extended attributes to what can be
+	fit in a single block.
+     </p><p>	There does not seem to be any support for extended attributes in Ext2 under
+	GNU HURD.
+     </p></td></tr></tbody></table></div></div><div class="SECT3"><hr><h4 class="SECT3"><a name="XATTR-H-HASH">5.2.2.4. h_hash</a></h4><p>	32bit hash value of all attribute entry header hashes.
+     </p><div class="PROCEDURE"><p><b><a name="XATTR-H-HASH-PROCEDURE"></a>Procedure to compute Extended Attribute Header Hash</b></p><ol type="1"><li class="STEP"><p>Initialize the 32bit hash to 0</p></li><li class="STEP"><a name="XATTR-H-HASH-PROCEDURE-LOOP"></a><p>Check if there are any extended 
+	attribute entry to process, if not we are done.</p></li><li class="STEP"><p>Do a cyclic bit shift of 16 bits to the left of the
+	32bits hash value, effectively swapping the upper and lower 16bits of the hash</p></li><li class="STEP"><p>Perform a bitwise OR between the extended attribute entry
+	<a href="#XATTR-E-HASH">hash</a> and the header hash being computed.</p></li><li class="STEP"><p>Go back to <a href="#XATTR-H-HASH-PROCEDURE-LOOP">step 2</a>&gt;.</p></li></ol></div></div></div><div class="SECT2"><hr><h3 class="SECT2"><a name="AEN2540">5.2.3. Attribute Entry Header</a></h3><div class="FIGURE"><a name="AEN2542"></a><p><b>Figure 5-1. ext2_xattr_header structure</b></p><pre class="PROGRAMLISTING">offset  size    description
+------- ------- -----------
+      0       1 <a href="#XATTR-E-NAME-LEN">e_name_len</a>
+      1       1 <a href="#XATTR-E-NAME-INDEX">e_name_index</a>
+      2       2 <a href="#XATTR-E-VALUE-OFFS">e_value_offs</a>
+      4       4 <a href="#XATTR-E-VALUE-BLOCK">e_value_block</a>
+      8       4 <a href="#XATTR-E-VALUE-SIZE">e_value_size</a>
+     12       4 <a href="#XATTR-E-HASH">e_hash</a>
+     16     ... <a href="#XATTR-E-NAME">e_name</a>
+    </pre></div><p>	The total size of an attribute entry is always rounded to the
+	next 4-bytes boundary.
+    </p><div class="SECT3"><hr><h4 class="SECT3"><a name="XATTR-E-NAME-LEN">5.2.3.1. e_name_len</a></h4><p>	8bit unsigned value indicating the length of the name.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="XATTR-E-NAME-INDEX">5.2.3.2. e_name_index</a></h4><p>	8bit unsigned value used as attribute name index.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="XATTR-E-VALUE-OFFS">5.2.3.3. e_value_offs</a></h4><p>	16bit unsigned offset to the value within the value block.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="XATTR-E-VALUE-BLOCK">5.2.3.4. e_value_block</a></h4><p>	32bit id of the block holding the value.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="XATTR-E-VALUE-SIZE">5.2.3.5. e_value_size</a></h4><p>	32bit unsigned value indicating the size of the attribute value.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="XATTR-E-HASH">5.2.3.6. e_hash</a></h4><p>	32bit hash of attribute name and value.
+     </p></div><div class="SECT3"><hr><h4 class="SECT3"><a name="XATTR-E-NAME">5.2.3.7. e_name</a></h4><p>	Attribute name.
+     </p></div></div></div><div class="SECT1"><hr><h2 class="SECT1"><a name="BEHAVIOUR-FLAGS">5.3. Behaviour Control Flags</a></h2><p>	The <a href="#I-FLAGS">i_flags</a> value in the
+	<a href="#INODE-STRUCTURE">inode</a> structure allows to  specify how the
+	file system should behave in regard to the file.  The following bits
+	are currently defined:
+   </p><div class="TABLE"><a name="AEN2579"></a><p><b>Table 5-3. Behaviour Control Flags</b></p><table frame="void" class="CALSTABLE" border="0" width="100%"><colgroup><col width="40%"><col width="20%"><col width="40%"></colgroup><tbody><tr><td><a href="#EXT2-SECRM-FL">EXT2_SECRM_FL</a></td><td>0x00000001</td><td>secure deletion</td></tr><tr><td><a href="#EXT2-UNRM-FL">EXT2_UNRM_FL</a></td><td>0x00000002</td><td>record for undelete</td></tr><tr><td><a href="#EXT2-COMPR-FL">EXT2_COMPR_FL</a></td><td>0x00000004</td><td>compressed file</td></tr><tr><td><a href="#EXT2-SYNC-FL">EXT2_SYNC_FL</a></td><td>0x00000008</td><td>synchronous updates</td></tr><tr><td><a href="#EXT2-IMMUTABLE-FL">EXT2_IMMUTABLE_FL</a></td><td>0x00000010</td><td>immutable file</td></tr><tr><td><a href="#EXT2-APPEND-FL">EXT2_APPEND_FL</a></td><td>0x00000020</td><td>append only</td></tr><tr><td><a href="#EXT2-NODUMP-FL">EXT2_NODUMP_FL</a></td><td>0x00000040</td><td>do not dump/delete file</td></tr><tr><td><a href="#EXT2-NOATIME-FL">EXT2_NOATIME_FL</a></td><td>0x00000080</td><td>do not update .i_atime</td></tr><tr><td><a href="#EXT2-DIRTY-FL">EXT2_DIRTY_FL</a></td><td>0x00000100</td><td>dirty (file is in use?)</td></tr><tr><td><a href="#EXT2-COMPRBLK-FL">EXT2_COMPRBLK_FL</a></td><td>0x00000200</td><td>compressed blocks</td></tr><tr><td><a href="#EXT2-NOCOMPR-FL">EXT2_NOCOMPR_FL</a></td><td>0x00000400</td><td>access raw compressed data</td></tr><tr><td><a href="#EXT2-ECOMPR-FL">EXT2_ECOMPR_FL</a></td><td>0x00000800</td><td>compression error</td></tr><tr><td><a href="#EXT2-BTREE-FL">EXT2_BTREE_FL</a></td><td>0x00001000</td><td>b-tree format directory</td></tr><tr><td><a href="#EXT2-INDEX-FL">EXT2_INDEX_FL</a></td><td>0x00001000</td><td>Hash indexed directory</td></tr><tr><td><a href="#EXT2-IMAGIC-FL">EXT2_IMAGIC_FL</a></td><td>0x00002000</td><td>?</td></tr><tr><td><a href="#EXT3-JOURNAL-DATA-FL">EXT3_JOURNAL_DATA_FL</a></td><td>0x00004000</td><td>journal file data</td></tr><tr><td><a href="#EXT2-RESERVED-FL">EXT2_RESERVED_FL</a></td><td>0x80000000</td><td>reserved for ext2 implementation</td></tr></tbody></table></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-SECRM-FL">5.3.1. EXT2_SECRM_FL - Secure Deletion</a></h3><p>	Enabling this bit will cause random data to be written over the flie's
+	content several time before the blocks are unlinked.  Note that this
+	is highly implementation dependant and as such, it should not be assumed
+	to be 100% secure.  Make sure to study the implementation notes before
+	relying on this option.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-UNRM-FL">5.3.2. EXT2_UNRM_FL - Record for Undelete</a></h3><p>	When supported by the implementation, setting this bit will cause the
+	deleted data to be moved to a temporary location, where the user can
+	restore the original file without any risk of data lost.  This is most
+	useful when using ext2 on a desktop or workstation.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-COMPR-FL">5.3.3. EXT2_COMPR_FL - Compressed File</a></h3><p>	The file's content is compressed.  There is no note about the particular
+	algorithm used other than maybe the
+	<a href="#S-ALGO-BITMAP">s_algo_bitmap</a> field of the
+	<a href="#SUPERBLOCK">superblock</a> structure.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-SYNC-FL">5.3.4. EXT2_SYNC_FL - Synchronous Updates</a></h3><p>	The file's content in memory will be constantly synchronized with the
+	content on disk.  This is mostly used for very sensitive boot files
+	or encryption keys that you do not want to lose in case of a crash.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-IMMUTABLE-FL">5.3.5. EXT2_IMMUTABLE_FL - Immutable File</a></h3><p>	The blocks associated with the file will not be exchanged.  If for
+	any reason a file system defragmentation is launched, such files will
+	not be moved. Mostly used for stage2 and stage1.5 boot loaders.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-APPEND-FL">5.3.6. EXT2_APPEND_FL - Append Only</a></h3><p>	Writing can only be used to append content at the end of the file and
+	not modify the current content.  Example of such use could be mailboxes,
+	where anybody could send a message to a user but not modify any already
+	present.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-NODUMP-FL">5.3.7. EXT2_NODUMP_FL - Do No Dump/Delete</a></h3><p>	Setting this bit will protect the file from deletion.  As long as this
+	bit is set, even if the <a href="#I-LINKS-COUNT">i_links_count</a>
+	is 0, the file will not be removed.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-NOATIME-FL">5.3.8. EXT2_NOATIME_FL - Do Not Update .i_atime</a></h3><p>	The <a href="#I-ATIME">i_atime</a> field of the
+	<a href="#INODE-STRUCTURE">inode</a> structure will not be modified when the
+	file is accessed if this bit is set.  The only good use I can think of
+	that are related to security.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-DIRTY-FL">5.3.9. EXT2_DIRTY_FL - Dirty</a></h3><p> 	I do not have information at this moment about the use of this bit.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-COMPRBLK-FL">5.3.10. EXT2_COMPRBLK_FL - Compressed Blocks</a></h3><p>	This flag is set if one or more blocks are compressed.  You can have
+	more information about compression on ext2 at
+	http://www.netspace.net.au/~reiter/e2compr/  Note that the project has
+	not been updated since 1999.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-NOCOMPR-FL">5.3.11. EXT2_NOCOMPR_FL - Access Raw Compressed Data</a></h3><p>	When this flag is set, the file system implementation will not uncompress
+	the data before fowarding it to the application but will rather give it as
+	is.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-ECOMPR-FL">5.3.12. EXT2_ECOMPR_FL - Compression Error</a></h3><p>	This flag is set if an error was detected when trying to uncompress the
+	file.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-BTREE-FL">5.3.13. EXT2_BTREE_FL - B-Tree Format Directory</a></h3><p>	
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-INDEX-FL">5.3.14. EXT2_INDEX_FL - Hash Indexed Directory</a></h3><p>	When this bit is set, the format of the directory file is hash indexed.
+	This is covered in details in <a href="#INDEXED-DIRECTORY">Section 4.2</a>.
+    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-IMAGIC-FL">5.3.15. EXT2_IMAGIC_FL -</a></h3><p>    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT3-JOURNAL-DATA-FL">5.3.16. EXT2_JOURNAL_DATA_FL - Journal File Data</a></h3><p>    </p></div><div class="SECT2"><hr><h3 class="SECT2"><a name="EXT2-RESERVED-FL">5.3.17. EXT2_RESERVED_FL - Reserved</a></h3><p>    </p></div></div></div><div class="APPENDIX"><hr><h1><a name="AEN2728"></a>Appendix A. Credits</h1><p>	I would like to personally thank everybody who contributed to this document,
+	you are numerous and in many cases I haven't kept track of all of you.  Be
+	sure that if you are not in this list, it's a mistake and do not hesitate
+	to contact me, it will be a pleasure to add your name to the list.
+  </p><pre class="PROGRAMLISTING">Peter Rottengatter (Peter.Rottengatter@bakerhughes.com)
+  Corrections to <a href="#S-INODES-PER-GROUP">Section 3.1.11</a>
+  Corrections to <a href="#DISK-LAYOUT-SAMPLE-FLOPPY">Table 3-1</a> and <a href="#DISK-LAYOUT-SAMPLE-20MB">Table 3-2</a>
+  Corrections to <a href="#BLOCK-GROUP-DESCRIPTOR-TABLE">Section 3.2</a>
+
+Ryan Cuthbertson (ryan.cuthbertson@adelaide.edu.au)
+  Corrections to <a href="#I-BLOCKS">Section 3.5.10</a>
+  Corrections to <a href="#DISK-ORGANISATION">Chapter 3</a>
+
+Andreas Gruenbacher (a.gruenbacher@bestbits.at)
+  <a href="#CONTRIB-EXTENDED-ATTRIBUTES">Section 5.2</a>
+
+Daniel Phillips (phillips@innominate.de)
+  <a href="#CONTRIB-LOOKUP-ALGORITHM">Section 4.2.3</a>
+  <a href="#CONTRIB-INSERT-ALGORITHM">Section 4.2.4</a>
+  <a href="#CONTRIB-SPLITTING">Section 4.2.5</a>
+  <a href="#CONTRIB-KEY-COLLISIONS">Section 4.2.6</a>
+  <a href="#CONTRIB-HASH-FUNCTION">Section 4.2.7</a>
+  <a href="#CONTRIB-PERFORMANCE">Section 4.2.8</a>
+
+Jeremy Stanley of Access Data Inc.
+  Pointed out the inversed values for EXT2_S_IFSOCK and EXT2_S_IFLNK
+  </pre></div></div></body></html>
