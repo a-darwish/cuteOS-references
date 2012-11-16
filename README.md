@@ -1,12 +1,10 @@
-‘Cute’ References
-==================
 
 Specifications, manuals, academic papers used, and notes written while
 developing the Cute kernel.
 
 
-Documentation:
---------------
+
+##Documentation:
 
 #### 01-ProjectGoals.txt
 
@@ -39,8 +37,8 @@ Microsoft's FAT32 & NTFS, and Linux ext2 are included and throughly
 discussed.
 
 
-Material:
----------
+
+##Material:
 
 Some of the folders stated below also include their own README files.
 
