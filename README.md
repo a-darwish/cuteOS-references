@@ -17,10 +17,9 @@ developing this project. That's the repository's _main_ document.
 
 #### papers/sched/00-README
 
-Study notes for a number of Scheduling-related papers, which served as
-a preparation for building an SMP scheduling base for my kernel.
+Study notes for a number of scheduling-related papers.
 
-The above notes discuss the origin of multi-level feedback queues
+These notes discuss the origin of multi-level feedback queues
 (beginning form the 1962's CTSS system, and moving to the Unix jungle
 of SVR2/3, Solaris, and the BSDs), spinlocks (from VAX/VMS), general-
 purpose kernel preemption, per-CPU runqueues and data areas (VAX/VMS,
@@ -29,12 +28,10 @@ DEC OSF/1, and WinNT), and thread scheduling soft and hard affinity
 
 #### papers/fs/00-README
 
-Study notes for a number of FileSystem-related papers, which served as
-a preparation for building our kernel file system implementation.
+Study notes for a number of filesystem-related papers.
 
 Primary sources for the classcial SVR2 filesystem, BSD's FFS,
-Microsoft's FAT32 & NTFS, and Linux ext2 are included and throughly
-discussed.
+Microsoft's FAT32 & NTFS, and Linux ext2 are throughly discussed.
 
 
 
@@ -59,7 +56,7 @@ Miscellaneous resources and self-written notes
 
 #### Specs/
 
-Specs of the 'hardware/software' interface used by our kernel;
+Specs of the 'hardware<->software' interface used by our kernel;
 examples include timers, interrupt controllers, and BIOS tables.
 
 #### papers/
@@ -68,5 +65,6 @@ Historical and relatively new research that was needed while
 working on this interesting project. Detailed notes I've written
 while studying these papers are also included.
 
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; —Ahmed S. Darwish <darwish.07@gmail.com>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+—Ahmed S. Darwish <darwish.07@gmail.com>

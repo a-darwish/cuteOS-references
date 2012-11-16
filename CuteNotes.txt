@@ -29,7 +29,8 @@ TOC:
 (21) The Zone!
 (22) Debugging periodic timers using statistical data
 (23) The Naughty Multiply
-
+(24) [DRAFT] On Reentrancy and Thread-safety
+(25) [DRAFT] SMP-safe kernel reference-counting
 
 On Intel Documents:
 -------------------
@@ -3011,3 +3012,93 @@ The Naughty Multiply:
   the side effects of __every__ opcode used in the kernel inlined
   assembly snippets. That's how I caught the %rflags, %rcx, and %rsi
   cases mentioned in the above point!
+
+
+[DRAFT] On Reentrancy and Thread-safety:
+----------------------------------------
+
+DRAFT:: * Reentrancy is a super-set of thread-safety. For example, our spin
+DRAFT:: lock code should not be only thread-safe, but also re-entrant:
+
+  void spin_lock(struct lock_spin *lock)
+  {
+	current->rflags = local_irq_disable_save();
+
+	while (atomic_bit_test_and_set(&lock->val) == _SPIN_LOCKED) {
+		local_irq_restore(current->rflags);
+
+		while (lock->val == _SPIN_LOCKED)
+			cpu_pause();
+
+		local_irq_disable();
+	}
+  }
+
+DRAFT:: The above spin lock code is thread-safe. 'current' is a per-CPU
+DRAFT:: variable representing the process descriptor of the thread
+DRAFT:: 'currently' executing on that CPU.
+DRAFT::
+DRAFT:: In that sense, there's a 'current->rflags' for each CPU and we
+DRAFT:: should be safe????
+DRAFT::
+DRAFT:: No, If an interrupt got griggered while spinning above, above
+DRAFT:: code will get executed in a re-entrant fashion. MUTING OLDER
+DRAFT:: current->rflags VALUE IN THE PROCESS!
+DRAFT::
+DRAFT:: In fact, the above code was directly responsible for a kernel
+DRAFT:: bug that made the kernel indefinitely disable kernel interrupts.
+DRAFT::
+DRAFT:: Here was the process:
+DRAFT::
+DRAFT:: Several CPUs called malloc() concurrently. This made the bootstrap
+DRAFT:: core spin for a while.
+DRAFT::
+DRAFT:: While the BSC spinning, a keyboard interrupt was triggered.
+DRAFT::
+DRAFT:: Since IRQs was on while spinning, the keyboard handler got executed.
+DRAFT:: Since we're using x86 "interrupt gates", IF=0 while handlers got
+DRAFT:: executed.
+DRAFT::
+DRAFT:: The keyboard interrupt handler issued a call to spin_lock (VGA
+DRAFT:: screen lock). That new call to spin_lock() was thus called with
+DRAFT:: interrupts disabled.
+DRAFT::
+DRAFT:: So, the new call set current->rflags with a value making IF=0;
+DRAFT::
+DRAFT:: After unlocking, and finishing the keyboard handler, the BSC malloc()
+DRAFT:: lock resumed spinning.
+DRAFT::
+DRAFT:: When restoring RFLAGS, malloc()'s spin_unlock() restored the one
+DRAFT:: with IF=0 .. leading to permanently disable bootstrap interrupts
+DRAFT:: and HALTING THE ENTIRE SYSTEM IN THE PROCESS.
+DRAFT::
+DRAFT:: THE SOLUTION:
+DRAFT:: #$#@#$@#$@#$#
+DRAFT::
+DRAFT:: Stack storage is the most reentrant-safe place possible. Use the
+DRAFT:: stack to save rflags.
+DRAFT::
+DRAFT:: Thus, if IF=1 before spin_lock(), busy loop while IF=1
+DRAFT:: if IF=0, busy loop while IF=0
+DRAFT:: Restore IF state at spin_unlock() by saving IF state at lock->rflags
+DRAFT:: AFTER acquiring the lock (Spin locks, ironically enough, are globals)
+DRAFT::
+DRAFT::* Another case functions called by IRQ handlers. They need to be
+DRAFT:: reentrant, not only thread safe.
+DRAFT::
+DRAFT:: Example:
+
+  CPU#1:
+  func1() -----.			  *----------------- func1() end
+	       | IRQ                      ^
+	       v 			  | IRQ end
+	       *--- handler -> func1() ---.
+
+  CPU#2:
+  func1() ---------------------- func1() end
+
+DRAFT:: Per-CPU variables can be enough if func1() was not called in an interrupt
+DRAFT:: handler, as long as preemption was disabled. Now since func1() get called
+DRAFT:: in IRQ context, it needs to protect its non-reentrant parts by disabling
+DRAFT:: interrupts (If only per-CPU vars where used), or by spinlocks that
+DRAFT:: disable interrupts (If globals were also used).

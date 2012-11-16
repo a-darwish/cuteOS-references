@@ -1,8 +1,7 @@
 
-
-			"I believe each incoming freshman must be started at once on his own research
-			 project if we are to preserve his secret dream of greatness and make it come
-			 true." -- Edwin H. Land
+		"I believe each incoming freshman must be started at once on
+		 his own research project if we are to preserve his secret
+		 dream of greatness and make it come true." —Edwin H. Land
 
 GOALS:
 ------
@@ -32,8 +31,4 @@ GOALS:
 - First milestone: reach a level of maturity to run basic GNU applications
   including GCC, binutils, and coreutils (in that order)
 
-
-			"A little sleep, a little slumber, a little folding of the hands to rest -
-			 and poverty will come on you like a bandit and scarcity like an armed man."
-			 -- Proverbs 24:33-34 NIV
 
