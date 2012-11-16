@@ -30,8 +30,9 @@ DEC OSF/1, and WinNT), and thread scheduling soft and hard affinity
 
 Study notes for a number of filesystem-related papers.
 
-Primary sources for the classcial SVR2 filesystem, BSD's FFS,
-Microsoft's FAT32 & NTFS, and Linux ext2 are throughly discussed.
+Primary sources for the classcial Multics and Unix SVR2 filesystems,
+BSD's FFS, Microsoft's FAT32 & NTFS, and Linux ext2/ext3 are throughly
+discussed.
 
 
 
@@ -65,6 +66,4 @@ Historical and relatively new research that was needed while
 working on this interesting project. Detailed notes I've written
 while studying these papers are also included.
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-—Ahmed S. Darwish <darwish.07@gmail.com>
+<div style='text-align:right; margin-right:5em;'>—Ahmed S. Darwish &lt;darwish.07@gmail.com&gt;</div>

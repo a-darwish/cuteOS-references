@@ -85,7 +85,13 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
   important papers in the history of modern operating systems. Here's the
   paper most important points:
 
-  - First, the file system is provided as an abstraction concept: "The
+  - First, a file system is designed to "provide the user with a simple
+    means of addressing an essentially infinite amount of secondary storage
+    in a machine-independent and device independent fashion." Per Brinch
+    Hansen notes that "this [hierarchial filesystem] paper was a proposal
+    only published _several_ years before the completion of Multics." :-)
+
+  - Thus, the file system is provided as an abstraction concept: "The
     basic structure of the file system is independent of machine consider-
     ations. Within a hierarchy of files, the user is aware only of symbolic
     addresses. All physical addressing of a multilevel complex of secondary
@@ -113,7 +119,7 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
     within the directory in which it occurs."
 
     A branch is a "directory entry that points to a file", while a link is
-    a "directory entry that points to another directory."
+    a "directory entry that points to another directory entry"
 
   - The paper then delves, for a while, in the implementation details of
     the FS. It mainly answers the question of where does the FS store files
@@ -152,6 +158,10 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
     Note that since only the tree structure is being considered, each file
     other than the root has __exactly one__ immediately superior file.
 
+    Links are then considered 'super-imposed upon', but independent of,
+    the tree structure above [note: that's why they're a hack].  The
+    notions of inferiority and superiority does not apply to links.
+
   - The paper then introduces the ‘working directory’ concept, which is a
     private area for each user: a file in that directory can be _directly_
     accessed only using its entry name. The file-system hierarchy is thus
@@ -177,6 +187,10 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
 				A:B:C:file1
 	get translated in UNIX as:
 				/A/B/C/file1
+
+	==> Thus, we can deduce that the Multics filesystem model did
+	pathname translation relative to the root by default, while Unix
+	did it relative to the 'current working directory' by default
 
   - In the previous point, writing paths (tree names) relative to the
     root directory was demonstrated. "However, a file may also be named
@@ -204,11 +218,15 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
     Multics and Unix have opposite semantics in that regard.
 
   - The paper then introduces the concept of SYMBOLIC LINKS, calling em
-    just ‘links’: "the name of the entry to be linked to [dst path] may
-    be specified as a tree name relative to the working directory or to
-    the root. A link serves as a shortcut to a branch somewhere else in
-    the hierarchy, and gives the user the illusion that the link is
-    actually a branch pointing directly to the desired file"
+    just ‘links’: "The only information associated with a link is the
+    pointer to the entry which it links. This pointer is specified in
+    terms of a symbolic name which uniquely identifies the linked entry
+    within the hierarchy." ... "the name of the entry to be linked to
+    [dst path] may be specified as a tree name relative to the working
+    directory or to the root. A link serves as a shortcut to a branch
+    somewhere else in the hierarchy, and gives the user the illusion
+    that the link is actually a branch pointing directly to the desired
+    file"
 
     Symbolic links "greatly facilitate the ease with which the FS may be
     used":
@@ -272,7 +290,7 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
 	  allocated, then the original file will be copied, then the new
 	  data will be added. Ugly & inefficient
 
-    ----------------------------------------------------------------------
+    .---------------------------------------------------------------------
     |					Appendix
     |
     | * External fragmentation is NOT an issue in read-only/write-once
@@ -305,8 +323,11 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
     | A small table will directly limit the amount of memory that can
     | be mapped. A big table wastes huge memory for each process or file,
     | and also puts useless constraints on file/process size. A solution
-    | would be to use linear, dynamically sized, page tables. But such
-    | tables will cause a main problem:
+    | would be to use linear, dynamically sized, page tables; this is
+    | how it's done in Mircrosoft's FAT file system.
+    |
+    | But dynamically-sized, linear mapping tables, as in FAT, will cause
+    | a main problem:
     |
     |   bad support of sparse files or memory area accesses (e.g. a
     |   large Bittorent file, or a memory image where the top part is
@@ -318,6 +339,10 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
     | Non-mapped parts in the middle of the mapping table need not to
     | be allocated (or navigated) at all. Holes can thus be supported
     | efficiently, and the meta-data can be kept in one place, etc.
+    |
+    | This basically leads to a 'tree' mapping structure. A certain node
+    | exist if and only if one of its siblings map itself to an existing
+    | block. Thus mapping sparse mem areas in a space-efficient manner.
     |
     | * A possible space-efficient implementation of the 'dynamically-
     | sized, linear mapping table' discussed above is to have the blocks
@@ -337,10 +362,15 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
     | occupy a great deal of virtual memory and disk space as well as
     | generating paging traffic [a 20-GB disk needs around 80MB table]."
     |
+    | NOTE! The idea of collapsing serial pointers, and moving them to
+    | an outside structure is similarly done in the evolution from
+    | primitve resource map memory allocators (first fit, best fit, etc)
+    | to the power-or-2 and McKusick-Karels memory allocators.
+    |
     | * UNIX SVR2, FFS, UFS, ext{2,3,4} file systems use the discussed
-    | method of the mapping table that extends itself by the use of
-    | data blocks or pages only as necessary, to solve the problems of
-    | external fragmentation and efficient data random access. The
+    | method of the tree mapping table that extends itself by the use
+    | of data blocks or pages only as necessary, to solve the problems
+    | of external fragmentation and efficient data random access. The
     | format is discussed in Bach's book and Ken Thompson's paper.
     |
     | NOTE! Such format has a problem of fragmenting the file over disk,
@@ -353,7 +383,7 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
     | inspiration:
     |	M. Talluri, et al., “A New Page-table for 64-bit Address Spaces”
     |
-    ----------------------------------------------------------------------
+    +---------------------------------------------------------------------
 
   - On-disk inodes are cached using in-core ones, by the FS code, for
     quick reference and to minimize disk access since the locality concept
@@ -451,6 +481,10 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
   - The allocation of data blocks was also sub-optimum. The next free data
     block was not on the same cylinder, forcing seeks between 512-byte
     transfers.
+
+  - The use of small 512-byte block sizes forced a high dependence on
+    indirect and double-indirect blocks, which were themselves scattered
+    allover the disk, leading to even more seeks.
 
   - Earlier expirements found that increasing the block size improved disk
     performance by a power of 2 cause of less seeks and less dependence on
@@ -586,6 +620,32 @@ NOTE-2: Turn UTF-8 on if you're reading this inside a web browser.
   - NOTE! The concept of immediate files is used Microsoft's NTFS and
     is called a ‘resident attribute’ (since a file data is considered
     _one_ of the file attributes in NTFS.)
+
+    .---------------------------------------------------------------------
+    |                                   Appendix
+    |                On the question of file's metadata placement
+    |
+    | * A file's metadata strcuture describes all of its important
+    |   attributes, which typically includes the file's data location on
+    |   disk, its own size, security permissions, access times, etc.
+    |
+    | * Different file systems place such important meta-data attributes
+    |   in different places. Here's a breakup of the common approaches:
+    |
+    |   (1) Embedded in the directory entries themselves. This is how
+    |       it's done in the first hierarchial file system (in Multics)
+    |       and in other popular filesystems like Microsoft's FAT/FAT32
+    |
+    |   (2) Embedded in the file's first data block, either at the
+    |       beginning or the end of such data block. This is how it's
+    |       done in Amoeba, and partially in NTFS resident blocks.
+    |
+    |   (3) In an isolated structure of its own (an inode), which is
+    |       usually kept in big arrays at the start of a filesystem
+    |       group/cylinder. This is how it's done in Unix SVR2, BSD's
+    |       FFS-based file systems, Linux ext2/3/4, etc.
+    |
+    +---------------------------------------------------------------------
 
 
 * Andrew S. Tanenbaum, Jorrit N. Herder & Herbert Bos, “File Size
