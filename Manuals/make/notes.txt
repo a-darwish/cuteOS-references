@@ -1,0 +1,13 @@
+
+# Notes on the Make manual
+--------------------------
+
+* Why is specifying PHONY targets important?
+
+  1. Since a phony target has no prerequisits, if a file of the same name
+     exists, make will never run the phony target commands.
+
+  2. It's much better in performance since make will not search its implicit
+     rules database (which can be big) in case of phony targets
+
+
