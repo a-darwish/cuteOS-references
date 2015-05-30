@@ -1,0 +1,718 @@
+Class 14
+CS 372H
+04 March 2010
+
+On the board
+------------
+
+1. Last time: scheduling intro (when, what metrics)
+2. Scheduling disciplines 
+3. Scheduling lessons and conclusions
+4. Midterm
+5. Kernel organization (microkernels, monolithic, exokernels)
+
+---------------------------------------------------------------------------
+
+1. Last time
+
+    --when scheduling happens
+
+    --what metrics we use to evaluate
+
+2. Scheduling disciplines
+
+    A. FCFS/FIFO
+
+	--run each job until it's done
+
+	--P1 needs 24 seconds
+
+	--P2 needs 3 seconds
+
+	--P3 needs 3 seconds
+	
+	--[ P1         P2  P3 ] 
+
+	--throughput: 3 jobs / 30 seconds = .1 jobs/sec
+
+	--average turnaround time?
+	    1/3(24 + 27 + 30) = 27
+
+	--observe: scheduling P2,P3,P1 would drastically reduce average
+	turnaround time
+
+	--advantages to FCFS:
+	    --simple
+	    --no starvation
+	    --few context switches
+
+	--disadvantage:
+	    --short jobs get stuck behind long ones
+
+    ***
+    Larger issue: I/O vs computation
+
+	--jobs contain bursts of computation, then must wait for I/O
+
+	--to maximize throughput:
+
+	    --must maximize CPU utilization *and*
+
+	    --must maximize I/O device utilization
+
+	--how?
+
+	    --overlap I/O and computation from multiple jobs
+
+	    --means *response time* very important for I/O intensive jobs:
+	    I/O device will be idle until some job gets small bit of CPU
+	    to issue next I/O request
+
+    Most CPU bursts are small; a few are very long
+
+    What are implications for FCFS?
+
+	CPU bound jobs will hold CPU until exit or I/O 
+	(but I/O rare for CPU-bound process) 
+
+	    --long periods where no I/O requests issued, and CPU held 
+	    --Result: poor I/O device utilization 
+
+	Example: one CPU-bound job, many I/O bound 
+	    --CPU bound runs (I/O devices idle) 
+	    --CPU bound blocks 
+	    --I/O bound job(s) run, quickly block on I/O 
+	    --CPU bound runs again 
+	    --I/O completes 
+	    --CPU bound job continues while I/O devices idle 
+
+	Simple hack: run process whose I/O completed? 
+	    --What is a potential problem? 
+	    (Answer: when the CPU-bound job issues an I/O request, it
+	    gets the CPU again and then bursts for a while, leaving us
+	    back where we started.)
+    ***
+
+    B. Round-robin
+
+	--add timer
+
+	--preempt CPU from long-running jobs. per time slice or quantum
+
+	--after time slice, go to the back of the ready queue
+
+	--most OSes do something of this flavor
+
+	    --JOS does something like this, as you'll see in lab 4A
+
+	--advantages:
+
+	    --fair allocation of CPU across jobs
+	    --low average waiting time when job lengths vary
+	    --good for responsiveness if small number of jobs
+
+	--disadvantages:
+
+	    --what if jobs are same length?
+	    --example: 2 jobs of 50 time units each, quantum of 1
+	    --average completion time: 100 (vs. 75 for FCFS)
+
+	--how to choose the quantum size?
+	    
+	    --want much larger than context switch cost
+
+	    --majority of bursts should be less than quantum
+
+	    --pick too small, and spend too much time context switching
+
+	    --pick too large, and response time suffers (extreme case:
+	    system reverts to FCFS)
+
+	    --typical time slice is between 10-100 milliseconds. context
+	    switches are usually microseconds or tens of microseconds
+	    (maybe hundreds)
+
+    C. SJF (shortest job first)
+
+	--STCF: shortest time to completion first 
+	    --Schedule the job whose next CPU burst is the shortest
+	    
+	--SRTCF: shortest remaining time to completion first
+	    --preemptive version of STCF: if job arrives that has a
+	    shorter time to completion than the remaining time on the
+	    current job, immediately preempt CPU to give to new job
+
+	--idea:
+	    --get short jobs out of the system
+	    --big effect on short jobs, small effect on large jobs
+	    --result: minimize waiting time (can prove this)
+
+	--seeks to minimize average waiting time for a given set of
+	processes
+
+	--example 1:
+
+	    process     arrival time         burst time
+	    P1		0			7
+	    P2		2			4
+	    P3		4			1
+	    P4		5			4
+
+	    preemptive:
+	    P1 P1 P2 P2 P3 P4 P4 P4 P4 P1 P1 P1 P1 P1
+
+	--example 2:
+
+	    3 jobs
+	    A, B: both CPU bound, run for a week
+	    C: I/O bound, loop
+		1 ms of CPU
+		10 ms of disk I/O
+
+	    by itself, C uses 90% of disk
+	    By itself, A or B uses 100% of CPU
+
+	    what happens if we use FIFO?
+		--if A or B gets in, keeps CPU for 2 weeks
+	    what about RR with 100msec time slice?
+		--only get 5% disk utilization
+	    what about RR with 1msec time slice?
+		--get nearly 90% disk utilization
+		--but lots of preemptions
+	    with SRTCF:
+		--no needless preeemptions
+		--get high disk utilization
+
+	--SRTCF advantages:
+	    --optimal response time (min waiting time)
+	    --low overhead 
+	--disadvantages:
+	    --not hard to get unfairness or starvation (long-running
+	    jobs)
+	    --does not optimize turnaround time (only waiting time)
+	    --** requires predicting the future **
+
+	so useful as a yardstick for measuring other policies (good way
+	to do CS design and development: figure out what the absolute
+	best answer is, then figure out how to approximate it)
+
+	however, can attempt to estimate future based on past (another
+	thing that people do when designing systems):
+
+	    --Exponentially weighted average a good idea 
+
+	    --t_n: length of proc's nth CPU burst
+
+	    --\tao_{n+1}: estimate for n+1 burst
+
+	    --choose \alpha, 0 < \alpha <= 1
+
+	    --set \tao_{n+1} = \alpha * t_n + (1-\alpha)*\tao_n
+
+	    --this is called an exponential weighted moving average
+	    (EWMA)
+
+	    --reacts to changes, but smoothly
+
+	upshot: favor jobs that have been using CPU the least amount of
+	time; that ought to approximate SRTCF
+
+    D. Priority schemes
+    
+	--priority scheme: give every process a number (set by
+	administrator), and give the CPU to the process with the highest
+	priority (which might be the lowest or highest number, depending
+	on the scheme)
+
+	    --can be done preempively or non-preemptively
+
+	--generally a bad idea because of starvation of low priority
+	tasks 
+	
+	    --here's an extreme example:
+		--say H at high priority, L at low priority
+		--H tries to acquire lock, fails, and spins
+		--L never runs
+
+	    --but note: SJF is priority scheduling where priority is the
+	    predicted next CPU burst time 
+
+	--solution to this starvation is to increase a process's
+	priority as it waits
+
+    E. multilevel feedback queues
+
+	[first used in CTSS; also used in FreeBSD. Linux up until 2.6.23
+	did something roughly similar.]
+	
+	two ideas:
+	    --*multiple queues, each with different priority*. OS does RR
+	    at each non-empty priority level before moving onto next priority
+	    level. 32 levels, for example.
+	    --feedback: process's priority changes, for example based on
+	    how little or much it's used the CPU
+	
+	result is to favor interactive jobs that use less CPU but
+	without starving all of the jobs
+
+	a process's priority might be set like this:
+	    --decreases whenever time interrupt found the process
+	    running
+	    --increases while the process is runnable but not running
+
+	advantages:
+	    --approximates SRTCF
+	disadvantages:
+	    --gameable: user puts in meaningless I/O to keep job's
+	    priority high
+	    --can't donate priority
+	    --not very flexible
+	    --not good for real-time and multimedia
+
+    F. Real time
+	--examples: cars, video playback, robots on assembly lines
+	--Soft real time: miss deadline and CD will sound funny 
+	--Hard real time: miss deadline and plane will crash 
+
+	--Many strategies. Long literature here. Basically, as long as
+	\sum (CPU_needed/period) <= 1, then first-deadline-first works.
+
+    G. What Linux does
+
+	--before Linux 2.4:
+	    
+	    --O(n) operations for O(n) processes
+
+	    --no affinity (means: which CPU the process wants to, or
+	    usually will, run on) on multicore systems (bad for cache)
+
+	    --global run-queue lock (coarse-grained lock)
+
+	--Linux 2.4 to 2.6.23
+	
+	    goal: O(1) for all operations
+
+	    [see section 10.3.4 in the text]
+
+	    Approach:
+
+	    --140 priority levels
+
+		0-99: for "real-time" tasks
+		    --some are FIFO (not preemptible)
+		    --some are round-robin (preemptible by clock or higher
+		    priority process)
+		[none is real "real time" because there are no guarantees or
+		deadlines]
+
+		100-140: for "timesharing" tasks
+		    --for user tasks (depends on nice and behavior)A
+
+	    --keeps per-process 4-entry "load estimator"
+
+		--how much CPU consumed in each of last 4 seconds
+
+		--adjusts priority by +/- 5 based on bheavior
+
+	    --each CPU has a run queue
+
+	    --each run queue is implemented as :
+	    
+		active array
+		expired array
+		
+		each array has 140 elements, each entry of which is a task
+		list of processes
+
+	    --avoids global clock and helps with affinity
+		a separate load-balancer can move tasks between CPUs
+
+	    --scheduling algorithm: run highest priority task in active
+	    array; after task uses quantum, place it in expired list; swap
+	    expired/active pointers when active list empty
+
+		--bitmap cache for empty/non-empty state of each list 
+
+	--post Linux 2.6.23: rough reinvention of ideas from stride
+	scheduling
+
+	    --motivation: the above approach is just a fancy multilevel
+	    feedback queue with an efficient implementation, so it
+	    inherits the disadvantages of multilevel feedback queues
+
+    H. lottery and stride scheduling
+
+	[citation: C. A. Waldsburger and W. E. Weihl. Lottery
+	Scheduling: Flexible Proportional-Share Resource Management.
+	Proc. Usenix Symposium on Operating Systems Design and
+	Implementation, November, 1994.
+	http://www.usenix.org/publications/library/proceedings/osdi/full_papers/waldspurger.pdf]
+
+	--lottery scheduling:
+	
+	    Issue lottery tickets to processes 
+	    -- Let p_i have t_i tickets 
+	    -- Let T be total # of tickets, T = \sum t_i
+	    -- Chance of winning next quantum is t_i / T
+	    -- Note lottery tickets not used up, more like season tickets
+
+	    controls long-term average proportion of CPU for each
+	    process
+
+	    can also group processes hierarchically for control
+		--subdivide lottery tickets
+		--can model as currency, so there can be an exchange
+		rate between real currencies (money) and lottery tickets
+
+
+	--lots of nice features
+
+	    --deals with starvation (have one ticket --> will make
+	    progress)
+
+	    --don't have to worry that adding one high priority job will
+	    starve all others
+
+	    --adding/deleting jobs affects all jobs proportionally (T
+	    gets bigger)
+
+	    --can transfer tickets between processes: highly useful if a
+	    client is waiting for a server. then client can donate
+	    tickets to server so it can run.
+
+		--note difference between donating tix and donating
+		priority. with donating tix, recipient amasses enough
+		until it runs. with donating priority, no difference
+		between one process donating and 1000 processes donating
+
+	--many other details
+
+	    --ticket inflation for processes that don't use their whole
+	    quantum
+
+	    --use fraction f of quantum; inflate tix by 1/f until it
+	    next gets CPU
+
+	--disadvantages
+
+	    --latency unpredictable
+
+	    --expected error somewhat high 
+
+		--for those comfortable with probability: this winds up
+		being a binomial distribution. variance n*p*(1-p) -->
+		standard deviation \proportional \sqrt(n),
+		    --where:
+			p is fraction of tickets owned
+			n is number of quanta
+
+	--in reaction to these disadvantages, Waldspurger and Weihl
+	proposed *Stride Scheduling*
+ 
+	    [citations:
+	    
+		C. A. Waldsburger and W. E. Weihl.  Stride Scheduling:
+		Deterministic Proportional-Share Resource Management.
+		Technical Memorandum MIT/LCS/TM-528, MIT Laboratory for
+		Computer Science, June 1995. 
+		http://www.psg.lcs.mit.edu/papers/stride-tm528.ps
+
+		Carl A. Waldspurger. Lottery and Stride Scheduling:
+		Flexible Proportional-Share Resource Management, Ph.D.
+		dissertation, Massachusetts Institute of Technology,
+		September 1995. Also appears as Technical Report
+		MIT/LCS/TR-667.
+		http://waldspurger.org/carl/papers/phd-mit-tr667.pdf]
+
+	    --the current Linux scheduler (post 2.6.23), called CFS
+	    (Completely Fair Scheduler), roughly reinvented these ideas
+
+	    --basically, a deterministic version of lottery scheduling.
+	    less randomness --> less expected error.
+	   
+
+3. Scheduling lessons and conclusions
+
+    --Scheduling comes up all over the place
+
+	--m requests share n resources
+
+	--disk arm: which read/write request to do next?
+
+	--memory: whom to take page from?
+
+    --This topic was popular in the days of time sharing, when there was
+    a shortage of resources all around, but many scheduling problems
+    become not very interesting when you can just buy a faster CPU or a
+    faster network.
+
+	--Exception: web sites and large-scale networks often cannot be made
+	 fast enough to handle peak demand (flash crowds, attacks) so
+	 scheduling becomes important again. For example may want to prioritize
+	 paying customers, or address denial-of-service attacks.
+
+	--Exception 2: some scheduling decisions have non-linear effects on
+	overall system behavior, not just different performance for different
+	users. For example, livelock scenario and paper.
+
+	--Exception 3: real-time systems:
+	    soft real time: miss deadline and CD or MPEG decode will skip
+	    hard real time: miss deadline and plane will crash
+
+    --In principle, scheduling decisions shouldn't affect program's
+    results
+
+	--This is good because it's rare to be able to calculate the
+	best schedule
+
+	--So instead, we build the kernel so that it's correct to do a
+	context switch and restore at any time, and then *any* schedule
+	will get the right answer for the program
+
+	--This is a case of a concept that comes up a fair bit in
+	computer systems: the policy/mechanism split. In this case, the
+	idea is that the *mechanism* allows the OS to switch any time
+	while the *policy* determines when to switch in order to meet
+	whatever goals are desired by the scheduling designer
+
+	    [[--In my view, the notion of "policy/mechanism split" is
+	    way overused in computer systems, for two reasons:
+	    
+		--when someone says they separated policy from mechanism
+		in some system, usually what's going on is that they
+		separated the hard problem from the easy problem and
+		solved the easy problem; or
+
+		--it's simply not the case that the two are separate.
+		*every* mechanism encodes a range of possible policies,
+		and by choice of mechanism you are usually constraining
+		what policies are possible]]
+
+    --But there are cases when the schedule *can* affect correctness
+
+	--multimedia: delay too long, and the result looks or sounds
+	wrong
+
+	--Web server: delay too long, and users give up
+
+    --Three further lessons (besides policy/mechanism split):
+
+	(i) Know your goals; write them down
+
+	(ii) Compare against optimal, even if optimal can't be built. 
+	    --It's a useful benchmark. Don't waste your time improving
+	    something if it's already at 99% of optimal.
+	    --Provides helpful insight. (For example, we know from the
+	    fact that SJF is optimal that it's impossible to be optimal
+	    and fair, so don't spend time looking for an optimal
+	    algorithm that is also fair.)
+
+	(iii) There are actually many different schedulers in the
+	system that interact:
+	    --mutexes, etc. are implicitly making scheduling decisions
+	    --interrupts: likewise (by invoking handlers)
+	    --disk: the disk scheduler doesn't know to favor one
+	    process's I/O above another
+	    --network: same thing: how does the network code know which
+	    process's packets to favor? (it doesn't)
+	    --example of multiple interacting schedulers:
+
+		you can optimize the CPU's scheduler and still find it
+		does nothing (e.g., if you're getting interrupted
+		200,000 times per second, only the interrupt handler is
+		going to get the CPU, so you need to solve that problem
+		before you worry about how the main CPU scheduler
+		allocates the CPU to jobs)
+
+
+	    --Basically, the _existence_ of interrupts is bad for
+	    scheduling. 
+
+
+
+4. Midterm
+
+    --covers readings (book, papers), labs, lectures, homeworks
+
+    --through Tuesday's class
+
+    --question format:
+    
+	--short answers
+
+	--design
+
+	--coding
+
+    --closed book [UPDATE: this used to say "open book". the exam will
+    not be "open book".]
+
+    --no electronics: no laptops, cell phones, PDAs, etc.
+
+    --we want you all to do well!
+
+    --please don't go overboard studying. on the other hand, if you
+    haven't been keeping up, or you don't study, you may find the exam
+    very difficult.
+
+5. Kernel organization: microkernels vs. monolithic
+
+    --What is a microkernel? Here's the idea:
+
+	--Implement many traditional OS abstractions in user-space servers
+
+	    --Paging, file system, networking, possibly even interrupt
+	    handlers (like L3), print, display
+
+	    --Some servers have privileged access to some h/w (e.g., file
+	    system and disks)
+
+	--What does kernel do? Minimum to support servers:
+
+	    --address spaces
+
+	    --threads
+
+	    --inter-process communication (IPC)
+
+	    --some IPC handle which can send/receive messages.
+
+	--Everything works through message passing
+	    --apps talking to servers
+	    --apps talking to apps
+	    --servers talking to servers
+
+    --Advantages:
+	 --Modularity and extensibility (understandable, replaceable services)
+	 --Isolation (bugs take down the server, not the kernel)
+	 --Fault-tolerant (same reason: just restart individual services)
+	 --Easier to extend to distributed context (send/recv no
+	    different in terms of interface, just implementation)
+
+    --History
+
+	--individual ideas around since the beginning
+
+	--lots of research projects starting early 1980s
+
+	--hit the big time w/ CMU's Mach in 1986
+
+	--thought to be too slow in early 1990s (Mach very slow; people
+	concluded microkernels are a bad idea)
+	    this is the context for Liedtke's paper. he is saying, "it
+	    can be fast".
+
+	--now slowly returning (OSX, QNX in embedded systems/routers, etc)
+
+	--ideas very influential on non-microkernels
+
+    --What is disadvantage? 
+	
+	--Performance
+
+	    --What would be simple calls into the kernel are now IPCs
+	    
+	    --How bad is performance?  (See Table 2 of Liedtke paper (p. 185))
+
+	--Programmability
+
+	    --Ken Thompson: "I would generally agree that microkernels
+	    are probably the wave of the future. However, it is in my
+	    opinion easier to implement a monolithic kernel. It is also
+	    easier for it to turn into a mess in a hurry as it is
+	    modified." 
+
+    --More about the trade-off:
+
+	--monolithic makes it easier to have sub-systems cooperate (such
+	as the pager and the file system; these modules can read each
+	other's data structures)
+
+	--monolithic creates lots of strange interactions, which leads
+	to complexity and bugs
+
+    --In practice...
+
+	--huge issue: Unix compatibility
+
+	--critical to widespread adoption
+
+	--difficult: Unix was not designed in a modular fashion
+
+	--Mach, L4: one big Unix server ... which is not
+	a huge practical difference from a single Linux kernel (who
+	cares if it's running in user space? a single bug still takes
+	down all of the interesting state because it's all in that Unix
+	server).
+
+    --So the approaches to kernel design are:
+
+	1. Monolithic (Linux, Unix, etc.).
+	    --philosophy:
+		--convenience (for application or OS programmer)
+		--for any problem, either hide it from the application,
+		or add a new system call
+	    --very successful approach
+
+	2. Microkernel (OSX, L3, etc.)
+	    --philosophy:
+		--IPC and user-space servers
+		--for any problem, make a new server, and talk to it
+		with RPC or IPC
+
+	3. Exokernel (JOS!)
+	    --philosophy:
+		--eliminate all abstractions
+		--for any problem, expose hardware or the needed
+		information to the application, and let the application
+		do what it wants
+
+    --Examples of exokernel use are:
+
+	--Let application built nice address space if it wants, or not
+
+	    --Expose calls like:
+		pa = AllocPage()
+		DeallocPage(pa)
+		MapPage(va, pa)
+
+	    --And expose upcalls like:
+		PageFault(va)
+
+	    --Kernel's job is only:
+	    
+		--to ensure that app creates mappings to physical pages
+		that it owns
+
+		--to track which environment owns which physical pages
+
+		--decide which application to reclaim pages from, if
+		system runs out
+
+	--What does it mean to expose CPU to app?
+	    --Tell application when it is about to be context-switched
+	    *out*
+	    --Tell application when it is about to be context-switched
+	    *in*
+
+	    then, on a timer interrupt:
+		--cpu jumps from application into kernel
+		--kernel issues please_yield() upcall:
+		    --then app saves state (registers, etc.)
+		    --app calls yield() for real
+	    
+	    when kernel decides to resume application:
+		--kernel jumps into the application at the "resume()"
+		upcall. application then restores its saved registers
+
+	    example use:
+		--suppose time slice ends in the middle of
+
+		    acquire(&mutex)
+		    ....
+		    release(&mutex)
+    
+		--then, inside please_yield(), app can complete the
+		critical section and release the mutex
+
+    --**JOS is an exokernel!**
