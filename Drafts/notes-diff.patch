@@ -1,0 +1,89 @@
+diff --git a/CuteNotes.txt b/CuteNotes.txt
+index 079fa61..f1bd35b 100644
+--- a/CuteNotes.txt
++++ b/CuteNotes.txt
+@@ -293,3 +293,84 @@ On accessing fixed disk drivers (hard-disks):
+   and is supported in all bios chips post-1995, so we use it exclusively.
+ 
+   Check the boot sector code for more details.
++
++
++On Referencing symbols from Assembly files in C:
++------------------------------------------------
++
++ELF:
++----
++
++- readelf, .symtable .. oh how valuable are they
++
++- not directly letting LD output binary, outputting elf first then use
++  objcopy is way more valuable since we can inspect the final kernel elf
++  image easily using common ELF parsing tools
++
++/*
++ * Note that 'extern <type> *SYMBOL;' won't work since it'd mean we
++ * don't point to meaningful data yet, which isn't the case. We use
++ * 'SYMBOL[]' since in a declaration, [] just leaves it open to the
++ * number of base type objects which are present, not *where* they are.
++ * SYMBOL[n] just adds more static-time safety; SYMBOL[n][size] lets
++ * the compiler automatically calculate an entry index for us.
++ * @IDT_STUB_SIZE: exception stub _code_ size.
++ */
++
++ALSO CHECK THE LINKER MANUAL, AND ADDING SYMBOLS USING A LINKER SCRIPT
++
++On the use of readelf and similar tools:
++----------------------------------------
++
++Once I removed the identity mappings, kernel was working but exception
++handlers was not working and a division over zero invoked protection faults
++and system restarts.
++
++mm, so how to debug that?
++
++running bochs, we see that after restart, from the registers dump that
++CR2 contains the address CR2=0x0000000000100148, which means somewhere
++we depended on identity mappings are available.
++
++mm, but in the code, we don't use any physical addresses, since all the
++code symbols are already relocated by the script at 0xffffffff80000000+
++addresses.
++
++So, we check what the 0x100148 address might be. The best resource is
++to check the final KERNEL elf.
++
++using readelf kernel.elf we find:
++
++     7: 0000000000100140     0 NOTYPE  LOCAL  DEFAULT    1 gdt
++
++Caught the bastard; we were using the code segment from the gdt (0x08)
++which let to the faulting address be 100148. The code segment was referenced
++by the interrupt handlers, and thus the restarts.
++
++Fine
++
++System V AMD64 calling convention:
++----------------------------------
++1. If the class is MEMORY, pass the argument on the stack.
++2. If the class is INTEGER, the next available register of the sequence %rdi,
++   %rsi, %rdx, %rcx, %r8 and %r9 is used.
++3. If the class is SSE, the next available vector register is used, the registers
++   are taken in the order from %xmm0 to %xmm7.
++4. If the class is SSEUP, the eightbyte is passed in the next available eightbyte
++   chunk of the last used vector register.
++5. If the class is X87, X87UP or COMPLEX_X87, it is passed in memory.
++
++  The direction flag DF in the %rFLAGS register must be clear (set to “forward”
++direction) on function entry and return. Other user flags have no specified role in
++the standard calling sequence and are not preserved across calls.
++
++The critical manuals used:
++--------------------------
++
++1) AMD64 documents
++2) GCC documentation
++3) GAS documentation
++4) LD documentation
++5) GNU make documentation
++5) Undocumented PC - I/O ports and BIOS interrupts
++6) AMD64 System V ABI specification

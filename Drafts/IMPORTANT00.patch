@@ -1,0 +1,111 @@
+diff --git a/CuteNotes.txt b/CuteNotes.txt
+index d4b6103..dfe08dc 100644
+--- a/CuteNotes.txt
++++ b/CuteNotes.txt
+@@ -155,6 +155,12 @@ On Data Alignment:
+   2  ^ 10 = 10000000000 = 1024 = 1KB
+   2  ^ 12 = 1000000000000 = 2^2 * 1KB = 4KB (x86 Page size/aligned-address)
+   ...
++  2  ^ 16 = 0x10000 = 64KB (max memory addressable using 16-bits + 1)
++  2  ^ 20 = 0x100000 = 1MB (x86-16 address space + 1)
++  ...
++  2  ^ 30 = 0x40000000 = 1GB (1/4 x86-32 address space)
++  ...
++  2  ^ 32 = 0x100000000 = 4GB (x86-32 address space + 1)
+ 
+ * Common alignments offsets:
+ 
+diff --git a/papers/sched/00-README b/papers/sched/00-README
+index b9852dc..783150c 100644
+--- a/papers/sched/00-README
++++ b/papers/sched/00-README
+@@ -20,6 +20,8 @@ Ahmed S. Darwish <darwish.07@gmail.com>
+   - Arpaci98, 'Multilevel Feedback Queue Scheduling in Solaris'
+   - Oracle02, Man Pages Section 4: File Formats, ts_dptbl(4)
+   - Black90, 'Concurrency and Parallelism in the Mach Operating System'
++  - Jones06, 'Inside the Linux [O(1)] Scheduler'
++  - Li09, 'Efficient and Scalable Multiprocessor Fair Scheduling'
+   - Sliberchatz08, Bibliography from the 'Operating System Concepts' book
+ 
+ 
+@@ -505,8 +507,78 @@ Ahmed S. Darwish <darwish.07@gmail.com>
+     system load, the less usage decay, avoiding jobs from getting crammed
+     in high priority queues on high system load.
+ 
+-    Priorites get calculated after every four clock ticks (40millis),
+-    decreasing linearly with job's CPU usage.
++    Priority of a __currently running__ thread get re-calculated after
++    each 4 ticks of its runtime, decreasing linearly with job's CPU usage.
++    If a higher priority was discovered after this decrease, the thread
++    is preempted.
++
++    Routines responsible for waking up a thread or adding a new thread to
++    the runqueue check such thread priority against the currently running
++    thread. If it's higher, a reschedule operation is requested.
++
++  (XXX: Unix internals discuss the problem of classical SVR2/3 decay,
++  its equations, and the new BSD decay method one in a very simple
++  manner. Use it here. Update the BSD scheduling description in the
++  process)
++
++
++* M. Tim Jones, 'Inside the Linux Scheduler', 2006:
++  -------------------------------------------------
++
++  This serves as a nice introduction to per-CPU runqueues and SMP load-
++  balancing. It's a very simple article that needs no further discussion.
++
++  (XXX: Check the OSF/1 Mach v3.0 paper, the one which originally
++  introducted per-CPU queues here. That article is shit in comparison.)
++
++
++* Tong Li et al., Effecient and Scalable MP Fair Scheduling, 2009:
++------------------------------------------------------------------
++
++  (XXX: stride scheduling, check l14.txt)
++
++  Personally, I've coded a multi-level feedback queue (Solaris-style) in
++  my kernel, and its disadvantages began to appear starting directly from
++  the first day of benchmarking: too much heuristics and voo-doo
++  constants![1] (check the footnote)
++
++  Such voo-doos would be partially acceptable if the system designer had
++  the luxury of lots of different machines and workloads to test against,
++  something I obviously lack. So in a search for more theoretically-sound
++  algorithms, let's check fair-share schedulers. Li's paper sounds like a
++  nice start.
++
++  The first claim of the paper is that many propotional-share algorithms
++  exist, but none provide a practical solution for large-scale SMP systems.
++  The classical algorithms require global runqueues, which leads to linear
++  lock contention with the extra number of CPUs, and cache snooping among
++  CPUs due to sharing cache lines. Analysis:
++
++  - 
++
++  (XXX: Put below discussion under the solaris entry instead)
++  [1] It was simply plotting different kernel threads properties over time.
++  Such properties included threads total runtime, average runtime per
++  dispatch, total wait in runqueues, average wait in runqueues, number of
++  priority boosts (cause of starvation), number of preemptions cause of a
++  higher-priority thread becoming runnable, and number of preemptions cause
++  of a thread time-slice end.
++
++  Here were part of the benchmarks:
++  (a) code version 1, 6 threads:
++        http://localf.googlepages.com/pub/mlfq/fairness.gif
++  (b) code version 1, 100 threads:
++        http://localf.googlepages.com/pub/mlfq/fairness100.gif
++  (c) code version 2 (after sanitizing the voo-doos), 6 threads:
++        http://localf.googlepages.com/pub/mlfq/fairness-improved.gif
++  (d) code version 2, 100 threads (things became good!!):
++        http://localf.googlepages.com/pub/mlfq/fairness-improved.gif
++  (e) unfortunately, the _new_ heuristics above had corner cases:
++        http://localf.googlepages.com/pub/mlfq/fairness-improved-pathological.gif
++
++  So unfortunately, playing with heuristics was like a game of cat and
++  mouse, and there were _always_ corner cases here or there. There had to
++  be suspense.
+ 
+ 
+ * Bibliography from 'Operating System Concepts', Sliberchatz et al., 2007:

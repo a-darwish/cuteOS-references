@@ -1,0 +1,299 @@
+diff --git a/A Commentary On The Sixth Edition Unix Operating System.pdf b/A Commentary On The Sixth Edition Unix Operating System.pdf
+deleted file mode 100644
+index 5b200be..0000000
+Binary files a/A Commentary On The Sixth Edition Unix Operating System.pdf and /dev/null differ
+diff --git a/CuteNotes.txt b/CuteNotes.txt
+index cd9f1f0..292504c 100644
+--- a/CuteNotes.txt
++++ b/CuteNotes.txt
+@@ -1,3 +1,5 @@
++			Notes on the Cute Kernel
++
+ On Intel Documents:
+ -------------------
+ 
+@@ -800,6 +802,29 @@ The 8259A Programmable Interrupt Controller:
+ 
+   which solves our problem nicely.
+ 
++Testing libc()-like kernel code:
++--------------------------------
++
++* An interesting way to test libc()-like code like the string methods is
++  to replace the glibc implementation with our own, and then run a huge
++  application like firefox, OpenOffice or gcc with those implementations.
++
++  This usually covers huge number of cases, and gives a good indicator
++  about the stability of those functions. I've usually found that even
++  the smallest mistake in such tests produce either a non-behaving app
++  or a direct segfault.
++
++* One way to quickly do this is Unix linkers LD_PRELOAD functionality:
++
++  # Position-independent object, suitable for dynamic linking
++  $ gcc -fPIC -c string_lib.c -o string_lib.o
++
++  # Produce shared object (instead of final executable) that can
++  # be linked with other objects to form an executable.
++  $ gcc -shared -o string_lib.so string_lib.o
++
++  $ LD_PRELOAD='./string_lib.so' firefox-bin
++
+ On SMP Memory ordering models:
+ ------------------------------
+ 
+@@ -1634,3 +1659,250 @@ Musings on Memory Allocation:
+   it cause of its beautiful simplicity, speed, and space effeciency for small
+   allocations. We shall develop a slab-like caching allocator for big objects
+   once the need arise; we're obviously influenced by FreeBSD in this area.
++
++
++On Virtual Memory:
++------------------
++
++* References:
++  - Uresh Vahalia, "Unix Internals", Chapter 13 - Virtual Memory
++  - Peter J. Denning, 'Virtual Memory', Princeton, ACM Computing Surveys
++  - Maurice Bach, "The Design of the UNIX Operating System", Chapter 9 -
++    Memory Management Policies
++
++* First, please check our detaild notes on the great Dennings's virtual memory
++  paper.
++
++* To cause considerable reduction in the amount of virtual-to-physical mapping
++  information that needs to be stored, methods like segmentation and paging
++  was invented. In the words of Denning, "each method groups information into
++  blocks, a block being a set of contiguous addresses in address space. The
++  entries in the mapping table will refer now to blocks, which are _far_ less
++  numerous than addresses in a process address space".
++
++  In other words, instead of storing mapping information for each address, we
++  store the mapping info fore each equally-sized _page_ or for each _segment_.
++
++* In paging, even while storing mapping information for each page instead of
++  for each address, the page table can consume a huge area of memory. For
++  example, in a fictional 32-bit machine with a page size of 1KB, and an
++  address space of 2GB, we need: 2^31 / 2^10 = 2^21 entry. For an entry size
++  of 32-bit, 4-bytes: page table size = 2^21 * 2^2 = 2^23 = 2^3 * 2^20 = 8MB.
++  So we'll need an 8MB table for _each_ process address space which is a lot.
++
++* Analyzing the problem, we see that the root cause is having mapping information
++  for non-used pages; A process rarely use its entire address space anyway. To
++  solve this we either:
++
++  - have segmented page tables. Each segment of the process has its own page table
++  which is just large enough to hold the valid address range for that segment.
++
++  - second is having the page table itself paged, which means an additional higher
++  level page table is used to map the lower-level page table. With such a multi-
++  teired hierarchy, we need to allocate only those pages of the lower-level table
++  that map used/valid addresses of the process. This is the common approach.
++
++On Partitionting the 64-bit kernel address space:
++-------------------------------------------------
++
++* References:
++  - Andi Kleen, "Porting Linux to x86-64", SuSe Labs
++  - Intel Manuals volume 2A, A-M Instructions Reference
++
++* Partitioning the address space of a long mode kernel is an interesting challenge.
++  There are so many tradeoffs to be taken care of. First, let's remember that we
++  have full 64-bit space. This has obvious potentials, but also some drawbacks that
++  need be taken care of.
++
++* The first drawback of using a full 64-bit address space is code size. Imagine when
++  every far jump, global data access, and function call uses a full 64-bit address.
++  The difference is outlied in below small app:
++
++	/* File1: sum.c */
++	int global;
++	int sum() {
++		return 0;
++	}
++
++	/* File2: app.c */
++	extern int global;
++	int x;
++	int main() {
++		global = 0xdead;
++		x = 0xceeb;
++		return sum();
++	}
++
++	$ gcc -O3 -m32 sum.c app.c -o app
++
++  which generates the very small code below:
++
++	$ objdump -D app
++	0804956c <x>:	/* 2-byte address */
++	 804956c:       00 00                   add    %al,(%eax)
++         ...
++	08049570 <y>:	/* 2-byte address */
++	 8049570:       00 00                   add    %al,(%eax)
++
++	08048370 <main>:
++	 /* 10-bytes in total
++	  * 2-byte address dereference */
++	 8048376:       c7 05 68 95 04 08 ad    movl   $0xdead,0x8049568
++	 804837d:       de 00 00
++
++	 /* 10-bytes in total
++	  * 2-byte address dereference */ 
++	 8048380:       c7 05 6c 95 04 08 eb    movl   $0xceeb,0x804956c
++	 8048387:       ce 00 00
++ 
++	 /* Only 5 bytes in total
++	  * 2-byte offset */
++	 8048394:       e8 c7 ff ff ff          call   8048360 <sum>
++	 ...
++
++  Now imagine if above app used full 64-bit virtual addresses, each 2-byte address
++  dereference above would have consumed full 8-bytes; even some ops would consume
++  140% extra size. Inspect below results:
++
++	$ gcc -m64 -mcmodel=large -c sum.c -o sum.o
++	$ gcc -m64 -mcmodel=large -c app.c -o app.o
++	$ ld  -Ttext 0xffff800000000000 app.o sum.o -o app
++        $ objdump -D app
++
++	ffff8000002000cc <x>:   /* .. 8-byte address */
++	ffff8000002000cc:       00 00                   add    %al,(%rax)
++         ...
++	ffff8000002000d0 <y>:   /* .. 8-byte address */
++         ...
++
++	ffff800000000024 <main>:
++
++	 /* 8-bytes address, 15-bytes ops size in total. Compare
++	  * with the 10-byte 32-bit equivalent ops (50% increase) */
++	 ffff800000000028:       48 b8 c8 00 20 00 00    mov    $0xffff8000002000c8,%rax
++	 ffff80000000002f:       80 ff ff 
++	 ffff800000000032:       c7 00 ad de 00 00       movl   $0xdead,(%rax)
++
++	 /* 8-bytes address, 15-bytes ops size in total. Compare
++	  * with the 10-byte 32-bit equivalent ops (50% increase) */
++	 ffff800000000038:       48 b8 cc 00 20 00 00    mov    $0xffff8000002000cc,%rax
++	 ffff80000000003f:       80 ff ff 
++	 ffff800000000042:       c7 00 eb ce 00 00       movl   $0xceeb,(%rax)
++	 ...
++
++	 /* 8-byte address, *12-bytes* ops size in total. Compare
++	  * with the 5-byte 32-bit equivalent ops (140% increase!) */
++	 ffff80000000005d:       48 ba 00 00 00 00 00    mov    $0xffff800000000000,%rdx
++	 ffff800000000064:       80 ff ff 
++	 ffff800000000067:       ff d2                   callq  *%rdx
++
++* As you can see from above, naively using the 64-bit address space can lead to
++  diastrous effects on code size, and thus, the cache footprint. To solve this, some
++  help from both the kernel and the compiler is needed.
++
++  First, let's focus on user-space. To let user-space avoid this large code-size hit,
++  it's common to assign to it the 0 -> 4GB+ virtual space, and let the compiler
++  generate 32-bit addresses for code and global data. This is for example, how the Linux
++  ecosystem does it. The kernel assigns below virtual addresses to user-space (for each
++  process):
++
++	0000000000000000 - 00007fffffffffff (=47 bits) user space, different per mm
++	hole caused by [48:63] sign extension
++
++  And let gcc emits 32-bit addressing for code and global data using the -mcmodel=small
++  parameter, which is the default memory model. %rip-relative addressing is also used
++  by default in this model.
++
++* Now how are we going to produce similar effect in kernel-space code when the
++  0 -> 4G+ space has been already reserved by user-space?
++
++  Thanks to the elegance of the 2's complement model, the common case is to use
++  negative 32-bit addresses for kernel linking. This leads to negative 32-bit
++  discplacement for kernel ops. We then let the CPU implcitly (automatically)
++  sign-extend those discplacements, leading us to use the top 64-bit address space,
++  but with the size-effeciency of 32-bit addresses!
++
++  An example is overdue. Imagine linking our kernel with the 0xffffffff80000000
++  as base. %rax points to a physical address in our text or data area. To let it
++  be virtual, we add the base to it. Mainly we want to do:
++
++	%rax = %rax + 0xffffffff80000000
++
++  Now, thanks to the sign-extension trick, the above instruction can be size-
++  -effeciently encoded as if the displacement was 32-bit as follows:
++
++	ffffffff8010b347: 48 05 00 00 00 80       add    $0xffffffff80000000,%rax
++
++  As you can see, only 4-bytes are used for displacement (0x80000000). The REX.W
++  prefix (0x48) with the x86 ADD opcode (05) will let the x86-64 cpu automatically
++  sign extend the 32-bit immediate 0x80000000 to $0xffffffff80000000 and achieve
++  our goals.
++
++  This is the main reason 64-bit Linux linking base (along with lots of other long
++  mode kernels) is 0xffffffff80000000. GCC has the -mcmodel=kernel parameter for
++  such common case of size-wise effecient negative addresses linkage. In our kernel
++  we also do the same.
++
++* To get a state of the effeciency difference, check the difference of function call
++  overhead from a size persective between -mcmodel=large, and -mcmodel=kernel:
++
++  $ objdump -j .text -D kernel.elf | grep call		# -mcmodel=kernel
++
++  ffffffff801090c8:       e8 e3 45 00 00          callq  ffffffff8010d6b0 <vsnprintf>
++  ffffffff801090df:       e8 ec 48 00 00          callq  ffffffff8010d9d0 <printk>
++  ffffffff80109105:       e8 86 41 00 00          callq  ffffffff8010d290 <memset>
++  ffffffff8010b97b:       e8 70 f9 ff ff          callq  ffffffff8010b2f0 <spin_lock>
++  ffffffff8010ba61:       e8 6a ff ff ff          callq  ffffffff8010b9d0 <get_free_page>
++  ffffffff8010bdd8:       e8 83 fc ff ff          callq  ffffffff8010ba60 <get_zeroed_page>
++  ffffffff8010c749:       e8 a2 f8 ff ff          callq  ffffffff8010bff0 <__kmalloc>
++  ...
++
++  $ objdump -j .text -D kernel.elf | grep call		# -mcmodel=large
++
++  /* Notice the ~%140 increase in size per call */
++  ffffffff801090cb:       48 b8 d0 e6 10 80 ff    mov    $0xffffffff8010e6d0,%rax
++  ffffffff801090d2:       ff ff ff 
++  ffffffff801090d5:       ff d0                   callq  *%rax
++  ffffffff801091a3:       48 bb 00 ea 10 80 ff    mov    $0xffffffff8010ea00,%rbx
++  ffffffff801091aa:       ff ff ff 
++  ffffffff801091b9:       ff d3                   callq  *%rbx
++  ...
++
++  So, while admittedly using -mcmodel=large makes things a bit easier for the 64-bit
++  kernel developer, it induces too much overhead that it's worth the effort to avoid
++  it.
++
++* So, keeping above points in mind, we'll use this strategy for dividing kernel-
++  space addresses:
++
++  0x0000000000000000 -> 0x00007fffffffffff      userspace mappings
++  unused hole ..
++  0xffff800000000000 -> 0xffffc00000000000	maps for all physical memory (64TB max)
++  unused hole ..
++  0xffffffff80000000 -> 0xffffffffc0000000      kernel text and data map
++
++* ( This point is based on very appreciated help from Travis Giselbrecht over IRC,
++  which I also copied to the osdev wiki )
++
++  An interesting design decision is how to map and use the kernel address space.
++  Linux approaches the problem by permanently mapping the -2GB virtual region
++  0xffffffff80000000 -> 0xffffffffffffffff to physical address 0x0 upwards. Kernel
++  data structures, which are usually allocated by kmalloc() and the slab allocator,
++  reside above the 0xffffffff80000000 virtual base and are allocate from the physical
++  0 -> 2GB zone. This necessitates the ability of 'zoning' the page allocator, asking
++  the page allocator to returning a page frame from a specific region, and only from
++  that region.
++
++  If a physical address above 2GB needs to accessed, the kernel temporarily map it to
++  its space in a temporary mapping space below the virtual addresses base. The Linux
++  approach provides the advantage of not having to modify the page tables much which
++  means less TLB shootdowns on an SMP system.
++
++* Note that also in this chapter, Vahali discusses the 4.3BSD _page_ allocator
++
++* Also check chapter 14 and 15, where Vahalia discusses the entire 4.4BSD
++  memory management stack, along with other great details.
++
++* You may also find it benefecial to check the chapter 7 on SMP synchronization,
++  and 7.6 on spinlocks
++
+diff --git a/The UNIX Time-Sharing System.pdf b/The UNIX Time-Sharing System.pdf
+deleted file mode 100644
+index 60e0ee1..0000000
+Binary files a/The UNIX Time-Sharing System.pdf and /dev/null differ

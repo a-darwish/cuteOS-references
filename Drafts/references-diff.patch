@@ -1,0 +1,114 @@
+[1mdiff --git a/A Commentary On The Sixth Edition Unix Operating System.pdf b/A Commentary On The Sixth Edition Unix Operating System.pdf[m
+[1mdeleted file mode 100644[m
+[1mindex 5b200be..0000000[m
+Binary files a/A Commentary On The Sixth Edition Unix Operating System.pdf and /dev/null differ
+[1mdiff --git a/CuteNotes.txt b/CuteNotes.txt[m
+[1mindex cd9f1f0..95e8273 100644[m
+[1m--- a/CuteNotes.txt[m
+[1m+++ b/CuteNotes.txt[m
+[36m@@ -407,6 +407,29 @@ On accessing fixed disk drivers (hard-disks):
+[m 
+[m   Check the boot sector code for more details.
+[m 
+[m[32m+[m[32mTesting libc()-like kernel code:[m
+[32m+[m[32m--------------------------------[m
+[32m+[m
+[32m+[m[32m* An interesting way to test libc()-like code like the string methods is[m
+[32m+[m[32m  to replace the glibc implementation with our own, and then run a huge[m
+[32m+[m[32m  application like firefox, OpenOffice or gcc with those implementations.[m
+[32m+[m
+[32m+[m[32m  This usually covers huge number of cases, and gives a good indicator[m
+[32m+[m[32m  about the stability of those functions. I've usually found that even[m
+[32m+[m[32m  the smallest mistake in such test produce either a non-behaving app[m
+[32m+[m[32m  or a direct segfault.[m
+[32m+[m
+[32m+[m[32m* One way to do this is Unix linkers LD_PRELOAD functionality:[m
+[32m+[m
+[32m+[m[32m  # Position-independent object, suitable for dynamic linking[m
+[32m+[m[32m  $ gcc -fPIC -c string_lib.c -o string_lib.o[m
+[32m+[m
+[32m+[m[32m  # Produce shared object (instead of final executable) that can[m
+[32m+[m[32m  # be linked with other objects to form an executable.[m
+[32m+[m[32m  $ gcc -shared -o string_lib.so string_lib.o[m
+[32m+[m
+[32m+[m[32m  $ LD_PRELOAD='./string_lib.o' firefox[m
+[32m+[m
+ The 8259A Programmable Interrupt Controller:
+[m --------------------------------------------
+[m 
+[m[36m@@ -1634,3 +1657,71 @@ Musings on Memory Allocation:
+[m   it cause of its beautiful simplicity, speed, and space effeciency for small
+[m   allocations. We shall develop a slab-like caching allocator for big objects
+[m   once the need arise; we're obviously influenced by FreeBSD in this area.
+[m[32m+[m
+[32m+[m
+[32m+[m[32mOn Virtual Memory:[m
+[32m+[m[32m------------------[m
+[32m+[m
+[32m+[m[32m* References:[m
+[32m+[m[32m  - Uresh Vahalia, "Unix Internals", Chapter 13 - Virtual Memory[m
+[32m+[m[32m  - Peter J. Denning, 'Virtual Memory', Princeton, ACM Computing Surveys[m
+[32m+[m[32m  - Maurice Bach, "The Design of the UNIX Operating System", Chapter 9 -[m
+[32m+[m[32m    Memory Management Policies[m
+[32m+[m
+[32m+[m[32m* First, please check our detaild notes on the great Dennings's virtual memory[m
+[32m+[m[32m  paper.[m
+[32m+[m
+[32m+[m[32m* To cause considerable reduction in the amount of virtual-to-physical mapping[m
+[32m+[m[32m  information that needs to be stored, methods like segmentation and paging[m
+[32m+[m[32m  was invented. In the words of Denning, "each method groups information into[m
+[32m+[m[32m  blocks, a block being a set of contiguous addresses in address space. The[m
+[32m+[m[32m  entries in the mapping table will refer now to blocks, which are _far_ less[m
+[32m+[m[32m  numerous than addresses in a process address space".[m
+[32m+[m
+[32m+[m[32m  In other words, instead of storing mapping information for each address, we[m
+[32m+[m[32m  store the mapping info fore each equally-sized _page_ or for each _segment_.[m
+[32m+[m
+[32m+[m[32m* In paging, even while storing mapping information for each page instead of[m
+[32m+[m[32m  for each address, the page table can consume a huge area of memory. For[m
+[32m+[m[32m  example, in a fictional 32-bit machine with a page size of 1KB, and an[m
+[32m+[m[32m  address space of 2GB, we need: 2^31 / 2^10 = 2^21 entry. For an entry size[m
+[32m+[m[32m  of 32-bit, 4-bytes: page table size = 2^21 * 2^2 = 2^23 = 2^3 * 2^20 = 8MB.[m
+[32m+[m[32m  So we'll need an 8MB table for _each_ process address space which is a lot.[m
+[32m+[m
+[32m+[m[32m* Analyzing the problem, we see that the root cause is having mapping information[m
+[32m+[m[32m  for non-used pages; A process rarely use its entire address space anyway. To[m
+[32m+[m[32m  solve this we either:[m
+[32m+[m
+[32m+[m[32m  - have segmented page tables. Each segment of the process has its own page table[m
+[32m+[m[32m  which is just large enough to hold the valid address range for that segment.[m
+[32m+[m
+[32m+[m[32m  - second is having the page table itself paged, which means an additional higher[m
+[32m+[m[32m  level page table is used to map the lower-level page table. With such a multi-[m
+[32m+[m[32m  teired hierarchy, we need to allocate only those pages of the lower-level table[m
+[32m+[m[32m  that map used/valid addresses of the process.[m[41m [m
+[32m+[m[41m  [m
+[32m+[m[32m* ( This point is based on very appreciated help from Travis Giselbrecht over IRC,[m
+[32m+[m[32m  which I also copied to the osdev wiki )[m
+[32m+[m
+[32m+[m[32m  An interesting design decision is how to map and use the kernel address space.[m
+[32m+[m[32m  Linux approaches the problem by permanently mapping the -2GB virtual region[m
+[32m+[m[32m  0xffffffff80000000 -> 0xffffffffffffffff to physical address 0x0 upwards. Kernel[m
+[32m+[m[32m  data structures, which are usually allocated by kmalloc() and the slab allocator,[m
+[32m+[m[32m  reside above the 0xffffffff80000000 virtual base and are allocate from the physical[m
+[32m+[m[32m  0 -> 2GB zone. This necessitates the ability of 'zoning' the page allocator, asking[m
+[32m+[m[32m  the page allocator to returning a page frame from a specific region, and only from[m
+[32m+[m[32m  that region.[m
+[32m+[m
+[32m+[m[32m  If a physical address above 2GB needs to accessed, the kernel temporarily map it to[m
+[32m+[m[32m  its space in a temporary mapping space below the virtual addresses base. The Linux[m
+[32m+[m[32m  approach provides the advantage of not having to modify the page tables much which[m
+[32m+[m[32m  means less TLB shootdowns on an SMP system.[m
+[32m+[m
+[32m+[m[32m* Note that also in this chapter, Vahali discusses the 4.3BSD _page_ allocator[m
+[32m+[m
+[32m+[m[32m* Also check chapter 14 and 15, where Vahalia discusses the entire 4.4BSD[m
+[32m+[m[32m  memory management stack, along with other great details.[m
+[32m+[m
+[32m+[m[32m* You may also find it benefecial to check the chapter 7 on SMP synchronization,[m
+[32m+[m[32m  and 7.6 on spinlocks[m
+[32m+[m
+[1mdiff --git a/The UNIX Time-Sharing System.pdf b/The UNIX Time-Sharing System.pdf[m
+[1mdeleted file mode 100644[m
+[1mindex 60e0ee1..0000000[m
+Binary files a/The UNIX Time-Sharing System.pdf and /dev/null differ

@@ -1,0 +1,91 @@
+diff --git a/CuteNotes.txt b/CuteNotes.txt
+index 462a675..d5a23fb 100644
+--- a/CuteNotes.txt
++++ b/CuteNotes.txt
+@@ -26,7 +26,7 @@ TOC:
+ (20) Debugging -O3 triggered problems
+ (21) The Zone!
+ (22) Debugging periodic timers using statistical data
+-
++(23) Important kernel commits
+ 
+ On Intel Documents:
+ -------------------
+@@ -177,14 +177,15 @@ On Data Alignment:
+ 
+ * Useful numbers:
+ 
+-  0x100   = 256 bytes
+-  0x200   = 512 bytes  (bootsector size, number of entries in PML{4, 3, 2} tables)
+-  0x400   = 1KB
+-  0x1000  = 4KB        (x86 normal page size/alignment)
+-  0x8000  = 32KB
+-  0xffff  = 64KB -1    (max offset for a real-mode segment)
+-  0x10000 = 64KB
+-  0x80000 = 512KB      (our initial kernel size!)
++  0x100    = 256 bytes
++  0x200    = 512 bytes  (bootsector size, number of entries in PML{4, 3, 2} tables)
++  0x400    = 1KB
++  0x1000   = 4KB        (x86 normal page size/alignment)
++  0x8000   = 32KB
++  0xffff   = 64KB -1    (max offset for a real-mode segment)
++  0x10000  = 64KB
++  0x80000  = 512KB      (our initial kernel size!)
++  0x100000 = 1MB	(low memory end)
+ 
+ On little-endian byte ordering:
+ -------------------------------
+@@ -893,6 +894,11 @@ The 8259A Programmable Interrupt Controller:
+   jump from its raw uninitialized state to a state similar to the bootstrap's
+   one.
+ 
++* Finally, remember that the BIOS knows if a core is usable by checking its
++  Builtin-self-test (BIST) result in the %rax register, directly after the
++  RESET# signal.
++
++
+ * On linkers 'relocation error's:
+ ---------------------------------
+ 
+@@ -1230,6 +1236,8 @@ On SMP Memory ordering models:
+   - A given CPU will always _perceive_ its own memory operations as occuring
+     in program order, without a need for memory barriers.
+   - Naturally-aligned loads and stores are always atomic
++    (the term comes from the __historical meaning__ of the word 'atom',
++     which means 'inidivisable')
+   - Code that uses standard synchronization primitives (spinlocks, RCU, ..)
+     should not need explicit mem barriers. Only tricky code that bypasses those
+     primitives need those barriers. An example of a linked list lockless search
+@@ -2055,6 +2063,9 @@ On Partitionting the 64-bit kernel address space:
+     http://www.webcitation.org/5nckv6YBf
+   - Intel Manuals volume 2A, A-M Instructions Reference
+ 
++* Add here an important note on why partitioning. From the first paragraph in
++  McKusick section 5.3, and my blog entry
++
+ * Partitioning the address space of a long mode kernel is an interesting challenge.
+   There are so many tradeoffs to be taken care of. First, let's remember that we
+   have full 64-bit space. This has obvious potentials, but also some drawbacks that
+@@ -2718,3 +2729,22 @@ Debugging periodic timers using statistical data:
+ * A similar test-case for periodic timers is comparing their statistical
+   ticks occurrences relative to each other. This will guarantee that all system
+   periodic timers really measure the same concept of time!
++
++
++Important commits in the kernel:
++--------------------------------
++
++Here we list very important 'big-picture' commit messages, instead of
++just copying their content:
++
++1) The page allocator circular dependency bugfix:
++
++   commit c1fb3a6fba4b7ad624db0d4a62ef4e8cc46f3661
++   MAJOR Bugfix: Introduce zones support to the page allocator.
++
++2) GCC inline assembly problems
++
++3)
++   commit c8a9ec12ab3af958b8a09182e31969899edf016c
++   Build a respectful Makefile.
++

@@ -1,0 +1,178 @@
+commit 06f422f2f59febc398123f7c5effc935b536db16
+Author: Ahmed S. Darwish <darwish.07@gmail.com>
+Date:   Tue Jul 27 16:45:54 2010 +0300
+
+    Polish our notes on virtual memory.
+
+diff --git a/CuteNotes.txt b/CuteNotes.txt
+index 2b0d8bf..f5cce30 100644
+--- a/CuteNotes.txt
++++ b/CuteNotes.txt
+@@ -1815,7 +1815,8 @@ On Virtual Memory:
+   example, in a fictional 32-bit machine with a page size of 1KB, and an
+   address space of 2GB, we need: 2^31 / 2^10 = 2^21 entries. For an entry size
+   of 32-bit, 4-bytes: page table size = 2^21 * 2^2 = 2^23 = 2^3 * 2^20 = 8MB.
+-  So we'll need an 8MB table for _each_ process address space which is a lot.
++  So we'll need a _contiguous_ 8MB table for _each_ system process address space
++  which is definitely not tolerable.
+ 
+ * Analyzing the problem, we see that the root cause is having mapping information
+   for non-used pages; a process rarely use its entire address space anyway. It's
+@@ -1852,7 +1853,7 @@ On Partitionting the 64-bit kernel address space:
+ 
+ * The first drawback of using a full 64-bit address space is code size. Imagine when
+   every far jump, global data access, and function call uses a full 64-bit address.
+-  The difference is outlied in below small app:
++  The difference is outlied in below pure x86-32 app:
+ 
+ 	/* File1: sum.c */
+ 	int global;
+@@ -1862,7 +1863,7 @@ On Partitionting the 64-bit kernel address space:
+ 
+ 	/* File2: app.c */
+ 	extern int global;
+-	int x;
++	int x, y;
+ 	int main() {
+ 		global = 0xdead;
+ 		x = 0xceeb;
+@@ -1882,20 +1883,20 @@ On Partitionting the 64-bit kernel address space:
+ 	 8049570:       00 00                   add    %al,(%eax)
+ 
+ 	08048370 <main>:
+-	 /* 10-bytes in total
+-	  * 4-byte address dereference */
+-	 8048376:       c7 05 68 95 04 08 ad    movl   $0xdead,0x8049568
+-	 804837d:       de 00 00
+-
+-	 /* 10-bytes in total
+-	  * 4-byte address dereference */
+-	 8048380:       c7 05 6c 95 04 08 eb    movl   $0xceeb,0x804956c
+-	 8048387:       ce 00 00
+-
+-	 /* Only 5 bytes in total
+-	  * 4-byte offset */
+-	 8048394:       e8 c7 ff ff ff          call   8048360 <sum>
+-	 ...
++	/* 10-bytes in total
++	 * 4-byte absolute address dereference */
++	8048376:       c7 05 68 95 04 08 ad     movl   $0xdead,0x8049568
++	804837d:       de 00 00
++
++	/* 10-bytes in total
++	 * 4-byte absolute address dereference */
++	8048380:       c7 05 6c 95 04 08 eb     movl   $0xceeb,0x804956c
++	8048387:       ce 00 00
++
++	/* Only 5 bytes in total
++	 * 4-byte relative offset */
++	8048394:       e8 c7 ff ff ff           call   8048360 <sum>
++	...
+ 
+   Now imagine if above app used full 64-bit virtual addresses, each 4-byte address
+   dereference above would have consumed full 8-bytes; even some ops would consume
+@@ -1904,7 +1905,7 @@ On Partitionting the 64-bit kernel address space:
+ 	$ gcc -m64 -mcmodel=large -c sum.c -o sum.o
+ 	$ gcc -m64 -mcmodel=large -c app.c -o app.o
+ 	$ ld  -Ttext 0xffff800000000000 app.o sum.o -o app
+-        $ objdump -D app
++        $ objdump -D app | less
+ 
+ 	ffff8000002000cc <x>:   /* .. 8-byte address */
+ 	ffff8000002000cc:       00 00                   add    %al,(%rax)
+@@ -1914,24 +1915,24 @@ On Partitionting the 64-bit kernel address space:
+ 
+ 	ffff800000000024 <main>:
+ 
+-	 /* 8-bytes address, 15-bytes ops size in total. Compare
+-	  * with the 10-byte 32-bit equivalent ops (50% increase) */
+-	 ffff800000000028:       48 b8 c8 00 20 00 00    mov    $0xffff8000002000c8,%rax
+-	 ffff80000000002f:       80 ff ff
+-	 ffff800000000032:       c7 00 ad de 00 00       movl   $0xdead,(%rax)
+-
+-	 /* 8-bytes address, 15-bytes ops size in total. Compare
+-	  * with the 10-byte 32-bit equivalent ops (50% increase) */
+-	 ffff800000000038:       48 b8 cc 00 20 00 00    mov    $0xffff8000002000cc,%rax
+-	 ffff80000000003f:       80 ff ff
+-	 ffff800000000042:       c7 00 eb ce 00 00       movl   $0xceeb,(%rax)
+-	 ...
+-
+-	 /* 8-byte address, *12-bytes* ops size in total. Compare
+-	  * with the 5-byte 32-bit equivalent ops (140% increase!) */
+-	 ffff80000000005d:       48 ba 00 00 00 00 00    mov    $0xffff800000000000,%rdx
+-	 ffff800000000064:       80 ff ff
+-	 ffff800000000067:       ff d2                   callq  *%rdx
++	/* 8-bytes address, 15-bytes ops size in total. Compare
++	 * with the 10-byte 32-bit equivalent ops (50% increase) */
++	ffff800000000028:       48 b8 c8 00 20 00 00    mov    $0xffff8000002000c8,%rax
++	ffff80000000002f:       80 ff ff
++	ffff800000000032:       c7 00 ad de 00 00       movl   $0xdead,(%rax)
++
++	/* 8-bytes address, 15-bytes ops size in total. Compare
++	 * with the 10-byte 32-bit equivalent ops (50% increase) */
++	ffff800000000038:       48 b8 cc 00 20 00 00    mov    $0xffff8000002000cc,%rax
++	ffff80000000003f:       80 ff ff
++	ffff800000000042:       c7 00 eb ce 00 00       movl   $0xceeb,(%rax)
++	...
++
++	/* 8-byte address, *12-bytes* ops size in total. Compare
++	 * with the 5-byte 32-bit equivalent ops (140% increase!) */
++	ffff80000000005d:       48 ba 00 00 00 00 00    mov    $0xffff800000000000,%rdx
++	ffff800000000064:       80 ff ff
++	ffff800000000067:       ff d2                   callq  *%rdx
+ 
+ * As you can see from above, naively using the 64-bit address space can lead to
+   diastrous effects on code size, and thus, the cache footprint. To solve this, some
+@@ -1948,7 +1949,8 @@ On Partitionting the 64-bit kernel address space:
+ 
+   And let gcc emits 32-bit addressing for code and global data using the -mcmodel=small
+   parameter, which is the default memory model. %rip-relative addressing is also used
+-  by default at this model for dereferencing objects globals.
++  by default at this model for dereferencing object globals; it already consumes same
++  amount of opcode size relative to x86-32's in-operand 32-bit absoulte dereference.
+ 
+ * Now how are we going to produce similar effect in kernel-space code when the
+   0 -> 4G+ space has been already reserved by user-space?
+@@ -1992,19 +1994,15 @@ On Partitionting the 64-bit kernel address space:
+   kernel text to a 32-bit virtual area. Thus, an x86-64 callq will only consume a
+   4-byte offset: relative space between next op and the destination label.
+ 
+-  To get kernel globals values (instead of just their addresses), we'll use
+-  %rip-relative addressing within + or - 2GB limit, avoiding the size-overhead of
+-  referencing a full 8-byte address.
++  To dereference kernel globals (instead of just passing their addresses), we'll
++  use %rip-relative addressing within + or - 2GB limit, avoiding the size-overhead
++  of referencing a full 8-byte address.
+ 
+   All of this was in fact designed by the SysV AMD64 ABI developers, and is called
+   the 'kernel code model'. We use this code  model, and let userspace use the
+   'small' or the 'medium' one. It's interesting to note that NT userspace defaults
+   to the medium model, while most UNIX implementations default to the 'small' one.
+ 
+-  This is the reason Linux's amd64, unlike the ia32 one, __PAGE_OFFSET =
+-  0xffff880000000000, which is different from the kernel linking base at -2GB =
+-  __START_KERNEL_MAP = 0xffffffff80000000.
+-
+ * To get a state of the size difference, check the difference of function call
+   size overhead between the 'large' and the 'kernel' code models:
+ 
+@@ -2031,8 +2029,17 @@ On Partitionting the 64-bit kernel address space:
+   ...
+ 
+   So, while admittedly using -mcmodel=large makes things a bit easier for the 64-bit
+-  kernel developer, it induces too much size overhead that it's worth the effort to
+-  avoid it.
++  kernel developer (as it gives them the freedom of basing the kernel on any desired
++  virtual address), it induces too much size overhead that it's worth the effort
++  avoiding it.
++
++  For example, since Cute uses -mcmodel=kernel, we have two mappings in our system,
++  one for kernel text and data (-2GB), and _another_ mapping for the entire physical
++  memory discovered at system boot. Extra care was needed while developing this in
++  an already very complicated subsystem: memory management.
++
++  This is also the same reason  why Linux's amd64 (unlike ia32) __PAGE_OFFSET is
++  different from the kernel linkage base at __START_KERNEL_MAP = -2GB.
+ 
+ * So, keeping above points in mind, we'll use below strategy for dividing our kernel
+   space addresses:

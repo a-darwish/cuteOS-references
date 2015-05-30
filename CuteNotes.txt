@@ -488,6 +488,9 @@ On x86 jumps:
   1:	movl $0xdeadbeef, %eax		  | af:     b8 ef be ad de
 	jmp  1b				  | b4:     eb f9
 
+  (0xf9 = 0xf9 - 256 = -7 in a 1-byte 2's complement system
+   0xb4 + 2 - 7 = 0xaf)
+
   [B] Near jump, 8-bit relative displacement (+127):  [short jump]
 
   1:	movl $0xdeadbeef, %eax	      	  | af:     b8 ef be ad de
@@ -503,6 +506,8 @@ On x86 jumps:
 	jmp    dst			  | 12:     e9 f8 ff 0f 00
   .skip 0xffff8				  | ...
   dst:  movl   $0xdeadbeef, %eax	  | 10000f: b8 ef be ad de
+
+  (0x000ffff8 + 0x17 = 0x10000f)
 
   [E] Near jump, absolute indirect displacement (register):
 

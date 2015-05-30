@@ -1,0 +1,72 @@
+diff --git a/CuteNotes.txt b/CuteNotes.txt
+index 079fa61..8b96e2a 100644
+--- a/CuteNotes.txt
++++ b/CuteNotes.txt
+@@ -293,3 +293,67 @@ On accessing fixed disk drivers (hard-disks):
+   and is supported in all bios chips post-1995, so we use it exclusively.
+ 
+   Check the boot sector code for more details.
++
++
++On Referencing symbols from Assembly files in C:
++------------------------------------------------
++
++ELF:
++----
++
++- readelf, .symtable .. oh how valuable are they
++
++- not directly letting LD output binary, outputting elf first then use
++  objcopy is way more valuable since we can inspect the final kernel elf
++  image easily using common ELF parsing tools
++
++/*
++ * Note that 'extern <type> *SYMBOL;' won't work since it'd mean we
++ * don't point to meaningful data yet, which isn't the case. We use
++ * 'SYMBOL[]' since in a declaration, [] just leaves it open to the
++ * number of base type objects which are present, not *where* they are.
++ * SYMBOL[n] just adds more static-time safety; SYMBOL[n][size] lets
++ * the compiler automatically calculate an entry index for us.
++ * @IDT_STUB_SIZE: exception stub _code_ size.
++ */
++
++On the use of readelf and similar tools:
++----------------------------------------
++
++Once I removed the identity mappings, kernel was working but exception
++handlers was not working and a division over zero invoked protection faults
++and system restarts.
++
++mm, so how to debug that?
++
++running bochs, we see that after restart, from the registers dump that
++CR2 contains the address CR2=0x0000000000100148, which means somewhere
++we depended on identity mappings are available.
++
++mm, but in the code, we don't use any physical addresses, since all the
++code symbols are already relocated by the script at 0xffffffff80000000+
++addresses.
++
++So, we check what the 0x100148 address might be. The best resource is
++to check the final KERNEL elf.
++
++using readelf kernel.elf we find:
++
++     7: 0000000000100140     0 NOTYPE  LOCAL  DEFAULT    1 gdt
++
++Caught the bastard; we were using the code segment from the gdt (0x08)
++which let to the faulting address be 100148. The code segment was referenced
++by the interrupt handlers, and thus the restarts.
++
++Fine
++
++The critical manuals used:
++--------------------------
++
++1) AMD64 documents
++2) GCC documentation
++3) GAS documentation  -- MISSING
++4) LD documentation   -- MISSING
++5) GNU make documentation
++5) Undocumented PC - I/O ports and BIOS interrupts
++6) AMD64 System V ABI specification
