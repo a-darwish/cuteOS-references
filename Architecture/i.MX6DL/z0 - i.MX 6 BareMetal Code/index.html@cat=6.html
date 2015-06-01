@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>  Homepage &#124; ATOSE</title>
+<link rel="profile" href="http://gmpg.org/xfn/11" />
+<link rel="pingback" href="xmlrpc.php" />
+<link rel="alternate" type="application/rss+xml" title="ATOSE &raquo; Feed" href="index.html@feed=rss2" />
+<link rel="alternate" type="application/rss+xml" title="ATOSE &raquo; Comments Feed" href="http://atose.org/?feed=comments-rss2" />
+<link rel="alternate" type="application/rss+xml" title="ATOSE &raquo; Homepage Category Feed" href="index.html@feed=rss2&amp;cat=6" />
+<link rel='stylesheet' id='bbp-default-css'  href='wp-content/plugins/bbpress/templates/default/css/bbpress.css@ver=2.5.4-5380.css' type='text/css' media='screen' />
+<link rel='stylesheet' id='bbpressmoderationstyle-css'  href='wp-content/plugins/bbpressmoderation/style.css@ver=3.6.css' type='text/css' media='all' />
+<link rel='stylesheet' id='wp-email-css'  href='wp-content/plugins/wp-email/email-css.css@ver=2.60.css' type='text/css' media='all' />
+<link rel='stylesheet' id='pinboard-web-font-css'  href='http://fonts.googleapis.com/css?family=Open+Sans:300,300italic,regular,italic,600,600italic|Oswald:300,300italic,regular,italic,600,600italic&#038;subset=latin' type='text/css' media='all' />
+<link rel='stylesheet' id='pinboard-css'  href='wp-content/themes/pinboard/style.css' type='text/css' media='all' />
+<link rel='stylesheet' id='colorbox-css'  href='wp-content/themes/pinboard/styles/colorbox.css' type='text/css' media='all' />
+<link rel='stylesheet' id='mediaelementplayer-css'  href='wp-content/themes/pinboard/styles/mediaelementplayer.css' type='text/css' media='all' />
+	<!--[if lt IE 9]>
+	<script src="http://atose.org/wp-content/themes/pinboard/scripts/html5.js" type="text/javascript"></script>
+	<![endif]-->
+<script type='text/javascript' src='wp-includes/js/jquery/jquery.js@ver=1.10.2'></script>
+<script type='text/javascript' src='wp-includes/js/jquery/jquery-migrate.min.js@ver=1.2.1'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/ios-orientationchange-fix.js'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/jquery.flexslider-min.js'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/jquery.fitvids.js'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/jquery.infinitescroll.min.js'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/jquery.colorbox-min.js'></script>
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="xmlrpc.php@rsd" />
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="wp-includes/wlwmanifest.xml" /> 
+<meta name="generator" content="WordPress 3.6" />
+	<!--[if lt IE 9]>
+	<script src="http://atose.org/wp-content/themes/pinboard/scripts/html5.js" type="text/javascript"></script>
+	<![endif]-->
+<script>
+/* <![CDATA[ */
+	jQuery(document).ready(function($) {
+		$('#access .menu > li > a').each(function() {
+			var title = $(this).attr('title');
+			if(typeof title !== 'undefined' && title !== false) {
+				$(this).append('<br /> <span>'+title+'</span>');
+				$(this).removeAttr('title');
+			}
+		});
+		function pinboard_move_elements(container) {
+			if( container.hasClass('onecol') ) {
+				var thumb = $('.entry-thumbnail', container);
+				if('undefined' !== typeof thumb)
+					$('.entry-container', container).before(thumb);
+				var video = $('.entry-attachment', container);
+				if('undefined' !== typeof video)
+					$('.entry-container', container).before(video);
+				var gallery = $('.post-gallery', container);
+				if('undefined' !== typeof gallery)
+					$('.entry-container', container).before(gallery);
+				var meta = $('.entry-meta', container);
+				if('undefined' !== typeof meta)
+					$('.entry-container', container).after(meta);
+			}
+		}
+		function pinboard_restore_elements(container) {
+			if( container.hasClass('onecol') ) {
+				var thumb = $('.entry-thumbnail', container);
+				if('undefined' !== typeof thumb)
+					$('.entry-header', container).after(thumb);
+				var video = $('.entry-attachment', container);
+				if('undefined' !== typeof video)
+					$('.entry-header', container).after(video);
+				var gallery = $('.post-gallery', container);
+				if('undefined' !== typeof gallery)
+					$('.entry-header', container).after(gallery);
+				var meta = $('.entry-meta', container);
+				if('undefined' !== typeof meta)
+					$('.entry-header', container).append(meta);
+				else
+					$('.entry-header', container).html(meta.html());
+			}
+		}
+		if( ($(window).width() > 960) || ($(document).width() > 960) ) {
+			// Viewport is greater than tablet: portrait
+		} else {
+			$('#content .hentry').each(function() {
+				pinboard_move_elements($(this));
+			});
+		}
+		$(window).resize(function() {
+			if( ($(window).width() > 960) || ($(document).width() > 960) ) {
+									$('#content .hentry').each(function() {
+						pinboard_restore_elements($(this));
+					});
+							} else {
+				$('#content .hentry').each(function() {
+					pinboard_move_elements($(this));
+				});
+			}
+			if( ($(window).width() > 760) || ($(document).width() > 760) ) {
+				var maxh = 0;
+				$('#access .menu > li > a').each(function() {
+					if(parseInt($(this).css('height'))>maxh) {
+						maxh = parseInt($(this).css('height'));
+					}
+				});
+				$('#access .menu > li > a').css('height', maxh);
+			} else {
+				$('#access .menu > li > a').css('height', 'auto');
+			}
+		});
+		if( ($(window).width() > 760) || ($(document).width() > 760) ) {
+			var maxh = 0;
+			$('#access .menu > li > a').each(function() {
+				var title = $(this).attr('title');
+				if(typeof title !== 'undefined' && title !== false) {
+					$(this).append('<br /> <span>'+title+'</span>');
+					$(this).removeAttr('title');
+				}
+				if(parseInt($(this).css('height'))>maxh) {
+					maxh = parseInt($(this).css('height'));
+				}
+			});
+			$('#access .menu > li > a').css('height', maxh);
+							$('#access li').mouseenter(function() {
+					$(this).children('ul').css('display', 'none').stop(true, true).fadeIn(250).css('display', 'block').children('ul').css('display', 'none');
+				});
+				$('#access li').mouseleave(function() {
+					$(this).children('ul').stop(true, true).fadeOut(250).css('display', 'block');
+				});
+					} else {
+			$('#access li').each(function() {
+				if($(this).children('ul').length)
+					$(this).append('<span class="drop-down-toggle"><span class="drop-down-arrow"></span></span>');
+			});
+			$('.drop-down-toggle').click(function() {
+				$(this).parent().children('ul').slideToggle(250);
+			});
+		}
+							var $content = $('.entries');
+			$content.imagesLoaded(function() {
+				$content.masonry({
+					itemSelector : '.hentry, #infscr-loading',
+					columnWidth : container.querySelector('.threecol'),
+				});
+			});
+												$('#content .entries').infinitescroll({
+						loading: {
+							finishedMsg: "There are no more posts to display.",
+							img:         ( window.devicePixelRatio > 1 ? "http://atose.org/wp-content/themes/pinboard/images/ajax-loading_2x.gif" : "http://atose.org/wp-content/themes/pinboard/images/ajax-loading.gif" ),
+							msgText:     "Loading more posts &#8230;",
+							selector:    "#content",
+						},
+						nextSelector    : "#posts-nav .nav-all a, #posts-nav .nav-next a",
+						navSelector     : "#posts-nav",
+						contentSelector : "#content .entries",
+						itemSelector    : "#content .entries .hentry",
+					}, function(entries){
+						var $entries = $( entries ).css({ opacity: 0 });
+						$entries.imagesLoaded(function(){
+							$entries.animate({ opacity: 1 });
+							$content.masonry( 'appended', $entries, true );
+						});
+						if( ($(window).width() > 960) || ($(document).width() > 960) ) {
+							// Viewport is greater than tablet: portrait
+						} else {
+							$('#content .hentry').each(function() {
+								pinboard_move_elements($(this));
+							});
+						}
+						$('audio,video').mediaelementplayer({
+							videoWidth: '100%',
+							videoHeight: '100%',
+							audioWidth: '100%',
+							alwaysShowControls: true,
+							features: ['playpause','progress','tracks','volume'],
+							videoVolume: 'horizontal'
+						});
+						$(".entry-attachment, .entry-content").fitVids({ customSelector: "iframe[src*='wordpress.tv'], iframe[src*='www.dailymotion.com'], iframe[src*='blip.tv'], iframe[src*='www.viddler.com']"});
+													$('.entry-content a[href$=".jpg"],.entry-content a[href$=".jpeg"],.entry-content a[href$=".png"],.entry-content a[href$=".gif"],a.colorbox').colorbox({
+								maxWidth: '100%',
+								maxHeight: '100%',
+							});
+											});
+											$('audio,video').mediaelementplayer({
+			videoWidth: '100%',
+			videoHeight: '100%',
+			audioWidth: '100%',
+			alwaysShowControls: true,
+			features: ['playpause','progress','tracks','volume'],
+			videoVolume: 'horizontal'
+		});
+		$(".entry-attachment, .entry-content").fitVids({ customSelector: "iframe[src*='wordpress.tv'], iframe[src*='www.dailymotion.com'], iframe[src*='blip.tv'], iframe[src*='www.viddler.com']"});
+	});
+	jQuery(window).load(function() {
+					jQuery('.entry-content a[href$=".jpg"],.entry-content a[href$=".jpeg"],.entry-content a[href$=".png"],.entry-content a[href$=".gif"],a.colorbox').colorbox({
+				maxWidth: '100%',
+				maxHeight: '100%',
+			});
+			});
+/* ]]> */
+</script>
+<style type="text/css">
+				.post.onecol .entry-header {
+			float:left;
+			width:27.6%;
+		}
+		.post.onecol .entry-summary {
+			float:right;
+			width:69.5%;
+		}
+		.post.onecol .wp-post-image,
+		.post.onecol .entry-attachment,
+		.post.onecol .post-gallery {
+			float:right;
+			max-width:69.5%;
+		}
+		.post.onecol .entry-attachment,
+		.post.onecol .post-gallery {
+			width:69.5%;
+		}
+		.twocol .entry-title,
+		.threecol .entry-title,
+		.fourcol .entry-title {
+			margin: 0;
+			text-align: center;
+		}
+		@media screen and (max-width: 960px) {
+			.post.onecol .wp-post-image,
+			.post.onecol .entry-attachment,
+			.post.onecol .post-gallery {
+				float:none;
+				max-width:100%;
+				margin:0;
+			}
+			.post.onecol .entry-attachment,
+			.post.onecol .post-gallery {
+				width:100%;
+			}
+			.post.onecol .entry-header,
+			.post.onecol .entry-summary {
+				float:none;
+				width:auto;
+			}
+		}
+						#wrapper {
+			background: #eeeeee;
+		}
+				#header {
+			border-color: #015832;
+		}
+		#access {
+			background: #015832;
+		}
+				#access li li {
+			background: #015832;
+		}
+							#footer-area {
+			background: #015832;
+		}
+				#copyright {
+			background: #015832;
+		}
+																													.widget-area a {
+			color:#cccccc;
+		}
+				#footer-area {
+			color:;
+		}
+						#copyright a {
+			color:#cccccc;
+		}
+		.button {
+  color:inherit;
+}
+code.cpp.preprocessor {
+  color: #800000 !important;
+}
+code.cpp.color1.bold {
+  color: #006699 !important;
+}
+code.cpp.functions.bold {
+  color: #006699 !important;
+}
+code {
+  box-shadow: none;
+}
+
+#site-title img {
+height: 96px;
+width: 657px;
+}
+
+#current-location .prefix-text {
+display:none;
+}
+
+.entry-meta {
+display:none;
+}
+
+.menu-mymenu-container {
+padding-top:0px;
+}
+
+#menu-mymenu.menu{
+height:20px;
+}
+
+#menu-mymenu.menu a{
+padding-top:0px;
+padding-bottom:0px;
+}
+
+
+#copyright{
+padding-top:0px;
+padding-bottom:0px;
+}
+
+#site-title img{
+line-height:110px !important;
+margin-top:0px !important;
+margin-bottom:0px !important;
+}</style>
+<style type="text/css">
+	#site-title .home,
+	#site-description {
+		position:absolute !important;
+		clip:rect(1px, 1px, 1px, 1px);
+	}
+</style>
+<style type="text/css" id="custom-background-css">
+body.custom-background { background-color: #015832; background-image: url('http://atose.otago.ac.nz/wp-content/uploads/2013/06/background.jpg'); background-repeat: repeat-y; background-position: top center; background-attachment: fixed; }
+</style>
+<style type="text/css" id="syntaxhighlighteranchor"></style>
+</head>
+
+<body class="archive category category-homepagw category-6 custom-background page-template-template-full-width-php">
+	<div id="wrapper">
+		<header id="header">
+			<div id="site-title">
+									<a href="index.html" rel="home">
+						<img src="http://atose.otago.ac.nz/wp-content/uploads/2013/06/atose657.png" alt="ATOSE" width="196" height="48" />
+					</a>
+								<a class="home" href="index.html" rel="home">ATOSE</a>
+			</div>
+							<div id="site-description">The operating system of the future</div>
+							<form role="search" method="get" id="searchform" action="index.html" >
+	<input type="text" value="" placeholder="Search this website&#8230;" name="s" id="s" />
+	<input type="submit" id="searchsubmit" value="Search" />
+</form>			<div id="social-media-icons">
+							<a class="social-media-icon facebook" href="https://www.facebook.com/atose.org">Facebook</a>
+																													</div>
+				<div class="clear"></div>
+			<nav id="access">
+				<a class="nav-show" href="index.html@cat=6.html#access">Show Navigation</a>
+				<a class="nav-hide" href="index.html@cat=6.html#nogo">Hide Navigation</a>
+				<div class="menu-mymenu-container"><ul id="menu-mymenu" class="menu"><li id="menu-item-77" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-77"><a href="index.html">ATOSE</a></li>
+<li id="menu-item-176" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-176"><a href="index.html@page_id=174.html">About</a></li>
+<li id="menu-item-139" class="menu-item menu-item-type-post_type menu-item-object-page current_page_parent menu-item-139"><a href="index.html@page_id=2.html">Blog</a></li>
+<li id="menu-item-91" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-91"><a href="index.html@page_id=89.html">Forums</a></li>
+</ul></div>				<div class="clear"></div>
+			</nav><!-- #access -->
+		</header><!-- #header -->					<hgroup id="current-location">
+			<h6 class="prefix-text">Currently browsing category</h6>
+			<h1 class="page-title">
+				Homepage			</h1>
+							<div class="category-description">
+									</div>
+					</hgroup>
+				<div id="container">
+		<section id="content" class="column onecol">
+																	<div class="entries">
+											<article class="post-141 post type-post status-publish format-standard hentry category-homepagw column threecol" id="post-141">
+	<div class="entry">
+									<div class="entry-container">
+			<header class="entry-header">
+				<h2 class="entry-title"><a href="index.html@p=141.html" rel="bookmark" title="i.MX6 Bare Metal">i.MX6 Bare Metal</a></h2>
+							</header><!-- .entry-header -->
+									<div class="clear"></div>
+		</div><!-- .entry-container -->
+								</div><!-- .entry -->
+</article><!-- .post -->											<article class="post-1 post type-post status-publish format-standard hentry category-homepagw column threecol" id="post-1">
+	<div class="entry">
+									<div class="entry-container">
+			<header class="entry-header">
+				<h2 class="entry-title"><a href="index.html@p=1.html" rel="bookmark" title="Mac &amp; Windows Code">Mac &#038; Windows Code</a></h2>
+							</header><!-- .entry-header -->
+									<div class="clear"></div>
+		</div><!-- .entry-container -->
+								</div><!-- .entry -->
+</article><!-- .post -->									</div><!-- .entries -->
+									</section><!-- #content -->
+				<div class="clear"></div>
+	</div><!-- #container -->
+				<div id="footer">
+				<div id="footer-area" class="widget-area" role="complementary">
+		    
+<!-- 
+	Plugin: Custom Meta Widget	Plugin URL: http://shinraholdings.com/plugins/custom-meta-widget/-->
+
+
+	<div class="column fourcol"><aside id="custommetawidget-2" class="widget customMetaWidget">	<h3 class="widget-title">Login</h3>	<ul>
+	
+	
+    <li><a href="wp-login.php.html">Log in</a></li>	
+	</ul>
+    
+	</aside><!-- .widget --></div>		<div class="clear"></div>
+	</div><!-- #footer-area -->
+			<div id="copyright">
+				<p class="copyright twocol">© 2015 ATOSE</p>
+								<div class="clear"></div>
+			</div><!-- #copyright -->
+		</div><!-- #footer -->
+	</div><!-- #wrapper -->
+<script type='text/javascript' src='wp-content/plugins/bbpress/templates/default/js/editor.js@ver=2.5.4-5380'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var emailL10n = {"ajax_url":"http:\/\/atose.org\/wp-admin\/admin-ajax.php","max_allowed":"5","text_error":"The Following Error Occurs:","text_name_invalid":"- Your Name is empty\/invalid","text_email_invalid":"- Your Email is empty\/invalid","text_remarks_invalid":"- Your Remarks is invalid","text_friend_names_empty":"- Friend Name(s) is empty","text_friend_name_invalid":"- Friend Name is empty\/invalid: ","text_max_friend_names_allowed":"- Maximum 5 Friend Names allowed","text_friend_emails_empty":"- Friend Email(s) is empty","text_friend_email_invalid":"- Friend Email is invalid: ","text_max_friend_emails_allowed":"- Maximum 5 Friend Emails allowed","text_friends_tally":"- Friend Name(s) count does not tally with Friend Email(s) count","text_image_verify_empty":"- Image Verification is empty"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='wp-content/plugins/wp-email/email-js.js@ver=2.60'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var mejsL10n = {"language":"en-US","strings":{"Close":"Close","Fullscreen":"Fullscreen","Download File":"Download File","Download Video":"Download Video","Play\/Pause":"Play\/Pause","Mute Toggle":"Mute Toggle","None":"None","Turn off Fullscreen":"Turn off Fullscreen","Go Fullscreen":"Go Fullscreen","Unmute":"Unmute","Mute":"Mute","Captions\/Subtitles":"Captions\/Subtitles"}};
+/* ]]> */
+</script>
+<script type='text/javascript' src='http://atose.org/wp-includes/js/mediaelement/mediaelement-and-player.min.js?ver=2.13.0'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var _wpmejsSettings = {"pluginPath":"\/wp-includes\/js\/mediaelement\/"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='http://atose.org/wp-includes/js/mediaelement/wp-mediaelement.js?ver=3.6'></script>
+</body>
+</html>

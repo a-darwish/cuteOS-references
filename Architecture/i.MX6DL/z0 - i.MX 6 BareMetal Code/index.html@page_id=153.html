@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>  i.MX6Q EPIT</title>
+<link rel="profile" href="http://gmpg.org/xfn/11" />
+<link rel="pingback" href="xmlrpc.php" />
+<link rel="alternate" type="application/rss+xml" title="ATOSE &raquo; Feed" href="index.html@feed=rss2" />
+<link rel="alternate" type="application/rss+xml" title="ATOSE &raquo; Comments Feed" href="http://atose.org/?feed=comments-rss2" />
+<link rel="alternate" type="application/rss+xml" title="ATOSE &raquo; i.MX6Q EPIT Comments Feed" href="index.html@feed=rss2&amp;page_id=153" />
+<link rel='stylesheet' id='bbp-default-css'  href='wp-content/plugins/bbpress/templates/default/css/bbpress.css@ver=2.5.4-5380.css' type='text/css' media='screen' />
+<link rel='stylesheet' id='bbpressmoderationstyle-css'  href='wp-content/plugins/bbpressmoderation/style.css@ver=3.6.css' type='text/css' media='all' />
+<link rel='stylesheet' id='wp-email-css'  href='wp-content/plugins/wp-email/email-css.css@ver=2.60.css' type='text/css' media='all' />
+<link rel='stylesheet' id='pinboard-web-font-css'  href='http://fonts.googleapis.com/css?family=Open+Sans:300,300italic,regular,italic,600,600italic|Oswald:300,300italic,regular,italic,600,600italic&#038;subset=latin' type='text/css' media='all' />
+<link rel='stylesheet' id='pinboard-css'  href='wp-content/themes/pinboard/style.css' type='text/css' media='all' />
+<link rel='stylesheet' id='colorbox-css'  href='wp-content/themes/pinboard/styles/colorbox.css' type='text/css' media='all' />
+<link rel='stylesheet' id='mediaelementplayer-css'  href='wp-content/themes/pinboard/styles/mediaelementplayer.css' type='text/css' media='all' />
+	<!--[if lt IE 9]>
+	<script src="http://atose.org/wp-content/themes/pinboard/scripts/html5.js" type="text/javascript"></script>
+	<![endif]-->
+<script type='text/javascript' src='wp-includes/js/jquery/jquery.js@ver=1.10.2'></script>
+<script type='text/javascript' src='wp-includes/js/jquery/jquery-migrate.min.js@ver=1.2.1'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/ios-orientationchange-fix.js'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/jquery.flexslider-min.js'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/jquery.fitvids.js'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/jquery.colorbox-min.js'></script>
+<script type='text/javascript' src='wp-includes/js/comment-reply.min.js@ver=3.6'></script>
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="xmlrpc.php@rsd" />
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="wp-includes/wlwmanifest.xml" /> 
+<link rel='prev' title='OS X List attached HID devices' href='index.html@page_id=113.html' />
+<link rel='next' title='i.MX6Q RAM' href='index.html@page_id=162.html' />
+<meta name="generator" content="WordPress 3.6" />
+<link rel='canonical' href='index.html@page_id=153.html' />
+	<!--[if lt IE 9]>
+	<script src="http://atose.org/wp-content/themes/pinboard/scripts/html5.js" type="text/javascript"></script>
+	<![endif]-->
+<script>
+/* <![CDATA[ */
+	jQuery(document).ready(function($) {
+		$('#access .menu > li > a').each(function() {
+			var title = $(this).attr('title');
+			if(typeof title !== 'undefined' && title !== false) {
+				$(this).append('<br /> <span>'+title+'</span>');
+				$(this).removeAttr('title');
+			}
+		});
+		function pinboard_move_elements(container) {
+			if( container.hasClass('onecol') ) {
+				var thumb = $('.entry-thumbnail', container);
+				if('undefined' !== typeof thumb)
+					$('.entry-container', container).before(thumb);
+				var video = $('.entry-attachment', container);
+				if('undefined' !== typeof video)
+					$('.entry-container', container).before(video);
+				var gallery = $('.post-gallery', container);
+				if('undefined' !== typeof gallery)
+					$('.entry-container', container).before(gallery);
+				var meta = $('.entry-meta', container);
+				if('undefined' !== typeof meta)
+					$('.entry-container', container).after(meta);
+			}
+		}
+		function pinboard_restore_elements(container) {
+			if( container.hasClass('onecol') ) {
+				var thumb = $('.entry-thumbnail', container);
+				if('undefined' !== typeof thumb)
+					$('.entry-header', container).after(thumb);
+				var video = $('.entry-attachment', container);
+				if('undefined' !== typeof video)
+					$('.entry-header', container).after(video);
+				var gallery = $('.post-gallery', container);
+				if('undefined' !== typeof gallery)
+					$('.entry-header', container).after(gallery);
+				var meta = $('.entry-meta', container);
+				if('undefined' !== typeof meta)
+					$('.entry-header', container).append(meta);
+				else
+					$('.entry-header', container).html(meta.html());
+			}
+		}
+		if( ($(window).width() > 960) || ($(document).width() > 960) ) {
+			// Viewport is greater than tablet: portrait
+		} else {
+			$('#content .hentry').each(function() {
+				pinboard_move_elements($(this));
+			});
+		}
+		$(window).resize(function() {
+			if( ($(window).width() > 960) || ($(document).width() > 960) ) {
+									$('.page-template-template-full-width-php #content .hentry, .page-template-template-blog-full-width-php #content .hentry, .page-template-template-blog-four-col-php #content .hentry').each(function() {
+						pinboard_restore_elements($(this));
+					});
+							} else {
+				$('#content .hentry').each(function() {
+					pinboard_move_elements($(this));
+				});
+			}
+			if( ($(window).width() > 760) || ($(document).width() > 760) ) {
+				var maxh = 0;
+				$('#access .menu > li > a').each(function() {
+					if(parseInt($(this).css('height'))>maxh) {
+						maxh = parseInt($(this).css('height'));
+					}
+				});
+				$('#access .menu > li > a').css('height', maxh);
+			} else {
+				$('#access .menu > li > a').css('height', 'auto');
+			}
+		});
+		if( ($(window).width() > 760) || ($(document).width() > 760) ) {
+			var maxh = 0;
+			$('#access .menu > li > a').each(function() {
+				var title = $(this).attr('title');
+				if(typeof title !== 'undefined' && title !== false) {
+					$(this).append('<br /> <span>'+title+'</span>');
+					$(this).removeAttr('title');
+				}
+				if(parseInt($(this).css('height'))>maxh) {
+					maxh = parseInt($(this).css('height'));
+				}
+			});
+			$('#access .menu > li > a').css('height', maxh);
+							$('#access li').mouseenter(function() {
+					$(this).children('ul').css('display', 'none').stop(true, true).fadeIn(250).css('display', 'block').children('ul').css('display', 'none');
+				});
+				$('#access li').mouseleave(function() {
+					$(this).children('ul').stop(true, true).fadeOut(250).css('display', 'block');
+				});
+					} else {
+			$('#access li').each(function() {
+				if($(this).children('ul').length)
+					$(this).append('<span class="drop-down-toggle"><span class="drop-down-arrow"></span></span>');
+			});
+			$('.drop-down-toggle').click(function() {
+				$(this).parent().children('ul').slideToggle(250);
+			});
+		}
+						$('audio,video').mediaelementplayer({
+			videoWidth: '100%',
+			videoHeight: '100%',
+			audioWidth: '100%',
+			alwaysShowControls: true,
+			features: ['playpause','progress','tracks','volume'],
+			videoVolume: 'horizontal'
+		});
+		$(".entry-attachment, .entry-content").fitVids({ customSelector: "iframe[src*='wordpress.tv'], iframe[src*='www.dailymotion.com'], iframe[src*='blip.tv'], iframe[src*='www.viddler.com']"});
+	});
+	jQuery(window).load(function() {
+					jQuery('.entry-content a[href$=".jpg"],.entry-content a[href$=".jpeg"],.entry-content a[href$=".png"],.entry-content a[href$=".gif"],a.colorbox').colorbox({
+				maxWidth: '100%',
+				maxHeight: '100%',
+			});
+			});
+/* ]]> */
+</script>
+<style type="text/css">
+							#wrapper {
+			background: #eeeeee;
+		}
+				#header {
+			border-color: #015832;
+		}
+		#access {
+			background: #015832;
+		}
+				#access li li {
+			background: #015832;
+		}
+							#footer-area {
+			background: #015832;
+		}
+				#copyright {
+			background: #015832;
+		}
+																													.widget-area a {
+			color:#cccccc;
+		}
+				#footer-area {
+			color:;
+		}
+						#copyright a {
+			color:#cccccc;
+		}
+		.button {
+  color:inherit;
+}
+code.cpp.preprocessor {
+  color: #800000 !important;
+}
+code.cpp.color1.bold {
+  color: #006699 !important;
+}
+code.cpp.functions.bold {
+  color: #006699 !important;
+}
+code {
+  box-shadow: none;
+}
+
+#site-title img {
+height: 96px;
+width: 657px;
+}
+
+#current-location .prefix-text {
+display:none;
+}
+
+.entry-meta {
+display:none;
+}
+
+.menu-mymenu-container {
+padding-top:0px;
+}
+
+#menu-mymenu.menu{
+height:20px;
+}
+
+#menu-mymenu.menu a{
+padding-top:0px;
+padding-bottom:0px;
+}
+
+
+#copyright{
+padding-top:0px;
+padding-bottom:0px;
+}
+
+#site-title img{
+line-height:110px !important;
+margin-top:0px !important;
+margin-bottom:0px !important;
+}</style>
+<style type="text/css">
+	#site-title .home,
+	#site-description {
+		position:absolute !important;
+		clip:rect(1px, 1px, 1px, 1px);
+	}
+</style>
+<style type="text/css" id="custom-background-css">
+body.custom-background { background-color: #015832; background-image: url('http://atose.otago.ac.nz/wp-content/uploads/2013/06/background.jpg'); background-repeat: repeat-y; background-position: top center; background-attachment: fixed; }
+</style>
+<style type="text/css" id="syntaxhighlighteranchor"></style>
+</head>
+
+<body class="page page-id-153 page-template-default custom-background page-template-template-full-width-php">
+	<div id="wrapper">
+		<header id="header">
+			<div id="site-title">
+									<a href="index.html" rel="home">
+						<img src="http://atose.otago.ac.nz/wp-content/uploads/2013/06/atose657.png" alt="ATOSE" width="196" height="48" />
+					</a>
+								<a class="home" href="index.html" rel="home">ATOSE</a>
+			</div>
+							<div id="site-description">The operating system of the future</div>
+							<form role="search" method="get" id="searchform" action="index.html" >
+	<input type="text" value="" placeholder="Search this website&#8230;" name="s" id="s" />
+	<input type="submit" id="searchsubmit" value="Search" />
+</form>			<div id="social-media-icons">
+							<a class="social-media-icon facebook" href="https://www.facebook.com/atose.org">Facebook</a>
+																													</div>
+				<div class="clear"></div>
+			<nav id="access">
+				<a class="nav-show" href="index.html@page_id=153.html#access">Show Navigation</a>
+				<a class="nav-hide" href="index.html@page_id=153.html#nogo">Hide Navigation</a>
+				<div class="menu-mymenu-container"><ul id="menu-mymenu" class="menu"><li id="menu-item-77" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-77"><a href="index.html">ATOSE</a></li>
+<li id="menu-item-176" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-176"><a href="index.html@page_id=174.html">About</a></li>
+<li id="menu-item-139" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-139"><a href="index.html@page_id=2.html">Blog</a></li>
+<li id="menu-item-91" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-91"><a href="index.html@page_id=89.html">Forums</a></li>
+</ul></div>				<div class="clear"></div>
+			</nav><!-- #access -->
+		</header><!-- #header -->		<div id="container">
+		<section id="content" class="column onecol">
+							<article class="post-153 page type-page status-publish hentry column onecol" id="post-153">
+					<div class="entry">
+						<header class="entry-header">
+							<h1 class="entry-title">i.MX6Q EPIT</h1>
+						</header><!-- .entry-header -->
+						<div class="entry-content">
+							<pre class="brush: cpp; title: ; notranslate" title="">
+/*
+	IMX6Q_CLOCK.C
+	-------------
+	Code to generate a simple u-second timer
+	Copyright (c) 2012-2013 Andrew Trotman
+	Licensed BSD
+*/
+#include &lt;stdint.h&gt;
+#include &quot;../systems/iMX6_Platform_SDK/sdk/include/mx6dq/registers/regsuart.h&quot;
+#include &quot;../systems/iMX6_Platform_SDK/sdk/include/mx6dq/registers/regsccm.h&quot;
+#include &quot;../systems/iMX6_Platform_SDK/sdk/include/mx6dq/registers/regsiomuxc.h&quot;
+#include &quot;../systems/iMX6_Platform_SDK/sdk/include/mx6dq/registers/regsepit.h&quot;
+
+
+/*
+	Default baud rate is 115200 and we'll talk down UARR-2 as that's the
+	console on the SABRE Lite board
+*/
+#define BAUD_RATE 115200
+#define DEFAULT_UART 2		/* can be either 2 (SABRE Lite &quot;console&quot;) or 1 (the other UART) */
+#define PLL3_FREQUENCY 80000000			// the frequency of Phase Lock Loop 3
+
+#define DEFAULT_TIMER 1				// the i.MX6Q has 2 Enhanced Periodic Interrupt Timer (EPIT).
+
+/*
+	SERIAL_INIT()
+	-------------
+*/
+void serial_init(void)
+{
+/*
+   Enable Clocks
+*/
+*((uint32_t *)0x020C407C) = 0x0F0000C3;	// CCM Clock Gating Register 5 (CCM_CCGR5) (inc UART clock)
+
+/*
+   Enable Pads
+*/
+#if (DEFAULT_UART == 1)
+	HW_IOMUXC_SW_MUX_CTL_PAD_SD3_DATA6_WR(BF_IOMUXC_SW_MUX_CTL_PAD_SD3_DATA6_SION_V(DISABLED) | BF_IOMUXC_SW_MUX_CTL_PAD_SD3_DATA6_MUX_MODE_V(ALT1));
+	HW_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA6_WR(BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA6_HYS_V(ENABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA6_PUS_V(100K_OHM_PU) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA6_PUE_V(PULL) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA6_PKE_V(ENABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA6_ODE_V(DISABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA6_SPEED_V(100MHZ) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA6_DSE_V(40_OHM) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA6_SRE_V(SLOW));
+	HW_IOMUXC_UART1_UART_RX_DATA_SELECT_INPUT_WR(BF_IOMUXC_UART1_UART_RX_DATA_SELECT_INPUT_DAISY_V(CSI0_DATA10_ALT3));
+	HW_IOMUXC_SW_MUX_CTL_PAD_SD3_DATA7_WR(BF_IOMUXC_SW_MUX_CTL_PAD_SD3_DATA7_SION_V(DISABLED) | BF_IOMUXC_SW_MUX_CTL_PAD_SD3_DATA7_MUX_MODE_V(ALT1));
+	HW_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA7_WR(BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA7_HYS_V(ENABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA7_PUS_V(100K_OHM_PU) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA7_PUE_V(PULL) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA7_PKE_V(ENABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA7_ODE_V(DISABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA7_SPEED_V(100MHZ) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA7_DSE_V(40_OHM) | BF_IOMUXC_SW_PAD_CTL_PAD_SD3_DATA7_SRE_V(SLOW));
+	HW_IOMUXC_UART1_UART_RX_DATA_SELECT_INPUT_WR(BF_IOMUXC_UART1_UART_RX_DATA_SELECT_INPUT_DAISY_V(CSI0_DATA10_ALT3));
+	HW_IOMUXC_UART1_UART_RX_DATA_SELECT_INPUT_WR(BF_IOMUXC_UART1_UART_RX_DATA_SELECT_INPUT_DAISY_V(SD3_DATA6_ALT1));
+#elif (DEFAULT_UART == 2)
+	HW_IOMUXC_SW_MUX_CTL_PAD_EIM_DATA27_WR(BF_IOMUXC_SW_MUX_CTL_PAD_EIM_DATA27_SION_V(DISABLED) | BF_IOMUXC_SW_MUX_CTL_PAD_EIM_DATA27_MUX_MODE_V(ALT4));
+	HW_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA27_WR(BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA27_HYS_V(ENABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA27_PUS_V(100K_OHM_PU) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA27_PUE_V(PULL) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA27_PKE_V(ENABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA27_ODE_V(DISABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA27_SPEED_V(100MHZ) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA27_DSE_V(40_OHM) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA27_SRE_V(SLOW));
+	HW_IOMUXC_UART2_UART_RX_DATA_SELECT_INPUT_WR(BF_IOMUXC_UART2_UART_RX_DATA_SELECT_INPUT_DAISY_V(EIM_DATA26_ALT4));
+	HW_IOMUXC_SW_MUX_CTL_PAD_EIM_DATA26_WR(BF_IOMUXC_SW_MUX_CTL_PAD_EIM_DATA26_SION_V(DISABLED) | BF_IOMUXC_SW_MUX_CTL_PAD_EIM_DATA26_MUX_MODE_V(ALT4));
+	HW_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA26_WR(BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA26_HYS_V(ENABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA26_PUS_V(100K_OHM_PU) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA26_PUE_V(PULL) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA26_PKE_V(ENABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA26_ODE_V(DISABLED) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA26_SPEED_V(100MHZ) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA26_DSE_V(40_OHM) | BF_IOMUXC_SW_PAD_CTL_PAD_EIM_DATA26_SRE_V(SLOW));
+	HW_IOMUXC_UART2_UART_RX_DATA_SELECT_INPUT_WR(BF_IOMUXC_UART2_UART_RX_DATA_SELECT_INPUT_DAISY_V(EIM_DATA26_ALT4));
+	HW_IOMUXC_UART2_UART_RX_DATA_SELECT_INPUT_WR(BF_IOMUXC_UART2_UART_RX_DATA_SELECT_INPUT_DAISY_V(EIM_DATA27_ALT4));
+
+#else
+	#error &quot;Only UART 1 and 2 are supported&quot;
+#endif
+
+/*
+	Now on to the UART 8 bits, 1 stop bit, no parity, software flow control
+*/
+HW_UART_UCR1(DEFAULT_UART).U = 0;
+HW_UART_UCR2(DEFAULT_UART).U = 0;
+while (HW_UART_UCR2(DEFAULT_UART).B.SRST == 0)
+	;	// nothing
+
+HW_UART_UCR1(DEFAULT_UART).B.UARTEN = 1;
+HW_UART_UCR3(DEFAULT_UART).B.RXDMUXSEL = 1;
+HW_UART_UCR2_WR(DEFAULT_UART, BM_UART_UCR2_WS | BM_UART_UCR2_IRTS | BM_UART_UCR2_RXEN | BM_UART_UCR2_TXEN | BM_UART_UCR2_SRST);
+HW_UART_UFCR(DEFAULT_UART).B.RFDIV = 0x04;		/* divide input clock by 2 */
+HW_UART_UBIR(DEFAULT_UART).U = 0x0F;
+HW_UART_UBMR(DEFAULT_UART).U = (PLL3_FREQUENCY / (HW_CCM_CSCDR1.B.UART_CLK_PODF + 1)) / (2 * BAUD_RATE);		// UBMR should be 0x015B once set
+}
+
+/*
+	DEBUG_PUTC()
+	------------
+*/
+void debug_putc(char value)
+{
+HW_UART_UTXD(DEFAULT_UART).U = value;
+while (HW_UART_UTS(DEFAULT_UART).B.TXEMPTY == 0)
+	; // do nothing
+}
+
+/*
+	DEBUG_PUTS()
+	------------
+*/
+void debug_puts(const char *string)
+{
+while (*string != 0)
+	debug_putc(*string++);
+}
+
+/*
+	EPIT_INIT()
+	-----------
+*/
+void epit_init(void)
+{
+uint32_t speed_in_Hz[] = {528000000, 396000000, 352000000, 198000000, 594000000};
+uint32_t frequency;
+
+HW_CCM_CCGR1.B.CG6 = 0x03;			// turn on the clock
+
+/*
+	Software reset the subsystem
+*/
+HW_EPIT_CR_WR(DEFAULT_TIMER, BM_EPIT_CR_SWR);
+while ((HW_EPIT_CR(DEFAULT_TIMER).B.SWR) != 0)
+	;	// nothing
+
+/*
+	Configure the timer:
+		Use the peripheral clock
+		Set and forget mode
+		Immediate load starting with the value in the load register
+*/
+frequency = speed_in_Hz[HW_CCM_CBCMR.B.PRE_PERIPH_CLK_SEL] / (HW_CCM_CBCDR.B.AHB_PODF + 1) / (HW_CCM_CBCDR.B.IPG_PODF + 1);
+HW_EPIT_CR_WR(DEFAULT_TIMER, BF_EPIT_CR_CLKSRC(1) | BF_EPIT_CR_PRESCALAR((frequency / 1000000) - 1) | BM_EPIT_CR_RLD | BM_EPIT_CR_IOVW | BM_EPIT_CR_ENMOD);
+}
+
+/*
+	EPIT_START()
+	------------
+*/
+void epit_start(uint32_t time_in_us)
+{
+/*
+	Store the count value in the load register (which then gets immediately loaded into the timer
+*/
+HW_EPIT_LR_WR(DEFAULT_TIMER, time_in_us);
+
+/*
+	Clear the status register so that we can watch it clock over
+*/
+HW_EPIT_SR_SET(DEFAULT_TIMER, BM_EPIT_SR_OCIF);
+
+/*
+	Start the timer
+*/
+HW_EPIT_CR_SET(DEFAULT_TIMER, BM_EPIT_CR_EN);
+}
+
+/*
+	EPIT_STOP()
+	-----------
+*/
+void epit_stop(void)
+{
+HW_EPIT_CR_CLR(DEFAULT_TIMER, BM_EPIT_CR_EN);
+}
+
+/*
+	EPIT_DELAY_US()
+	---------------
+*/
+void epit_delay_us(uint32_t usecs)
+{
+epit_start(usecs);
+while (HW_EPIT_SR_RD(DEFAULT_TIMER) == 0)
+	;	// nothing (i.e. wait)
+epit_stop();
+}
+
+/*
+	MAIN()
+	------
+*/
+int main(void)
+{
+serial_init();
+debug_puts(&quot;Serial Init...done\r\n&quot;);
+
+debug_puts(&quot;EPIT Init...&quot;);
+epit_init();
+debug_puts(&quot;done\r\n&quot;);
+
+debug_puts(&quot;Wait a second...&quot;);
+epit_delay_us(1000000);
+debug_puts(&quot;done\r\n&quot;);
+
+debug_puts(&quot;Wait 10 seconds...&quot;);
+epit_delay_us(10000000);
+debug_puts(&quot;done\r\n&quot;);
+
+return 0;
+}
+</pre>
+							<div class="clear"></div>
+						</div><!-- .entry-content -->
+											</div><!-- .entry -->
+					
+
+								<div id="respond" class="comment-respond">
+				<h3 id="reply-title" class="comment-reply-title">Leave a Reply <small><a rel="nofollow" id="cancel-comment-reply-link" href="index.html@page_id=153.html#respond" style="display:none;">Cancel reply</a></small></h3>
+									<p class="must-log-in">You must be <a href="wp-login.php@redirect_to=http%253A%252F%252Fatose.org%252F%253Fpage_id=153.html">logged in</a> to post a comment.</p>												</div><!-- #respond -->
+										</article><!-- .post -->
+					</section><!-- #content -->
+				<div class="clear"></div>
+	</div><!-- #container -->
+				<div id="footer">
+				<div id="footer-area" class="widget-area" role="complementary">
+		    
+<!-- 
+	Plugin: Custom Meta Widget	Plugin URL: http://shinraholdings.com/plugins/custom-meta-widget/-->
+
+
+	<div class="column fourcol"><aside id="custommetawidget-2" class="widget customMetaWidget">	<h3 class="widget-title">Login</h3>	<ul>
+	
+	
+    <li><a href="wp-login.php.html">Log in</a></li>	
+	</ul>
+    
+	</aside><!-- .widget --></div>		<div class="clear"></div>
+	</div><!-- #footer-area -->
+			<div id="copyright">
+				<p class="copyright twocol">© 2015 ATOSE</p>
+								<div class="clear"></div>
+			</div><!-- #copyright -->
+		</div><!-- #footer -->
+	</div><!-- #wrapper -->
+	<!--[if lt IE 9]>
+	<script src="http://atose.org/wp-content/themes/pinboard/scripts/html5.js" type="text/javascript"></script>
+	<![endif]-->
+<script type='text/javascript' src='wp-content/plugins/syntaxhighlighter/syntaxhighlighter3/scripts/shCore.js@ver=3.0.9'></script>
+<script type='text/javascript' src='wp-content/plugins/syntaxhighlighter/syntaxhighlighter3/scripts/shBrushCpp.js@ver=3.0.9'></script>
+<script type='text/javascript'>
+	(function(){
+		var corecss = document.createElement('link');
+		var themecss = document.createElement('link');
+		var corecssurl = "http://atose.org/wp-content/plugins/syntaxhighlighter/syntaxhighlighter3/styles/shCore.css?ver=3.0.9";
+		if ( corecss.setAttribute ) {
+				corecss.setAttribute( "rel", "stylesheet" );
+				corecss.setAttribute( "type", "text/css" );
+				corecss.setAttribute( "href", corecssurl );
+		} else {
+				corecss.rel = "stylesheet";
+				corecss.href = corecssurl;
+		}
+		document.getElementsByTagName("head")[0].insertBefore( corecss, document.getElementById("syntaxhighlighteranchor") );
+		var themecssurl = "http://atose.org/wp-content/plugins/syntaxhighlighter/syntaxhighlighter3/styles/shThemeDefault.css?ver=3.0.9";
+		if ( themecss.setAttribute ) {
+				themecss.setAttribute( "rel", "stylesheet" );
+				themecss.setAttribute( "type", "text/css" );
+				themecss.setAttribute( "href", themecssurl );
+		} else {
+				themecss.rel = "stylesheet";
+				themecss.href = themecssurl;
+		}
+		//document.getElementById("syntaxhighlighteranchor").appendChild(themecss);
+		document.getElementsByTagName("head")[0].insertBefore( themecss, document.getElementById("syntaxhighlighteranchor") );
+	})();
+	SyntaxHighlighter.config.strings.expandSource = '+ expand source';
+	SyntaxHighlighter.config.strings.help = '?';
+	SyntaxHighlighter.config.strings.alert = 'SyntaxHighlighter\n\n';
+	SyntaxHighlighter.config.strings.noBrush = 'Can\'t find brush for: ';
+	SyntaxHighlighter.config.strings.brushNotHtmlScript = 'Brush wasn\'t configured for html-script option: ';
+	SyntaxHighlighter.defaults['gutter'] = false;
+	SyntaxHighlighter.defaults['pad-line-numbers'] = false;
+	SyntaxHighlighter.defaults['tab-size'] = 3;
+	SyntaxHighlighter.defaults['toolbar'] = false;
+	SyntaxHighlighter.all();
+</script>
+<script type='text/javascript' src='wp-content/plugins/bbpress/templates/default/js/editor.js@ver=2.5.4-5380'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var emailL10n = {"ajax_url":"http:\/\/atose.org\/wp-admin\/admin-ajax.php","max_allowed":"5","text_error":"The Following Error Occurs:","text_name_invalid":"- Your Name is empty\/invalid","text_email_invalid":"- Your Email is empty\/invalid","text_remarks_invalid":"- Your Remarks is invalid","text_friend_names_empty":"- Friend Name(s) is empty","text_friend_name_invalid":"- Friend Name is empty\/invalid: ","text_max_friend_names_allowed":"- Maximum 5 Friend Names allowed","text_friend_emails_empty":"- Friend Email(s) is empty","text_friend_email_invalid":"- Friend Email is invalid: ","text_max_friend_emails_allowed":"- Maximum 5 Friend Emails allowed","text_friends_tally":"- Friend Name(s) count does not tally with Friend Email(s) count","text_image_verify_empty":"- Image Verification is empty"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='wp-content/plugins/wp-email/email-js.js@ver=2.60'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var mejsL10n = {"language":"en-US","strings":{"Close":"Close","Fullscreen":"Fullscreen","Download File":"Download File","Download Video":"Download Video","Play\/Pause":"Play\/Pause","Mute Toggle":"Mute Toggle","None":"None","Turn off Fullscreen":"Turn off Fullscreen","Go Fullscreen":"Go Fullscreen","Unmute":"Unmute","Mute":"Mute","Captions\/Subtitles":"Captions\/Subtitles"}};
+/* ]]> */
+</script>
+<script type='text/javascript' src='http://atose.org/wp-includes/js/mediaelement/mediaelement-and-player.min.js?ver=2.13.0'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var _wpmejsSettings = {"pluginPath":"\/wp-includes\/js\/mediaelement\/"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='http://atose.org/wp-includes/js/mediaelement/wp-mediaelement.js?ver=3.6'></script>
+</body>
+</html>
