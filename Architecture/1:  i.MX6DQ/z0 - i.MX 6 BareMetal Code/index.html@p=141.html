@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>  i.MX6 Bare Metal</title>
+<link rel="profile" href="http://gmpg.org/xfn/11" />
+<link rel="pingback" href="xmlrpc.php" />
+<link rel="alternate" type="application/rss+xml" title="ATOSE &raquo; Feed" href="index.html@feed=rss2" />
+<link rel="alternate" type="application/rss+xml" title="ATOSE &raquo; Comments Feed" href="http://atose.org/?feed=comments-rss2" />
+<link rel="alternate" type="application/rss+xml" title="ATOSE &raquo; i.MX6 Bare Metal Comments Feed" href="index.html@feed=rss2&amp;p=141" />
+<link rel='stylesheet' id='bbp-default-css'  href='wp-content/plugins/bbpress/templates/default/css/bbpress.css@ver=2.5.4-5380.css' type='text/css' media='screen' />
+<link rel='stylesheet' id='bbpressmoderationstyle-css'  href='wp-content/plugins/bbpressmoderation/style.css@ver=3.6.css' type='text/css' media='all' />
+<link rel='stylesheet' id='wp-email-css'  href='wp-content/plugins/wp-email/email-css.css@ver=2.60.css' type='text/css' media='all' />
+<link rel='stylesheet' id='pinboard-web-font-css'  href='http://fonts.googleapis.com/css?family=Open+Sans:300,300italic,regular,italic,600,600italic|Oswald:300,300italic,regular,italic,600,600italic&#038;subset=latin' type='text/css' media='all' />
+<link rel='stylesheet' id='pinboard-css'  href='wp-content/themes/pinboard/style.css' type='text/css' media='all' />
+<link rel='stylesheet' id='colorbox-css'  href='wp-content/themes/pinboard/styles/colorbox.css' type='text/css' media='all' />
+<link rel='stylesheet' id='mediaelementplayer-css'  href='wp-content/themes/pinboard/styles/mediaelementplayer.css' type='text/css' media='all' />
+	<!--[if lt IE 9]>
+	<script src="http://atose.org/wp-content/themes/pinboard/scripts/html5.js" type="text/javascript"></script>
+	<![endif]-->
+<script type='text/javascript' src='wp-includes/js/jquery/jquery.js@ver=1.10.2'></script>
+<script type='text/javascript' src='wp-includes/js/jquery/jquery-migrate.min.js@ver=1.2.1'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/ios-orientationchange-fix.js'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/jquery.flexslider-min.js'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/jquery.fitvids.js'></script>
+<script type='text/javascript' src='wp-content/themes/pinboard/scripts/jquery.colorbox-min.js'></script>
+<script type='text/javascript' src='wp-includes/js/comment-reply.min.js@ver=3.6'></script>
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="xmlrpc.php@rsd" />
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="wp-includes/wlwmanifest.xml" /> 
+<link rel='prev' title='Mac &amp; Windows Code' href='index.html@p=1.html' />
+<meta name="generator" content="WordPress 3.6" />
+<link rel='canonical' href='index.html@p=141.html' />
+	<!--[if lt IE 9]>
+	<script src="http://atose.org/wp-content/themes/pinboard/scripts/html5.js" type="text/javascript"></script>
+	<![endif]-->
+<script>
+/* <![CDATA[ */
+	jQuery(document).ready(function($) {
+		$('#access .menu > li > a').each(function() {
+			var title = $(this).attr('title');
+			if(typeof title !== 'undefined' && title !== false) {
+				$(this).append('<br /> <span>'+title+'</span>');
+				$(this).removeAttr('title');
+			}
+		});
+		function pinboard_move_elements(container) {
+			if( container.hasClass('onecol') ) {
+				var thumb = $('.entry-thumbnail', container);
+				if('undefined' !== typeof thumb)
+					$('.entry-container', container).before(thumb);
+				var video = $('.entry-attachment', container);
+				if('undefined' !== typeof video)
+					$('.entry-container', container).before(video);
+				var gallery = $('.post-gallery', container);
+				if('undefined' !== typeof gallery)
+					$('.entry-container', container).before(gallery);
+				var meta = $('.entry-meta', container);
+				if('undefined' !== typeof meta)
+					$('.entry-container', container).after(meta);
+			}
+		}
+		function pinboard_restore_elements(container) {
+			if( container.hasClass('onecol') ) {
+				var thumb = $('.entry-thumbnail', container);
+				if('undefined' !== typeof thumb)
+					$('.entry-header', container).after(thumb);
+				var video = $('.entry-attachment', container);
+				if('undefined' !== typeof video)
+					$('.entry-header', container).after(video);
+				var gallery = $('.post-gallery', container);
+				if('undefined' !== typeof gallery)
+					$('.entry-header', container).after(gallery);
+				var meta = $('.entry-meta', container);
+				if('undefined' !== typeof meta)
+					$('.entry-header', container).append(meta);
+				else
+					$('.entry-header', container).html(meta.html());
+			}
+		}
+		if( ($(window).width() > 960) || ($(document).width() > 960) ) {
+			// Viewport is greater than tablet: portrait
+		} else {
+			$('#content .hentry').each(function() {
+				pinboard_move_elements($(this));
+			});
+		}
+		$(window).resize(function() {
+			if( ($(window).width() > 960) || ($(document).width() > 960) ) {
+									$('.page-template-template-full-width-php #content .hentry, .page-template-template-blog-full-width-php #content .hentry, .page-template-template-blog-four-col-php #content .hentry').each(function() {
+						pinboard_restore_elements($(this));
+					});
+							} else {
+				$('#content .hentry').each(function() {
+					pinboard_move_elements($(this));
+				});
+			}
+			if( ($(window).width() > 760) || ($(document).width() > 760) ) {
+				var maxh = 0;
+				$('#access .menu > li > a').each(function() {
+					if(parseInt($(this).css('height'))>maxh) {
+						maxh = parseInt($(this).css('height'));
+					}
+				});
+				$('#access .menu > li > a').css('height', maxh);
+			} else {
+				$('#access .menu > li > a').css('height', 'auto');
+			}
+		});
+		if( ($(window).width() > 760) || ($(document).width() > 760) ) {
+			var maxh = 0;
+			$('#access .menu > li > a').each(function() {
+				var title = $(this).attr('title');
+				if(typeof title !== 'undefined' && title !== false) {
+					$(this).append('<br /> <span>'+title+'</span>');
+					$(this).removeAttr('title');
+				}
+				if(parseInt($(this).css('height'))>maxh) {
+					maxh = parseInt($(this).css('height'));
+				}
+			});
+			$('#access .menu > li > a').css('height', maxh);
+							$('#access li').mouseenter(function() {
+					$(this).children('ul').css('display', 'none').stop(true, true).fadeIn(250).css('display', 'block').children('ul').css('display', 'none');
+				});
+				$('#access li').mouseleave(function() {
+					$(this).children('ul').stop(true, true).fadeOut(250).css('display', 'block');
+				});
+					} else {
+			$('#access li').each(function() {
+				if($(this).children('ul').length)
+					$(this).append('<span class="drop-down-toggle"><span class="drop-down-arrow"></span></span>');
+			});
+			$('.drop-down-toggle').click(function() {
+				$(this).parent().children('ul').slideToggle(250);
+			});
+		}
+						$('audio,video').mediaelementplayer({
+			videoWidth: '100%',
+			videoHeight: '100%',
+			audioWidth: '100%',
+			alwaysShowControls: true,
+			features: ['playpause','progress','tracks','volume'],
+			videoVolume: 'horizontal'
+		});
+		$(".entry-attachment, .entry-content").fitVids({ customSelector: "iframe[src*='wordpress.tv'], iframe[src*='www.dailymotion.com'], iframe[src*='blip.tv'], iframe[src*='www.viddler.com']"});
+	});
+	jQuery(window).load(function() {
+					jQuery('.entry-content a[href$=".jpg"],.entry-content a[href$=".jpeg"],.entry-content a[href$=".png"],.entry-content a[href$=".gif"],a.colorbox').colorbox({
+				maxWidth: '100%',
+				maxHeight: '100%',
+			});
+			});
+/* ]]> */
+</script>
+<style type="text/css">
+							#wrapper {
+			background: #eeeeee;
+		}
+				#header {
+			border-color: #015832;
+		}
+		#access {
+			background: #015832;
+		}
+				#access li li {
+			background: #015832;
+		}
+							#footer-area {
+			background: #015832;
+		}
+				#copyright {
+			background: #015832;
+		}
+																													.widget-area a {
+			color:#cccccc;
+		}
+				#footer-area {
+			color:;
+		}
+						#copyright a {
+			color:#cccccc;
+		}
+		.button {
+  color:inherit;
+}
+code.cpp.preprocessor {
+  color: #800000 !important;
+}
+code.cpp.color1.bold {
+  color: #006699 !important;
+}
+code.cpp.functions.bold {
+  color: #006699 !important;
+}
+code {
+  box-shadow: none;
+}
+
+#site-title img {
+height: 96px;
+width: 657px;
+}
+
+#current-location .prefix-text {
+display:none;
+}
+
+.entry-meta {
+display:none;
+}
+
+.menu-mymenu-container {
+padding-top:0px;
+}
+
+#menu-mymenu.menu{
+height:20px;
+}
+
+#menu-mymenu.menu a{
+padding-top:0px;
+padding-bottom:0px;
+}
+
+
+#copyright{
+padding-top:0px;
+padding-bottom:0px;
+}
+
+#site-title img{
+line-height:110px !important;
+margin-top:0px !important;
+margin-bottom:0px !important;
+}</style>
+<style type="text/css">
+	#site-title .home,
+	#site-description {
+		position:absolute !important;
+		clip:rect(1px, 1px, 1px, 1px);
+	}
+</style>
+<style type="text/css" id="custom-background-css">
+body.custom-background { background-color: #015832; background-image: url('http://atose.otago.ac.nz/wp-content/uploads/2013/06/background.jpg'); background-repeat: repeat-y; background-position: top center; background-attachment: fixed; }
+</style>
+<style type="text/css" id="syntaxhighlighteranchor"></style>
+</head>
+
+<body class="single single-post postid-141 single-format-standard custom-background page-template-template-full-width-php">
+	<div id="wrapper">
+		<header id="header">
+			<div id="site-title">
+									<a href="index.html" rel="home">
+						<img src="http://atose.otago.ac.nz/wp-content/uploads/2013/06/atose657.png" alt="ATOSE" width="196" height="48" />
+					</a>
+								<a class="home" href="index.html" rel="home">ATOSE</a>
+			</div>
+							<div id="site-description">The operating system of the future</div>
+							<form role="search" method="get" id="searchform" action="index.html" >
+	<input type="text" value="" placeholder="Search this website&#8230;" name="s" id="s" />
+	<input type="submit" id="searchsubmit" value="Search" />
+</form>			<div id="social-media-icons">
+							<a class="social-media-icon facebook" href="https://www.facebook.com/atose.org">Facebook</a>
+																													</div>
+				<div class="clear"></div>
+			<nav id="access">
+				<a class="nav-show" href="index.html@p=141.html#access">Show Navigation</a>
+				<a class="nav-hide" href="index.html@p=141.html#nogo">Hide Navigation</a>
+				<div class="menu-mymenu-container"><ul id="menu-mymenu" class="menu"><li id="menu-item-77" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-77"><a href="index.html">ATOSE</a></li>
+<li id="menu-item-176" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-176"><a href="index.html@page_id=174.html">About</a></li>
+<li id="menu-item-139" class="menu-item menu-item-type-post_type menu-item-object-page current_page_parent menu-item-139"><a href="index.html@page_id=2.html">Blog</a></li>
+<li id="menu-item-91" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-91"><a href="index.html@page_id=89.html">Forums</a></li>
+</ul></div>				<div class="clear"></div>
+			</nav><!-- #access -->
+		</header><!-- #header -->	<div id="container">
+		<section id="content" class="column onecol">
+							<article class="post-141 post type-post status-publish format-standard hentry category-homepagw column onecol" id="post-141">
+					<div class="entry">
+						<header class="entry-header">
+							<h1 class="entry-title">i.MX6 Bare Metal</h1>
+									<aside class="entry-meta">
+							<span class="custom-meta entry-category"><a href="index.html@cat=6.html" title="View all posts in Homepage" rel="category">Homepage</a></span>
+																																<div class="clear"></div>
+		</aside><!-- .entry-meta -->
+							</header><!-- .entry-header -->
+						<div class="entry-content">
+														<p>The i.MX6 series of SoCs come in many forms, but we&#8217;re most interested in the quad core i.MX6Q.  As we&#8217;re programming it directly (bare metal) and not through any operating system its been necessary to bring up and test each subsystems we&#8217;re using one by one.  Here we provide links to source code to exercise each subsystem.</p>
+<p>The development board we&#8217;re using is the SABRE Lite board (compatible) provided by Boundary Devices, the <a href="http://boundarydevices.com/products/sabre-lite-imx6-sbc/">BD-SL-i.MX6</a>.  The <a href="index.html@page_id=183.html" title="i.MX6Q Bare Metal Programming">software development environment</a> is based on the GNU tool chain and our own tools.</p>
+<p>This site contains a quick and simple guide to getting started with <a href="index.html@page_id=229.html" title="Getting Started With ARM i.MX6Q Bare Metal on Mac OS X">Bare Metal on ARM i.MX6Q</a>. Please take a look there for more information.</p>
+<p><a href="index.html@page_id=11.html" title="i.MX6Q UART">i.MX6Q Universal Asynchronous Receiver/Transmitter (UART), or serial port</a><br />
+The SABRE Lite boards we received had two DB9 connectors, one connected to UART1, the other to UART2.  To our surprise the connector labeled &#8220;Console&#8221; was connected to UART2!  This code uses a compile time constant to select between UART1 and UART2.  It has not been tested on any of the others (boards or UARTs). The code as stands configures UART2 at 115200 baud, 8 bits, 1 stop bit, no parity, software flow control.  Make sure you disable hardware flow control in your terminal emulator software (I use minicom on MacOS).</p>
+<p><a href="index.html@page_id=153.html" title="i.MX6Q EPIT">i.MX6Q Enhanced Periodic Interrupt Timer (EPIT)</a><br />
+With the UART working we move on to a periodic timer. The i.MX6Q Enhanced Periodic Interrupt Timer (EPIT) is the ideal subsystem for this.  It allows us to create a u-second level timer. In this example code we spin lock on waiting for the timer.  It does not use interrupts. </p>
+<p><a href="index.html@page_id=162.html" title="i.MX6Q RAM initialisation">i.MX6Q RAM configuration</a><br />
+With I/O and a timer we can turn on the RAM and determine how much RAM is connected. The code to configure the RAM is somewhat unreadable because it was written by reverse engineering the U-boot configuration files for the SABRE Lite board.  As there doesn&#8217;t appear to be any other configurations, this is the one used here.</p>
+<p><a href="index.html@page_id=167.html" title="i.MX6Q GPT">i.MX6Q General Purpose Timer (GPT)</a><br />
+The general purpose timer is an alternative way to measure time. Here we just initialize the thing and a tight loop prints it&#8217;s current value. Note that both the GPT and the EPIT can be used at the same time. </p>
+<p><a href="index.html@page_id=170.html" title="i.MX6Q GPT Interrupt">i.MX6Q Interrupts from the General Purpose Timer</a><br />
+The general purpose timer an be programmed to cause an interrupt. The i.MX6Q uses the ARM Generic Interrupt Controller so we must program that, and then enable the GPT input to it had then connect the GIC to the CPU&#8217;s IRQ line. So this code includes an IRQ handler, programming the GIC, programming the GPT, and output through the UART. </p>
+<p><a href="index.html@page_id=258.html" title="I.MX6Q USB">i.MX6Q USB</a><br />
+This program (which is quite long) make the USB OTG port on the i.MX6Q act as a USB CDC port. In short, it makes the i.MX6Q USB act as a serial port.  If you open a terminal window and connect to this port, it will echo any characters you press.</p>
+							<div class="clear"></div>
+						</div><!-- .entry-content -->
+						<footer class="entry-utility">
+																							<div class="social-bookmarks">
+			<p>Did you like this article? Share it with your friends!</p>
+							<div class="facebook-like">
+					<div id="fb-root"></div>
+					<script>
+						(function(d, s, id) {
+							var js, fjs = d.getElementsByTagName(s)[0];
+							if (d.getElementById(id)) return;
+							js = d.createElement(s); js.id = id;
+							js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+							fjs.parentNode.insertBefore(js, fjs);
+						}(document, 'script', 'facebook-jssdk'));
+					</script>
+					<div class="fb-like" data-href="http://atose.org/?p=141" data-send="false" data-layout="button_count" data-width="110" data-show-faces="false" data-font="arial"></div>
+				</div><!-- .facebook-like -->
+										<div class="twitter-button">
+					<a href="https://twitter.com/share" class="twitter-share-button" data-url="http://atose.org/?p=141">Tweet</a>
+					<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+				</div><!-- .twitter-button -->
+										<div class="google-plusone">
+					<div class="g-plusone" data-size="medium" data-href="http://atose.org/?p=141"></div>
+					<script type="text/javascript">
+						(function() {
+							var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+							po.src = 'https://apis.google.com/js/plusone.js';
+							var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+						})();
+					</script>
+				</div><!-- .google-plusone -->
+										<div class="pinterest-button">
+					<a href="http://pinterest.com/pin/create/button/?url=http%3A%2F%2Fatose.org%2F%3Fp%3D141&#038;description=%3Cp%3EThe+i.MX6+series+of+SoCs+come+in+many+forms%2C+but+we%26%238217%3Bre+most+interested+in+the+quad+core+i.MX6Q.+As+we%26%238217%3Bre+programming+it+directly+%28bare+metal%29+and+not+through+any+operating+system+its+been+necessary+to+bring+up+and+test+each+subsystems+we%26%238217%3Bre+using+one+by+one.+Here+we+provide+links+%26%238230%3B%3C%2Fp%3E" class="pin-it-button" count-layout="horizontal"><img border="0" src="http://assets.pinterest.com/images/PinExt.png" title="Pin It" /></a>
+					<script>
+						(function(d, s, id) {
+							var js, pjs = d.getElementsByTagName(s)[0];
+							if (d.getElementById(id)) return;
+							js = d.createElement(s); js.id = id;
+							js.src = "//assets.pinterest.com/js/pinit.js";
+							pjs.parentNode.insertBefore(js, pjs);
+						}(document, 'script', 'pinterest-js'));
+					</script>
+				</div>
+						<div class="clear"></div>
+		</div><!-- .social-bookmarks -->
+														</footer><!-- .entry-utility -->
+					</div><!-- .entry -->
+					
+
+								<div id="respond" class="comment-respond">
+				<h3 id="reply-title" class="comment-reply-title">Leave a Reply <small><a rel="nofollow" id="cancel-comment-reply-link" href="index.html@p=141.html#respond" style="display:none;">Cancel reply</a></small></h3>
+									<p class="must-log-in">You must be <a href="wp-login.php@redirect_to=http%253A%252F%252Fatose.org%252F%253Fp=141.html">logged in</a> to post a comment.</p>												</div><!-- #respond -->
+										</article><!-- .post -->
+					</section><!-- #content -->
+			</div><!-- #container -->
+				<div id="footer">
+				<div id="footer-area" class="widget-area" role="complementary">
+		    
+<!-- 
+	Plugin: Custom Meta Widget	Plugin URL: http://shinraholdings.com/plugins/custom-meta-widget/-->
+
+
+	<div class="column fourcol"><aside id="custommetawidget-2" class="widget customMetaWidget">	<h3 class="widget-title">Login</h3>	<ul>
+	
+	
+    <li><a href="wp-login.php.html">Log in</a></li>	
+	</ul>
+    
+	</aside><!-- .widget --></div>		<div class="clear"></div>
+	</div><!-- #footer-area -->
+			<div id="copyright">
+				<p class="copyright twocol">© 2015 ATOSE</p>
+								<div class="clear"></div>
+			</div><!-- #copyright -->
+		</div><!-- #footer -->
+	</div><!-- #wrapper -->
+<script type='text/javascript' src='wp-content/plugins/bbpress/templates/default/js/editor.js@ver=2.5.4-5380'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var emailL10n = {"ajax_url":"http:\/\/atose.org\/wp-admin\/admin-ajax.php","max_allowed":"5","text_error":"The Following Error Occurs:","text_name_invalid":"- Your Name is empty\/invalid","text_email_invalid":"- Your Email is empty\/invalid","text_remarks_invalid":"- Your Remarks is invalid","text_friend_names_empty":"- Friend Name(s) is empty","text_friend_name_invalid":"- Friend Name is empty\/invalid: ","text_max_friend_names_allowed":"- Maximum 5 Friend Names allowed","text_friend_emails_empty":"- Friend Email(s) is empty","text_friend_email_invalid":"- Friend Email is invalid: ","text_max_friend_emails_allowed":"- Maximum 5 Friend Emails allowed","text_friends_tally":"- Friend Name(s) count does not tally with Friend Email(s) count","text_image_verify_empty":"- Image Verification is empty"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='wp-content/plugins/wp-email/email-js.js@ver=2.60'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var mejsL10n = {"language":"en-US","strings":{"Close":"Close","Fullscreen":"Fullscreen","Download File":"Download File","Download Video":"Download Video","Play\/Pause":"Play\/Pause","Mute Toggle":"Mute Toggle","None":"None","Turn off Fullscreen":"Turn off Fullscreen","Go Fullscreen":"Go Fullscreen","Unmute":"Unmute","Mute":"Mute","Captions\/Subtitles":"Captions\/Subtitles"}};
+/* ]]> */
+</script>
+<script type='text/javascript' src='http://atose.org/wp-includes/js/mediaelement/mediaelement-and-player.min.js?ver=2.13.0'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var _wpmejsSettings = {"pluginPath":"\/wp-includes\/js\/mediaelement\/"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='http://atose.org/wp-includes/js/mediaelement/wp-mediaelement.js?ver=3.6'></script>
+</body>
+</html>

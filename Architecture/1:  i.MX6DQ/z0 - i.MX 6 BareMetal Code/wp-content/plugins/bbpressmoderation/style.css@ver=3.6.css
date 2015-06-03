@@ -1,0 +1,11 @@
+@CHARSET "UTF-8";
+
+
+/*
+ * Style pending topic/replies to give a visual clue to the
+ * user after submission of a moderated topic/reply
+ */
+#bbpress-forums ul.bbp-topics ul.status-pending,
+	#bbpress-forums ul.bbp-replies div.status-pending {
+	background-color:#FFFFE0;
+}
